@@ -40,7 +40,10 @@ export const isDev: boolean = (function () {
  * @param installed If the application is installed (instead of portable).
  */
 export function getMainFolderPath(): string {
-    return process.env.APPIMAGE ?
-        app.getPath('appData') :
-        process.cwd();
+    // For packaged apps (AppImage on Linux, .app on macOS), use userData directory
+    // For portable/dev mode, use current working directory
+    if (process.env.APPIMAGE || (process.platform === 'darwin' && !isDev)) {
+        return app.getPath('userData');
+    }
+    return process.cwd();
 }

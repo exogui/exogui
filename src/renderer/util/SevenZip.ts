@@ -2,9 +2,14 @@ import { app } from "@electron/remote";
 import * as path from "path";
 
 function get7zExec(): string {
+    // Get the base path for external resources
+    // On macOS packaged apps, resources are siblings to the .app bundle
+    // On dev mode, use process.cwd()
     const basePath = window.External.isDev
         ? process.cwd()
-        : path.dirname(app.getPath("exe"));
+        : (process.platform === 'darwin')
+            ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
+            : app.getAppPath();
     switch (process.platform) {
         case "darwin":
             return path.join(basePath, "extern/7zip-bin/mac", "7za");

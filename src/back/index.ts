@@ -189,7 +189,7 @@ async function initialize(message: any, _: any): Promise<void> {
     try {
         switch (process.platform) {
             case 'win32': {
-                state.vlcPlayer = new VlcPlayer(path.join(state.config.exodosPath, 'ThirdParty\\VLC\\x64\\vlc.exe'), [],
+                state.vlcPlayer = new VlcPlayer(path.join(state.config.exodosPath, 'ThirdParty', 'VLC', 'x64', 'vlc.exe'), [],
                  state.preferences.vlcPort, state.preferences.gameMusicVolume);
                 break;
             }

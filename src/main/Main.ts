@@ -198,8 +198,10 @@ export function main(init: Init): void {
                             localeCode: localeCode,
                             exePath: path.dirname(app.getPath("exe")),
                             basePath: process.env.APPIMAGE
-                                ? path.dirname(app.getPath("appData"))
-                                : process.cwd(),
+                                ? app.getAppPath()
+                                : (process.platform === 'darwin' && !Util.isDev)
+                                    ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
+                                    : process.cwd(),
                             acceptRemote: !!init.args["host-remote"],
                         };
                         state.backProc.send(JSON.stringify(msg));
