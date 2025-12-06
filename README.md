@@ -1,51 +1,109 @@
 # exogui
 
-The launcher for eXoDOS project.
+The launcher for the eXoDOS project.
 
-### Status
+## Links
 
-### Links
-
--   [eXoDOS](https://exodos.the-eye.us) - eXoDOS project
+-   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
+-   [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) - Linux setup guide
+-   [exogui discord](https://discord.gg/srHzx9HS) - exogui-specific support
 
 ## About
 
-The exogui is a desktop application made for browsing, storing and launching other applications (games, manuals etc.). It is specifically made for eXoDOS v5 project. Application is based on Flashpoint Launcher application. [BlueMaxima's Flashpoint](https://bluemaxima.org/flashpoint/) is generally very cool project so do not forget to check their website. Exogui loads Launchbox configuration files format.
+exogui is an Electron-based desktop application for browsing, managing, and launching games from the [eXo projects](https://www.retro-exo.com). It is based on [BlueMaxima's Flashpoint Launcher](https://bluemaxima.org/flashpoint/) and reads LaunchBox-format XML configuration files.
 
-If you need guidance on setting up eXoDOS on Linux, you can refer to the [linux guide page](https://www.retro-exo.com/linux.html) on the Retro-Exo website. If you encounter any issues, feel free to seek help on the #linux_port_for_nerds channel on the [eXoDOS Discord](https://discord.com/invite/37FYaUZ) server.
+### Supported eXo Projects
 
-## Setup
+Currently supported:
 
-How to setup a development environment:
+-   **eXoDOS** - DOS games collection
+-   **eXoDREAMM** - Dreamcast games collection
+-   **eXoDemoscene** - Demoscene collection
 
-1. Download the project (and extract it, if it was downloaded as an archive)
-2. Open a command prompt and navigate it to the projects root folder
-3. Run `npm install`
+More eXo projects coming in the future!
 
-## Development
+### Features
 
-Recommended setup for development:
+-   Browse and search through the entire eXo game collections
+-   Launch DOS and Windows games with platform-specific configurations
+-   Manage playlists and favorites
+-   Cross-platform support (Windows, Linux)
+-   macOS support is currently under development
+-   Integration with game metadata, screenshots, and videos
 
-1. Clone the repository with `git clone --recurse-submodules https://github.com/margorski/exodos-launcher launcher`
-2. In the new 'launcher' folder run `npm run watch` and let the prompt stay open
-3. Open a second command prompt and run `npm run start`
+If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/srHzx9HS) server. For general eXoDOS support and Linux setup, visit the [eXoDOS Discord](https://www.retro-exo.com/community.html) server.
+
+## Development Setup
+
+This project is currently intended for developers. To set up your development environment:
+
+1. **Clone the repository** with submodules:
+
+    ```bash
+    git clone --recurse-submodules https://github.com/margorski/exodos-launcher launcher
+    cd launcher
+    ```
+
+2. **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3. **Run in development mode** (recommended approach):
+    - Terminal 1: Start the watch process to rebuild on changes
+        ```bash
+        npm run watch
+        ```
+    - Terminal 2: Start the application
+        ```bash
+        npm run start
+        ```
+
+Alternatively, you can build once and run:
+
+```bash
+npm run build
+npm run start
+```
 
 ## Package Scripts
 
--   `build` - Build the launcher (build main & renderer and copy static files to `./build/`)
--   `watch` - Build the launcher and incrementally rebuild it when the source or static files change
--   `pack` - Pack the latest build (and put the packaged file with the executable electron app in `./dist/`)
--   `release` - Build then pack the launcher (same as running `build` then `pack`)
--   `start` - Run the latest build of the launcher
+### Common Commands
 
-`pack` and `release` will by default pack for the OS and architecture of the machine that runs it.
+-   `npm run build` - Build the launcher (main, renderer, and static files to `./build/`)
+-   `npm run watch` - Build and incrementally rebuild on source file changes
+-   `npm run start` - Run the latest build of the launcher
+-   `npm test` - Run Jest tests
+-   `npm run lint` - Run ESLint
 
-To pack for a specific OS / architecture use the handy package scripts (such as `pack:linux` or `release:win32`) or set the environment variables `PACK_PLATFORM` / `PACK_ARCH`.
+### Packaging
 
-## Troubleshooting
+-   `npm run pack` - Package the latest build (outputs to `./dist/`)
+-   `npm run release` - Build and package in one step
 
-### "Not allowed to load local resource" Error
+#### Platform-Specific Packaging
 
-If this error appears in the electron applications console, it is probably because the file it is looking for does not exist. To solve this, run `npm run build`
+-   `npm run pack:linux` - Package for Linux (x64)
+-   `npm run pack:win32` - Package for Windows (ia32)
+-   `npm run pack:darwin` - Package for macOS (Intel) - _under development_
+-   `npm run pack:m1` - Package for macOS (Apple Silicon) - _under development_
+-   `npm run pack:all` - Package for all platforms
 
-Example: `Not allowed to load local resource: file:///<ProjectPath>/build/renderer/index.html`
+Use `release:*` variants (e.g., `npm run release:linux`) to build and package in production mode.
+
+**Note:** You can also set environment variables `PACK_PLATFORM` and `PACK_ARCH` to customize packaging.
+
+## Configuration Files
+
+exogui uses several JSON configuration files to control its behavior:
+
+-   **[config.json](docs/config.md)** - Application configuration (paths, ports, native platforms)
+-   **[preferences.json](docs/preferences.md)** - User preferences (UI settings, theme, window size)
+-   **[mappings.json](docs/mappings.md)** - File extension to application mappings (for opening manuals, videos, etc.)
+-   **[platform_options.json](docs/platform_options.md)** - Platform-specific options (file watching)
+
+## Documentation
+
+-   **[docs/architecture.md](docs/architecture.md)** - Detailed architecture overview and socket communication
+-   **[docs/troubleshooting.md](docs/troubleshooting.md)** - Troubleshooting guide for common issues
