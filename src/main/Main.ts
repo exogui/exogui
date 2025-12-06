@@ -200,7 +200,7 @@ export function main(init: Init): void {
                             basePath: process.env.APPIMAGE
                                 ? app.getAppPath()
                                 : (process.platform === 'darwin' && !Util.isDev)
-                                    ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
+                                    ? path.dirname(path.dirname(path.dirname(app.getPath("exe"))))
                                     : process.cwd(),
                             acceptRemote: !!init.args["host-remote"],
                         };
