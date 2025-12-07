@@ -2,7 +2,8 @@ import * as remoteMain from "@electron/remote/main";
 import { SocketClient } from "@shared/back/SocketClient";
 import {
     BackIn,
-    BackInitArgs
+    BackInitArgs,
+    BackOut
 } from "@shared/back/types";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { APP_TITLE } from "@shared/constants";
@@ -153,6 +154,12 @@ export function main(init: Init): void {
             const socket = await waitForConnection();
             state.socket.setSocket(socket);
             state.socket.killOnDisconnect = true;
+
+            // Handle quit signal from backend
+            state.socket.register(BackOut.QUIT, () => {
+                state.isQuitting = true;
+                app.quit();
+            });
 
             const mainData = await state.socket.request(BackIn.GET_MAIN_INIT_DATA);
             state.preferences = mainData.preferences;

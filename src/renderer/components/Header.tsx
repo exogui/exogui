@@ -85,6 +85,7 @@ export function Header(props: HeaderProps) {
                         />
                     ))}
                     <MenuItem title={strings.logs} link={Paths.LOGS} />
+                    <MenuItem title={strings.config} link={Paths.CONFIG} />
                 </ul>
             </div>
         </div>

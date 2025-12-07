@@ -28,7 +28,10 @@ The `config.json` file is located in the root directory of the exogui installati
     "backPortMax": 12100,
     "imagesPortMin": 12101,
     "imagesPortMax": 12200,
-    "nativePlatforms": []
+    "nativePlatforms": [],
+    "currentTheme": "Metal\\theme.css",
+    "showDeveloperTab": false,
+    "vlcPort": 39421
 }
 ```
 
@@ -182,10 +185,43 @@ exogui uses dynamic port allocation within specified ranges. The backend tries p
     -   Platform names must match exactly with names in `Platforms.xml`
     -   This improves performance and compatibility for platforms with native Linux/macOS support
 
-**Note:** Most configuration changes require an application restart to take effect.
+### Theme Configuration
 
-## Related Files
+#### `currentTheme`
 
--   **preferences.json** - User-specific preferences (window size, theme, etc.)
--   **mappings.json** - Platform-specific executable mappings
--   **platform_options.json** - Platform-specific launch options
+-   **Type:** `string | undefined`
+-   **Required:** No
+-   **Default:** `"Metal\\theme.css"`
+-   **Description:** Path to the currently active theme CSS file, relative to the theme folder
+-   **Example:** `"Metal\\theme.css"`, `"Dark\\theme.css"`
+-   **Notes:**
+    -   Set to `undefined` or omit to use no theme (default styling)
+    -   Theme files are loaded from `{exodosPath}/{themeFolderPath}/`
+    -   Changing this requires an application restart
+
+#### `showDeveloperTab`
+
+-   **Type:** `boolean`
+-   **Required:** Yes
+-   **Default:** `false`
+-   **Description:** Whether to show the Developer tab in the header navigation
+-   **Notes:**
+    -   Developer tab provides access to debugging tools and utilities
+    -   Useful for curators and developers working on game metadata
+    -   Changing this requires an application restart
+
+### Media Configuration
+
+#### `vlcPort`
+
+-   **Type:** `number`
+-   **Required:** Yes
+-   **Default:** `39421`
+-   **Description:** Port number for VLC media player HTTP interface
+-   **Valid range:** `1024` - `65535`
+-   **Notes:**
+    -   Used to control VLC for game music playback (Windows only)
+    -   Must not conflict with other ports used by exogui or system services
+    -   Changing this requires an application restart
+
+**Note:** All configuration changes require an application restart to take effect.

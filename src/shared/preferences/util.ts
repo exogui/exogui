@@ -1,6 +1,5 @@
 import { BackIn } from "../back/types";
 import { BrowsePageLayout } from "../BrowsePageLayout";
-import { ARCADE } from "../constants";
 import { DeepPartial } from "../interfaces";
 import { gameOrderByOptions, gameOrderReverseOptions } from "../order/util";
 import { deepCopy } from "../Util";
@@ -35,19 +34,14 @@ const { num, str } = Coerce;
 export const defaultPreferencesData: Readonly<IAppPreferencesData> =
     Object.freeze<IAppPreferencesData>({
         browsePageGameScale: 0.087,
-        enableEditing: false,
         browsePageLayout: BrowsePageLayout.grid,
         browsePageShowLeftSidebar: true,
         browsePageShowRightSidebar: true,
         browsePageLeftSidebarWidth: 320,
         browsePageRightSidebarWidth: 320,
-        curatePageLeftSidebarWidth: 320,
-        showDeveloperTab: false,
-        currentTheme: "Metal\\theme.css",
         lastSelectedLibrary: "",
         gamesOrderBy: "title",
         gamesOrder: "ascending",
-        defaultLibrary: ARCADE,
         mainWindow: Object.freeze({
             x: undefined,
             y: undefined,
@@ -55,13 +49,11 @@ export const defaultPreferencesData: Readonly<IAppPreferencesData> =
             height: undefined,
             maximized: false,
         }),
-        saveImportedCurations: true,
         showLogSource: Object.freeze({
             // (Add log sources that should be hidden by default here)
         }),
         gameMusicPlay: true,
         gameMusicVolume: 0.5,
-        vlcPort: 39421,
     });
 
 /**
@@ -87,7 +79,6 @@ export function overwritePreferenceData(
         "browsePageGameScale",
         (v) => (source.browsePageGameScale = num(v))
     );
-    parser.prop("enableEditing", (v) => (source.enableEditing = !!v));
     parser.prop("browsePageLayout", (v) => (source.browsePageLayout = num(v)));
     parser.prop(
         "browsePageShowLeftSidebar",
@@ -105,12 +96,6 @@ export function overwritePreferenceData(
         "browsePageRightSidebarWidth",
         (v) => (source.browsePageRightSidebarWidth = num(v))
     );
-    parser.prop(
-        "curatePageLeftSidebarWidth",
-        (v) => (source.curatePageLeftSidebarWidth = num(v))
-    );
-    parser.prop("showDeveloperTab", (v) => (source.showDeveloperTab = !!v));
-    parser.prop("currentTheme", (v) => (source.currentTheme = str(v)), true);
     parser.prop(
         "lastSelectedLibrary",
         (v) => (source.lastSelectedLibrary = str(v))
@@ -130,12 +115,6 @@ export function overwritePreferenceData(
     );
     parser.prop("gameMusicVolume", (v) => (source.gameMusicVolume = num(v)), true);
     parser.prop("gameMusicPlay", (v) => (source.gameMusicPlay = !!v), true);
-    parser.prop("vlcPort", v => (source.vlcPort = num(v)), true);
-    parser.prop("defaultLibrary", (v) => (source.defaultLibrary = str(v)));
-    parser.prop(
-        "saveImportedCurations",
-        (v) => (source.saveImportedCurations = !!v)
-    );
     // Parse window object
     parseMainWindow(parser.prop("mainWindow"), source.mainWindow);
     parser

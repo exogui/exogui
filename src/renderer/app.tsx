@@ -249,7 +249,7 @@ class App extends React.Component<AppProps, AppState> {
         });
 
         window.External.back.register(BackOut.THEME_CHANGE, (event, theme) => {
-            if (this.props.preferencesData.currentTheme !== theme) {
+            if (window.External.config.data.currentTheme !== theme) {
                 setTheme(theme);
             }
         });
@@ -299,14 +299,6 @@ class App extends React.Component<AppProps, AppState> {
 
     componentDidUpdate(prevProps: AppProps, prevState: AppState) {
         const { location, preferencesData } = this.props;
-
-        // Check if theme changed
-        if (
-            preferencesData.currentTheme !==
-            prevProps.preferencesData.currentTheme
-        ) {
-            setTheme(preferencesData.currentTheme);
-        }
 
         // Update preference "lastSelectedLibrary"
         const gameLibrary = getBrowseSubPath(location.pathname);

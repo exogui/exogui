@@ -195,7 +195,7 @@ async function initialize(message: any, _: any): Promise<void> {
         switch (process.platform) {
             case "win32": {
                 state.vlcPlayer = new VlcPlayer(path.join(state.config.exodosPath, "ThirdParty", "VLC", "x64", "vlc.exe"), [],
-                    state.preferences.vlcPort, state.preferences.gameMusicVolume);
+                    state.config.vlcPort, state.preferences.gameMusicVolume);
                 break;
             }
             default: {
@@ -631,6 +631,9 @@ async function onMessage(event: WebSocket.MessageEvent): Promise<void> {
 export function exit() {
     if (!state.isExit) {
         state.isExit = true;
+
+        // Broadcast quit signal to all connected clients (including Main process)
+        state.socketServer.broadcast(BackOut.QUIT);
 
         Promise.all([
             // Close WebSocket server

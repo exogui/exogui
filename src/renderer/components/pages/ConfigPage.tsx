@@ -1,14 +1,20 @@
-import { WithPreferencesProps } from "@renderer/containers/withPreferences";
 import { englishTranslation } from "@renderer/lang/en";
 import { BackIn } from "@shared/back/types";
-import { updatePreferencesData } from "@shared/preferences/util";
+import { IAppConfigData } from "@shared/config/interfaces";
+import { memoizeOne } from "@shared/memoize";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
 import { isExodosValidCheck } from "../../Util";
-import { CheckBox } from "../CheckBox";
+import { ConfigBox } from "../ConfigBox";
+import { ConfigBoxCheckbox } from "../ConfigBoxCheckbox";
+import { ConfigBoxNumberInput } from "../ConfigBoxInput";
+import {
+    ConfigBoxMultiSelect,
+    MultiSelectItem,
+} from "../ConfigBoxMultiSelect";
+import { ConfigBoxSelectInput } from "../ConfigBoxSelectInput";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
-import { Dropdown } from "../Dropdown";
-import { DropdownInputField } from "../DropdownInputField";
+
 type OwnProps = {
     /** List of all platforms */
     platforms: string[];
@@ -16,49 +22,37 @@ type OwnProps = {
     themeList: Theme[];
 };
 
-export type ConfigPageProps = OwnProps & WithPreferencesProps;
+export type ConfigPageProps = OwnProps;
 
-type ConfigPageState = {
-    /** If the currently entered Exodos path points to a "valid" Exodos folder (it exists and "looks" like a Exodos folder). */
+type ConfigPageState = IAppConfigData & {
+    /** If the currently entered Exodos path points to a "valid" Exodos folder. */
     isExodosPathValid?: boolean;
-    /** Currently entered Exodos path. */
-    exodosPath: string;
-    /** If the "use custom title bar" checkbox is checked. */
-    useCustomTitlebar: boolean;
-    /** Array of native platforms */
-    nativePlatforms: string[];
 };
 
-export interface ConfigPage {}
-
 /**
- * A page displaying some of the current "configs" / "preferences", as well as a way of changing them.
- * All changed "configs" (settings stored in "config.json") require you to "Save & Restart" to take effect.
- * The changed "preferences" (settings stored in "preferences.json") do not require a restart, and are updated directly.
- * @TODO Make it clear which settings are "configs" and which are "preferences" (or at least which require you to "save & restart")?
+ * A page displaying all settings from config.json.
+ * All changes require you to "Save & Restart" to take effect.
  */
 export class ConfigPage extends React.Component<
     ConfigPageProps,
     ConfigPageState
 > {
-    /** Reference to the input element of the "current theme" drop-down field. */
-    currentThemeInputRef: HTMLInputElement | HTMLTextAreaElement | null = null;
-
     constructor(props: ConfigPageProps) {
         super(props);
         const configData = window.External.config.data;
         this.state = {
+            ...configData,
+            nativePlatforms: [...configData.nativePlatforms],
             isExodosPathValid: undefined,
-            exodosPath: configData.exodosPath,
-            useCustomTitlebar: configData.useCustomTitlebar,
-            nativePlatforms: configData.nativePlatforms,
         };
     }
 
     render() {
-        const { platforms } = this.props;
-        const { nativePlatforms } = this.state;
         const strings = englishTranslation.config;
+        const platformOptions = this.itemizePlatformOptionsMemo(
+            this.props.platforms,
+            this.state.nativePlatforms,
+        );
 
         return (
             <div className="config-page simple-scroll">
@@ -66,86 +60,35 @@ export class ConfigPage extends React.Component<
                     <h1 className="config-page__title">
                         {strings.configHeader}
                     </h1>
-                    <i>{strings.configDesc}</i>
+                    <p className="config-page__description">
+                        {strings.configDesc}
+                    </p>
 
-                    {/* -- Exodos -- */}
+                    {/* -- eXoDOS -- */}
                     <div className="setting">
                         <p className="setting__title">{strings.exodosHeader}</p>
                         <div className="setting__body">
                             {/* Exodos Path */}
-                            <div className="setting__row">
-                                <div className="setting__row__top">
-                                    <p className="setting__row__title">
-                                        {strings.exodosPath}
-                                    </p>
-                                    <div className="setting__row__content setting__row__content--filepath-path">
-                                        <ConfigExodosPathInput
-                                            input={this.state.exodosPath}
-                                            buttonText={strings.browse}
-                                            onInputChange={
-                                                this.onExodosPathChange
-                                            }
-                                            isValid={
-                                                this.state.isExodosPathValid
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                                <div className="setting__row__bottom">
-                                    <p>{strings.exodosPathDesc}</p>
-                                </div>
-                            </div>
+                            <ConfigBox
+                                title={strings.exodosPath}
+                                description={strings.exodosPathDesc}
+                                contentClassName="setting__row__content--filepath-path"
+                            >
+                                <ConfigExodosPathInput
+                                    input={this.state.exodosPath}
+                                    buttonText={strings.browse}
+                                    onInputChange={this.onExodosPathChange}
+                                    isValid={this.state.isExodosPathValid}
+                                />
+                            </ConfigBox>
                             {/* Native Platforms */}
-                            <div className="setting__row">
-                                <div className="setting__row__top">
-                                    <div className="setting__row__title">
-                                        <p>{strings.nativePlatforms}</p>
-                                    </div>
-                                    <div className="setting__row__content setting__row__content--toggle">
-                                        <div>
-                                            <Dropdown text={strings.platforms}>
-                                                {platforms.map(
-                                                    (platform, index) => (
-                                                        <label
-                                                            key={index}
-                                                            className="log-page__dropdown-item"
-                                                        >
-                                                            <div className="simple-center">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={
-                                                                        nativePlatforms.findIndex(
-                                                                            (
-                                                                                item
-                                                                            ) =>
-                                                                                item ===
-                                                                                platform
-                                                                        ) !== -1
-                                                                    }
-                                                                    onChange={() => {
-                                                                        this.onNativeCheckboxChange(
-                                                                            platform
-                                                                        );
-                                                                    }}
-                                                                    className="simple-center__vertical-inner"
-                                                                />
-                                                            </div>
-                                                            <div className="simple-center">
-                                                                <p className="simple-center__vertical-inner log-page__dropdown-item-text">
-                                                                    {platform}
-                                                                </p>
-                                                            </div>
-                                                        </label>
-                                                    )
-                                                )}
-                                            </Dropdown>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="setting__row__bottom">
-                                    <p>{strings.nativePlatformsDesc}</p>
-                                </div>
-                            </div>
+                            <ConfigBoxMultiSelect
+                                title={strings.nativePlatforms}
+                                description={strings.nativePlatformsDesc}
+                                text={strings.platforms}
+                                onChange={this.onNativeCheckboxChange}
+                                items={platformOptions}
+                            />
                         </div>
                     </div>
 
@@ -156,63 +99,79 @@ export class ConfigPage extends React.Component<
                         </p>
                         <div className="setting__body">
                             {/* Custom Title Bar */}
-                            <div className="setting__row">
-                                <div className="setting__row__top">
-                                    <div className="setting__row__title">
-                                        <p>{strings.useCustomTitleBar}</p>
-                                    </div>
-                                    <div className="setting__row__content setting__row__content--toggle">
-                                        <div>
-                                            <CheckBox
-                                                checked={
-                                                    this.state.useCustomTitlebar
-                                                }
-                                                onToggle={
-                                                    this
-                                                    .onUseCustomTitlebarChange
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="setting__row__bottom">
-                                    <p>{strings.useCustomTitleBarDesc}</p>
-                                </div>
-                            </div>
+                            <ConfigBoxCheckbox
+                                title={strings.useCustomTitleBar}
+                                description={strings.useCustomTitleBarDesc}
+                                checked={this.state.useCustomTitlebar}
+                                onToggle={this.onUseCustomTitlebarChange}
+                            />
                             {/* Theme */}
-                            <div className="setting__row">
-                                <div className="setting__row__top">
-                                    <div className="setting__row__title">
-                                        <p>{strings.theme}</p>
-                                    </div>
-                                    <div className="setting__row__content setting__row__content--input-field setting__row__content--theme-input-field">
-                                        <DropdownInputField
-                                            text={
-                                                this.props.preferencesData
-                                                .currentTheme || ""
-                                            }
-                                            placeholder={strings.noTheme}
-                                            onChange={this.onCurrentThemeChange}
-                                            editable={true}
-                                            items={[
-                                                ...this.props.themeList.map(
-                                                    formatThemeItemName
-                                                ),
-                                                "No Theme",
-                                            ]}
-                                            onItemSelect={
-                                                this.onCurrentThemeItemSelect
-                                            }
-                                            inputRef={
-                                                this.currentThemeInputRefFunc
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                                <div className="setting__row__bottom">
-                                    <p>{strings.themeDesc}</p>
-                                </div>
-                            </div>
+                            <ConfigBoxSelectInput
+                                title={strings.theme}
+                                description={strings.themeDesc}
+                                text={
+                                    this.getThemeName(
+                                        this.state.currentTheme || "",
+                                    ) || ""
+                                }
+                                placeholder={strings.noTheme}
+                                editable={true}
+                                items={[
+                                    ...this.props.themeList.map(
+                                        formatThemeItemName,
+                                    ),
+                                    "No Theme",
+                                ]}
+                                onChange={this.onCurrentThemeChange}
+                                onItemSelect={this.onCurrentThemeItemSelect}
+                            />
+                        </div>
+                    </div>
+
+                    {/* -- Network -- */}
+                    <div className="setting">
+                        <p className="setting__title">{strings.networkHeader}</p>
+                        <div className="setting__body">
+                            <ConfigBoxNumberInput
+                                title={strings.backPortMin}
+                                description={strings.backPortMinDesc}
+                                value={this.state.backPortMin}
+                                onChange={(v) => this.setState({ backPortMin: v })}
+                                min={1024}
+                                max={65535}
+                            />
+                            <ConfigBoxNumberInput
+                                title={strings.backPortMax}
+                                description={strings.backPortMaxDesc}
+                                value={this.state.backPortMax}
+                                onChange={(v) => this.setState({ backPortMax: v })}
+                                min={1024}
+                                max={65535}
+                            />
+                            <ConfigBoxNumberInput
+                                title={strings.imagesPortMin}
+                                description={strings.imagesPortMinDesc}
+                                value={this.state.imagesPortMin}
+                                onChange={(v) => this.setState({ imagesPortMin: v })}
+                                min={1024}
+                                max={65535}
+                            />
+                            <ConfigBoxNumberInput
+                                title={strings.imagesPortMax}
+                                description={strings.imagesPortMaxDesc}
+                                value={this.state.imagesPortMax}
+                                onChange={(v) => this.setState({ imagesPortMax: v })}
+                                min={1024}
+                                max={65535}
+                            />
+                            <ConfigBoxNumberInput
+                                title={strings.vlcPort}
+                                description={strings.vlcPortDesc}
+                                value={this.state.vlcPort}
+                                onChange={(v) => this.setState({ vlcPort: v })}
+                                min={1024}
+                                max={65535}
+                            />
                         </div>
                     </div>
 
@@ -223,29 +182,12 @@ export class ConfigPage extends React.Component<
                         </p>
                         <div className="setting__body">
                             {/* Show Developer Tab */}
-                            <div className="setting__row">
-                                <div className="setting__row__top">
-                                    <div className="setting__row__title">
-                                        <p>{strings.showDeveloperTab}</p>
-                                    </div>
-                                    <div className="setting__row__content setting__row__content--toggle">
-                                        <div>
-                                            <CheckBox
-                                                checked={
-                                                    this.props.preferencesData
-                                                    .showDeveloperTab
-                                                }
-                                                onToggle={
-                                                    this.onShowDeveloperTab
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="setting__row__bottom">
-                                    <p>{strings.showDeveloperTabDesc}</p>
-                                </div>
-                            </div>
+                            <ConfigBoxCheckbox
+                                title={strings.showDeveloperTab}
+                                description={strings.showDeveloperTabDesc}
+                                checked={this.state.showDeveloperTab}
+                                onToggle={this.onShowDeveloperTab}
+                            />
                         </div>
                     </div>
 
@@ -265,8 +207,22 @@ export class ConfigPage extends React.Component<
         );
     }
 
+    itemizePlatformOptionsMemo = memoizeOne(
+        (
+            platforms: string[],
+            nativePlatforms: string[],
+        ): MultiSelectItem<string>[] => {
+            return platforms.map((platform) => {
+                return {
+                    value: platform,
+                    checked: nativePlatforms.includes(platform),
+                };
+            });
+        },
+    );
+
     onNativeCheckboxChange = (platform: string): void => {
-        const { nativePlatforms } = this.state;
+        const nativePlatforms = [...this.state.nativePlatforms];
         const index = nativePlatforms.findIndex((item) => item === platform);
 
         if (index !== -1) {
@@ -274,7 +230,7 @@ export class ConfigPage extends React.Component<
         } else {
             nativePlatforms.push(platform);
         }
-        this.setState({ nativePlatforms: nativePlatforms });
+        this.setState({ nativePlatforms });
     };
 
     /** When the "Exodos Folder Path" input text is changed. */
@@ -290,13 +246,16 @@ export class ConfigPage extends React.Component<
     };
 
     onShowDeveloperTab = (isChecked: boolean): void => {
-        updatePreferencesData({ showDeveloperTab: isChecked });
+        this.setState({ showDeveloperTab: isChecked });
     };
 
-    onCurrentThemeChange = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ): void => {
-        updatePreferencesData({ currentTheme: event.currentTarget.value });
+    onCurrentThemeChange = (value: string): void => {
+        const selectedTheme = this.props.themeList.find(
+            (t) => t.entryPath === value,
+        );
+        if (selectedTheme) {
+            this.setState({ currentTheme: selectedTheme.entryPath });
+        }
     };
 
     onCurrentThemeItemSelect = (_: string, index: number): void => {
@@ -309,28 +268,45 @@ export class ConfigPage extends React.Component<
         } else {
             theme = undefined;
         } // (Deselect the current theme)
-        updatePreferencesData({ currentTheme: theme });
-        // Select the input field
-        if (this.currentThemeInputRef) {
-            this.currentThemeInputRef.focus();
-        }
+        this.setState({ currentTheme: theme });
     };
 
-    currentThemeInputRefFunc = (
-        ref: HTMLInputElement | HTMLTextAreaElement | null
-    ): void => {
-        this.currentThemeInputRef = ref;
-    };
+    getThemeName(entryPath: string): string | undefined {
+        const theme = this.props.themeList.find(
+            (t) => t.entryPath === entryPath,
+        );
+        if (theme) {
+            return theme.meta.name || theme.entryPath;
+        }
+        return undefined;
+    }
 
     /** When the "Save & Restart" button is clicked. */
     onSaveAndRestartClick = () => {
-        window.External.back.request(BackIn.UPDATE_CONFIG, {
+        const configData: IAppConfigData = {
             exodosPath: this.state.exodosPath,
-            useCustomTitlebar: this.state.useCustomTitlebar
-        })
-        .then(() => {
-            window.External.restart();
-        });
+            imageFolderPath: this.state.imageFolderPath,
+            logoFolderPath: this.state.logoFolderPath,
+            playlistFolderPath: this.state.playlistFolderPath,
+            jsonFolderPath: this.state.jsonFolderPath,
+            platformFolderPath: this.state.platformFolderPath,
+            themeFolderPath: this.state.themeFolderPath,
+            useCustomTitlebar: this.state.useCustomTitlebar,
+            nativePlatforms: this.state.nativePlatforms,
+            backPortMin: this.state.backPortMin,
+            backPortMax: this.state.backPortMax,
+            imagesPortMin: this.state.imagesPortMin,
+            imagesPortMax: this.state.imagesPortMax,
+            currentTheme: this.state.currentTheme,
+            showDeveloperTab: this.state.showDeveloperTab,
+            vlcPort: this.state.vlcPort,
+        };
+
+        window.External.back
+            .request(BackIn.UPDATE_CONFIG, configData)
+            .then(() => {
+                window.External.restart();
+            });
     };
 }
 

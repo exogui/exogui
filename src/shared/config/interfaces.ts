@@ -26,4 +26,10 @@ export type IAppConfigData = {
     imagesPortMin: number;
     /** Upper limit of the range of ports that the back image server should listen on. */
     imagesPortMax: number;
+    /** Filename of the current theme (relative to theme folder). */
+    currentTheme: string | undefined;
+    /** If the "Developer" tab should be visible in the header. */
+    showDeveloperTab: boolean;
+    /** Port number for VLC media player HTTP interface. */
+    vlcPort: number;
 };

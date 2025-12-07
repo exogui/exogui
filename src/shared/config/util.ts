@@ -24,6 +24,9 @@ const configDataDefaultBase: Readonly<IAppConfigData> = Object.freeze({
     imagesPortMin: 12101,
     imagesPortMax: 12200,
     nativePlatforms: [],
+    currentTheme: "Metal\\theme.css",
+    showDeveloperTab: false,
+    vlcPort: 39421,
 });
 
 /**
@@ -107,6 +110,9 @@ export function overwriteConfigData(
     parser.prop("backPortMax", (v) => (source.backPortMax = num(v)));
     parser.prop("imagesPortMin", (v) => (source.imagesPortMin = num(v)));
     parser.prop("imagesPortMax", (v) => (source.imagesPortMax = num(v)));
+    parser.prop("currentTheme", (v) => (source.currentTheme = str(v)), true);
+    parser.prop("showDeveloperTab", (v) => (source.showDeveloperTab = !!v));
+    parser.prop("vlcPort", (v) => (source.vlcPort = num(v)));
     // Do some alterations
     source.exodosPath = fixSlashes(source.exodosPath); // (Clean path)
     // Return

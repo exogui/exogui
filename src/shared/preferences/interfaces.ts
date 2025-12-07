@@ -8,8 +8,6 @@ import { GameOrderBy, GameOrderReverse } from "../order/interfaces";
 export type IAppPreferencesData = {
     /** Scale of the games at the BrowsePage. */
     browsePageGameScale: number;
-    /** If editing games, additional applications and playlists should be allowed. */
-    enableEditing: boolean;
     /** Layout of game collection at BrowsePage. */
     browsePageLayout: BrowsePageLayout;
     /** If the left sidebar at the BrowsePage should be visible. */
@@ -20,12 +18,6 @@ export type IAppPreferencesData = {
     browsePageLeftSidebarWidth: number;
     /** Width of the right sidebar. (Browse Page) */
     browsePageRightSidebarWidth: number;
-    /** Width of the left sidebar. (Curate Page) */
-    curatePageLeftSidebarWidth: number;
-    /** If the "Developer" tab should be visible in the header. */
-    showDeveloperTab: boolean;
-    /** Filename of the current theme. */
-    currentTheme: string | undefined;
     /** The "route" of the last selected library (empty string selects the default). */
     lastSelectedLibrary: string;
     /** What property to order the games by. */
@@ -34,10 +26,6 @@ export type IAppPreferencesData = {
     gamesOrder: GameOrderReverse;
     /** Position and size of the main window. */
     mainWindow: IAppPreferencesDataMainWindow;
-    /** Default Library for new games etc. */
-    defaultLibrary: string;
-    /** Save curations after importing */
-    saveImportedCurations: boolean;
     /** Sources to show/hide in the log page. */
     showLogSource: {
         [key: string]: boolean;
@@ -46,8 +34,6 @@ export type IAppPreferencesData = {
     gameMusicPlay: boolean;
     /** Game music volume */
     gameMusicVolume: number;
-    /** VLC port */
-    vlcPort: number;
 };
 
 export type IAppPreferencesDataMainWindow = {

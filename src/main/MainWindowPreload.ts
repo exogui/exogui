@@ -139,8 +139,8 @@ const onInit = (async () => {
     window.External.initialThemes = themes;
     window.External.initialPlaylists = playlists;
     window.External.initialLocaleCode = localeCode;
-    if (window.External.preferences.data.currentTheme) {
-        setTheme(window.External.preferences.data.currentTheme);
+    if (window.External.config.data.currentTheme) {
+        setTheme(window.External.config.data.currentTheme);
     }
 
     // Start keepalive routine

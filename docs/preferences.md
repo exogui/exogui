@@ -29,27 +29,20 @@ User preferences store all non-configuration settings that control the appearanc
 ```json
 {
     "browsePageGameScale": 0.087,
-    "enableEditing": false,
     "browsePageLayout": 1,
     "browsePageShowLeftSidebar": true,
     "browsePageShowRightSidebar": true,
     "browsePageLeftSidebarWidth": 320,
     "browsePageRightSidebarWidth": 320,
-    "curatePageLeftSidebarWidth": 320,
-    "showDeveloperTab": false,
-    "currentTheme": "Metal\\theme.css",
     "lastSelectedLibrary": "",
     "gamesOrderBy": "title",
     "gamesOrder": "ascending",
-    "defaultLibrary": "arcade",
     "mainWindow": {
         "maximized": false
     },
-    "saveImportedCurations": true,
     "showLogSource": {},
     "gameMusicPlay": true,
-    "gameMusicVolume": 0.5,
-    "vlcPort": 39421
+    "gameMusicVolume": 0.5
 }
 ```
 
@@ -106,46 +99,6 @@ User preferences store all non-configuration settings that control the appearanc
 -   **Range:** Typically `200` - `600`
 -   **UI Control:** Sidebar resize handle
 
-### Curate Page Settings
-
-#### `curatePageLeftSidebarWidth`
-
--   **Type:** `number`
--   **Default:** `320`
--   **Description:** Width in pixels of the left sidebar on the curate page
--   **Range:** Typically `200` - `600`
-
-### Editing Settings
-
-#### `enableEditing`
-
--   **Type:** `boolean`
--   **Default:** `false`
--   **Description:** Whether editing of games, playlists, and metadata is allowed
--   **Security:** Disabled by default to prevent accidental modifications
--   **UI Control:** Settings menu
-
-### Developer Settings
-
-#### `showDeveloperTab`
-
--   **Type:** `boolean`
--   **Default:** `false`
--   **Description:** Whether to show the Developer tab in the header
--   **Purpose:** Provides access to developer tools and debugging features
--   **UI Control:** Settings menu
-
-### Theme Settings
-
-#### `currentTheme`
-
--   **Type:** `string | undefined`
--   **Default:** `"Metal\\theme.css"`
--   **Description:** Path to the currently active theme CSS file
--   **Format:** Relative path from theme folder
--   **Example:** `"Metal\\theme.css"`, `"Dark\\theme.css"`
--   **UI Control:** Theme selector in settings
-
 ### Library Settings
 
 #### `lastSelectedLibrary`
@@ -155,13 +108,6 @@ User preferences store all non-configuration settings that control the appearanc
 -   **Description:** Route/ID of the last selected game library/platform
 -   **Purpose:** Restores the selected library when reopening exogui
 -   **Example:** `"MS-DOS"`, `"ScummVM"`
-
-#### `defaultLibrary`
-
--   **Type:** `string`
--   **Default:** `"arcade"`
--   **Description:** Default library to use for new games and curations
--   **Example:** `"arcade"`, `"MS-DOS"`
 
 ### Game Ordering
 
@@ -213,15 +159,6 @@ User preferences store all non-configuration settings that control the appearanc
 }
 ```
 
-### Curation Settings
-
-#### `saveImportedCurations`
-
--   **Type:** `boolean`
--   **Default:** `true`
--   **Description:** Whether to save curations after importing them
--   **Purpose:** Keeps a backup of imported game metadata
-
 ### Logging Settings
 
 #### `showLogSource`
@@ -259,20 +196,12 @@ User preferences store all non-configuration settings that control the appearanc
 -   **Range:** `0.0` (muted) to `1.0` (full volume)
 -   **UI Control:** Volume slider
 
-#### `vlcPort`
-
--   **Type:** `number`
--   **Default:** `39421`
--   **Description:** Port number for VLC media player HTTP interface
--   **Purpose:** Used to control VLC for music playback
--   **Range:** `1024` - `65535`
-
 ## Runtime Modifications
 
 Most preferences are automatically saved when changed through the exogui interface:
 
 -   Adjusting sliders (game scale, volume)
 -   Toggling sidebars
--   Changing themes
 -   Resizing panels
 -   Window position/size
+-   Changing sort order and filters
