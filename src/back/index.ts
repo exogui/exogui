@@ -95,7 +95,7 @@ const state: BackState = {
         defaultMapping: DefaultCommandMapping,
         commandsMapping: [],
     },
-    vlcPlayer: createErrorProxy("vlcPlayer"),
+    vlcPlayer: undefined,
 };
 
 export const preferencesFilename = "preferences.json";
