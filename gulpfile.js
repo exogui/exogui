@@ -67,10 +67,6 @@ gulp.task("copy-static", () => {
         .pipe(gulp.dest(config.static.dest));
 });
 
-gulp.task("config-version", (done) => {
-    fs.writeFile(".version", config.buildVersion, done);
-});
-
 /* ------ Pack ------ */
 
 gulp.task("pack", (done) => {
@@ -134,7 +130,6 @@ gulp.task(
         "build-back",
         "build-renderer",
         "copy-static",
-        "config-version",
     ),
 );
 

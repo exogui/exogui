@@ -51,20 +51,15 @@ export class VlcPlayer {
     }
 
     private async sendCommand(command: string): Promise<string> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                // Ensure the socket is connected
-                await this.connectSocket();
+        await this.connectSocket();
 
-                // Add the command to the queue
-                this.commandQueue.push({ command, resolve, reject });
+        return new Promise((resolve, reject) => {
+            // Add the command to the queue
+            this.commandQueue.push({ command, resolve, reject });
 
-                // Process the queue if it's not already being processed
-                if (!this.isProcessingQueue) {
-                    this.processQueue();
-                }
-            } catch (err) {
-                reject(err);
+            // Process the queue if it's not already being processed
+            if (!this.isProcessingQueue) {
+                this.processQueue();
             }
         });
     }

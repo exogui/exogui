@@ -23,7 +23,6 @@ import {
     session,
     shell
 } from "electron";
-import * as fs from "fs";
 import * as path from "path";
 import * as WebSocket from "ws";
 import { Init } from "./types";
@@ -87,13 +86,6 @@ export function main(init: Init): void {
         state._installed = false;
         state.mainFolderPath = Util.getMainFolderPath();
         console.log("Main folder: " + state.mainFolderPath);
-        const versionFile = fs.readFileSync(path.join(state.mainFolderPath, ".version"));
-        state._version = versionFile
-            ? parseInt(
-                versionFile.toString().replace(/[^\d]/g, ""),
-                10
-            ) // (Remove all non-numerical characters, then parse it as a string)
-            : -1; // (Version not found error code)
 
         // Start back process
         if (!init.args["connect-remote"]) {
@@ -227,7 +219,6 @@ export function main(init: Init): void {
         const data: InitRendererData = {
             isBackRemote: !!init.args["connect-remote"],
             installed: !!state._installed,
-            version: state._version,
             host: state.backHost.href,
             secret: state._secret,
         };

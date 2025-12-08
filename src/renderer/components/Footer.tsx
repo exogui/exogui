@@ -247,4 +247,4 @@ const setVol = (vol: number) => {
     window.External.back.send(BackIn.SET_VOLUME, vol / 100);
 };
 
-const setVolThrottle = throttle(setVol, 25);
+const setVolThrottle = throttle(setVol, 50);
