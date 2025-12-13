@@ -22,13 +22,13 @@ interface SocketConstructor<T> {
 
 type SocketCloseEvent = Pick<CloseEvent, "reason" | "code" | "wasClean">;
 
-export interface SharedSocket<T extends Socket> {
+export class SharedSocket<T extends Socket> extends EventEmitter {
     on(event: "connect", listener: () => void): this;
     /** Fired when a message is received. */
     on(event: "message", listener: (event: WrappedResponse) => void): this;
-}
-
-export class SharedSocket<T extends Socket> extends EventEmitter {
+    on(event: string, listener: (...args: any[]) => void): this {
+        return super.on(event, listener);
+    }
     url: string = "";
     secret: string = "";
     socket: T | undefined;

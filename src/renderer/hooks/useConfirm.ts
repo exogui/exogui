@@ -28,13 +28,14 @@ function confirmReducer(
     action: ConfirmAction,
 ): ConfirmState {
     switch (action.type) {
-        case "increment":
+        case "increment": {
             let nextCount = state.count + 1;
             if (nextCount > action.limit) {
                 action.confirm();
                 nextCount = 0;
             }
             return { count: nextCount };
+        }
         case "reset":
             return { count: 0 };
         default:
@@ -78,7 +79,7 @@ export function useConfirm(
     // Activate callback
     const activate = useCallback(() => {
         dispatch({ type: "increment", limit, confirm });
-    }, [dispatch, limit, confirm, reset]);
+    }, [dispatch, limit, confirm]);
     // Return
     return [state.count, activate, confirm, reset];
 }

@@ -12,15 +12,15 @@ export type SizeProviderProps = {
 
 /** Sets and updates the "--width" and "--height" CSS variables to match the prop values. */
 export function SizeProvider(props: SizeProviderProps) {
-    const ref = useRef(null);
+    const ref = useRef<HTMLDivElement>(null);
     // Update "--width"
     useEffect(() => {
         updateStyle(ref.current, "--width", props.width);
-    }, [ref.current, props.width]);
+    }, [props.width]);
     // Update "--height"
     useEffect(() => {
         updateStyle(ref.current, "--height", props.height);
-    }, [ref.current, props.height]);
+    }, [props.height]);
     // Render
     return <div ref={ref}>{props.children}</div>;
 }

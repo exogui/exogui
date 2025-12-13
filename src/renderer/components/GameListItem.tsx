@@ -1,6 +1,5 @@
 import * as React from "react";
 import { ListRowProps } from "react-virtualized";
-import { getPlatformIconURL } from "../Util";
 
 export type GameListItemProps = ListRowProps & {
     id: string;
@@ -24,7 +23,6 @@ export function GameListItem(props: GameListItemProps) {
     const {
         id,
         title,
-        platform,
         tags: tags,
         developer,
         publisher,
@@ -36,11 +34,6 @@ export function GameListItem(props: GameListItemProps) {
         index,
         style,
     } = props;
-    // Get the platform icon path
-    const platformIcon = React.useMemo(
-        () => getPlatformIconURL(platform),
-        [platform],
-    );
     // Pick class names
     const className = React.useMemo(() => {
         let className: string = "game-list-item";
@@ -105,7 +98,7 @@ export function GameListItem(props: GameListItemProps) {
                 </div>
             </li>
         );
-    }, [style, className, isDraggable, id, tags, title, platformIcon]);
+    }, [style, className, isDraggable, id, tags, title, releaseYear, developer, publisher]);
 }
 
 export namespace GameListItem {

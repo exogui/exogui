@@ -17,9 +17,6 @@ export type GameOrderChangeEvent = {
     orderReverse: GameOrderReverse;
 };
 
-export interface GameOrder {
-}
-
 /**
  * Two drop down lists, the first for selecting what to order the games by, and
  * the second for selecting what way to order the games in.

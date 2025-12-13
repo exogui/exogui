@@ -1,6 +1,6 @@
-import { IAppCommandsMappingData, ICommandMapping } from "./interfaces";
+import { IAppCommandsMappingData } from "./interfaces";
 import { escapeShell } from "../Util";
-import path = require("path");
+import * as path from "path";
 
 const FOOBAR_EXECUTABLE = "foobar2000.exe";
 

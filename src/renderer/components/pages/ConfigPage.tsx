@@ -303,10 +303,10 @@ export class ConfigPage extends React.Component<
         };
 
         window.External.back
-            .request(BackIn.UPDATE_CONFIG, configData)
-            .then(() => {
-                window.External.restart();
-            });
+        .request(BackIn.UPDATE_CONFIG, configData)
+        .then(() => {
+            window.External.restart();
+        });
     };
 }
 

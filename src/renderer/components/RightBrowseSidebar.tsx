@@ -46,8 +46,6 @@ type RightBrowseSidebarState = {
     dynamicAddApps?: IAdditionalApplicationInfo[];
 };
 
-export interface RightBrowseSidebar {}
-
 /** Sidebar on the right side of BrowsePage. */
 export class RightBrowseSidebar extends React.Component<
     RightBrowseSidebarProps,

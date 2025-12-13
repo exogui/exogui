@@ -1,9 +1,7 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { useNavigate } from "react-router";
 import { Header, HeaderProps } from "../components/Header";
 import { withPreferences, WithPreferencesProps } from "./withPreferences";
-import { withRouter } from "./withRouter";
 
 type HeaderContainerProps = HeaderProps & WithPreferencesProps;
 

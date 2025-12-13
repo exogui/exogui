@@ -2,9 +2,7 @@ import { AnyFunction, ArgumentTypesOf, ReturnTypeOf } from "./interfaces";
 import { shallowStrictEquals } from "./Util";
 
 /** Callable object, A is the arguments, R is the return value */
-interface Callable<A extends any[], R> extends Function {
-    (...args: A): R;
-}
+type Callable<A extends any[], R> = (...args: A) => R;
 
 /** A short-hand for a callable function that has the same argument and return types as a "normal" function */
 type CallableWrap<T extends AnyFunction> = Callable<

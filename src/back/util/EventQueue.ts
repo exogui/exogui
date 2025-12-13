@@ -1,13 +1,10 @@
 /** Event functions accepted by EventQueue. */
 type EventFunction = (() => void) | (() => Promise<any>) | Promise<any>;
 
-export interface EventQueue {
-    push(event: EventFunction, returnPromise: true): Promise<void>;
-    push(event: EventFunction, returnPromise?: false): void;
-}
-
 /** Executes a queue of asynchronous functions, one at a time. */
 export class EventQueue {
+    push(event: EventFunction, returnPromise: true): Promise<void>;
+    push(event: EventFunction, returnPromise?: false): void;
     /** Queue of functions. */
     private queue: EventFunction[] = [];
     /** If this is currently executing an event (flag). */
@@ -105,4 +102,4 @@ function wrapEvent(event: EventFunction): [() => Promise<void>, Promise<void>] {
     return [wrappedEvent, promise];
 }
 
-function noop() {}
+function noop() { /* intentionally empty */ }

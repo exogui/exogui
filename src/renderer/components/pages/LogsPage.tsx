@@ -9,9 +9,7 @@ import { WithPreferencesProps } from "../../containers/withPreferences";
 import { Dropdown } from "../Dropdown";
 import { LogData } from "../LogData";
 
-type OwnProps = {};
-
-export type LogsPageProps = OwnProps & WithPreferencesProps;
+export type LogsPageProps = WithPreferencesProps;
 
 const labels = [
     "Game Launcher",
@@ -19,9 +17,6 @@ const labels = [
     "Redirector",
     "Router",
 ];
-
-export interface LogsPage {
-}
 
 /** Page displaying this launcher's log. */
 export class LogsPage extends React.Component<LogsPageProps> {

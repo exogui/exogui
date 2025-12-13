@@ -5,9 +5,7 @@ import { englishTranslation } from "@renderer/lang/en";
 
 export type PlaylistItemContentProps = {
 	playlist: GamePlaylist;
-
 	onDescriptionChange: (event: React.ChangeEvent<InputElement>) => void;
-	OnFilenameChange: (event: React.ChangeEvent<InputElement>) => void;
 };
 
 export function PlaylistItemContent(props: PlaylistItemContentProps) {

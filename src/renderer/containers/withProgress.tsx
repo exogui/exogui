@@ -109,7 +109,7 @@ export function withProgress<T extends WithProgressProps>(
                 setText: setText,
                 setSecondaryText: setSecondaryText,
             };
-        }, [itemCount, totalItems, percentDone, isDone, text, secondaryText]);
+        }, [percentDone, usePercentDone, isDone, text, secondaryText, incItems, setTotalItems, newProgress, setIsDoneCallback]);
 
         return <Component {...(props as T)} progressData={progressData} />;
     };

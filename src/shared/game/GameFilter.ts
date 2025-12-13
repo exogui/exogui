@@ -183,13 +183,14 @@ function filterPlaylist(
  */
 function parseQuickSearch(text: string): FieldFilter | undefined {
     switch (text.charAt(0)) {
-        case "-":
+        case "-": {
             const filter = parseQuickSearch(text.substring(1));
             if (filter) {
                 filter.inverse = !filter.inverse;
                 return filter;
             }
             break;
+        }
         case "@":
             return {
                 field: "developer",

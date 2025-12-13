@@ -20,7 +20,9 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
 
     // When the image changes, reset the selected elements
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset when media changes
         setWheelPosition(0);
+
         setSelectedMediaIdx(0);
     }, [props.media]);
 

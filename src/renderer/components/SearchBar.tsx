@@ -467,7 +467,7 @@ function SearchableSelectDropdown(props: SearchableSelectDropdownProps) {
         if (selected.length === 0) {
             setStoredItems(items);
         }
-    }, [items]);
+    }, [items, selected.length]);
 
     const rowRenderer = (props: ListRowProps) => {
         const { style } = props;

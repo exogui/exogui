@@ -4,8 +4,11 @@ export type ConfigBoxProps = {
     title: string;
     description: string;
     swapChildren?: boolean;
-    contentClassName?: string;
     bottomChildren?: React.JSX.Element | React.JSX.Element[];
+};
+
+export type ConfigBoxPropsWithClassName = ConfigBoxProps & {
+    contentClassName?: string;
 };
 
 export function ConfigBoxInner(
@@ -33,7 +36,7 @@ export function ConfigBoxInner(
     );
 }
 
-export function ConfigBox(props: React.PropsWithChildren<ConfigBoxProps>) {
+export function ConfigBox(props: React.PropsWithChildren<ConfigBoxPropsWithClassName>) {
     return (
         <div className="setting__row">
             <div

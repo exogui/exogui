@@ -16,27 +16,34 @@ export type PlaylistItemProps = {
 };
 
 export function PlaylistItem(props: PlaylistItemProps) {
+    const {
+        playlist,
+        selected,
+        iconFilename,
+        playlistIconCache,
+        onHeadClick: onHeadClickProp,
+        onSetIcon,
+    } = props;
     const strings = englishTranslation.playlist;
 
     const onHeadClick = useCallback(() => {
-        props.onHeadClick(props.playlist, props.selected);
-    }, [props.playlist.filename, props.selected]);
+        onHeadClickProp(playlist, selected);
+    }, [onHeadClickProp, playlist, selected]);
 
     const onIconClick = useCallback(() => {
-        if (props.selected) {
-            props.onSetIcon();
+        if (selected) {
+            onSetIcon();
         }
-    }, [props.onSetIcon, props.selected]);
+    }, [onSetIcon, selected]);
 
     const icon = useMemo(() => {
-        return props.playlistIconCache[
-        props.iconFilename || props.playlist.filename
+        return playlistIconCache[
+        iconFilename || playlist.filename
         ];
     }, [
-        props.iconFilename,
-        props.playlist.filename,
-        props.playlist.icon,
-        props.playlistIconCache,
+        iconFilename,
+        playlist.filename,
+        playlistIconCache,
     ]);
 
     let className = "playlist-list-item";

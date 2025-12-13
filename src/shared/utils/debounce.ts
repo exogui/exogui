@@ -1,9 +1,7 @@
 import { AnyFunction, ArgumentTypesOf } from "@shared/interfaces";
 
 /** A callable object that has the same argument types as T (and void as the return type). */
-interface CallableCopy<T extends AnyFunction> extends Function {
-    (...args: ArgumentTypesOf<T>): void;
-}
+type CallableCopy<T extends AnyFunction> = (...args: ArgumentTypesOf<T>) => void;
 
 /**
  * Executes a callback after a `time` millisecond timer, resetting the existing timer (cancelling its callback) with each call

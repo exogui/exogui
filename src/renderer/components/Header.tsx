@@ -16,10 +16,6 @@ type OwnProps = {
     exodosResources: ExodosResources;
     /** Array of library routes */
     libraries: string[];
-    /** Called when the left sidebar toggle button is clicked. */
-    onToggleLeftSidebarClick?: () => void;
-    /** Called when the right sidebar toggle button is clicked. */
-    onToggleRightSidebarClick?: () => void;
 };
 
 export type HeaderProps = OwnProps & WithPreferencesProps;

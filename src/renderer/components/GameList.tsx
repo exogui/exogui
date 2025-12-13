@@ -17,7 +17,6 @@ import { GameListItem } from "./GameListItem";
 type RefFunc<T extends HTMLElement> = (instance: T | null) => void;
 
 const RENDERER_OVERSCAN = 15;
-const BACK_OVERSCAN = 100;
 
 export type GameListProps = {
     /** All games that will be shown in the list. */

@@ -15,7 +15,6 @@ import { GameGridItem } from "./GameGridItem";
 import { GameItemContainer } from "./GameItemContainer";
 
 const RENDERER_OVERSCAN = 9;
-const BACK_OVERSCAN = 50;
 
 /** A function that receives an HTML element. */
 type RefFunc<T extends HTMLElement> = (instance: T | null) => void;

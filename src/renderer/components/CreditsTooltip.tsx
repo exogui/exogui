@@ -12,15 +12,16 @@ export function CreditsTooltip(props: CreditsTooltipProps) {
     // Hooks
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        if (ref.current && props.profile) {
+        const currentRef = ref.current;
+        if (currentRef && props.profile) {
             // (Check if the tooltip is visible)
-            const onMouseMove = createOnMouseMove(ref.current);
+            const onMouseMove = createOnMouseMove(currentRef);
             window.addEventListener("mousemove", onMouseMove);
             return () => {
                 window.removeEventListener("mousemove", onMouseMove);
             };
         }
-    }, [ref.current, props.profile]);
+    }, [props.profile]);
     // Render
     return (
         <div

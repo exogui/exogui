@@ -108,7 +108,7 @@ export function GameGridItem(props: GameGridItemProps) {
                 </div>
             </li>
         );
-    }, [style, className, isDraggable, id, title, platformIcon, thumbnail]);
+    }, [style, className, isDraggable, id, title, platformIcon, thumbnail, isInstalled]);
 }
 
 export namespace GameGridItem {

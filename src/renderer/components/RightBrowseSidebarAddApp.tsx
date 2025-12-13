@@ -9,9 +9,6 @@ export type RightBrowseSidebarAddAppProps = {
     onLaunch?: (addApp: IAdditionalApplicationInfo) => void;
 };
 
-export interface RightBrowseSidebarAddApp {
-}
-
 /** Displays an additional application for a game in the right sidebar of BrowsePage. */
 export class RightBrowseSidebarAddApp extends React.Component<RightBrowseSidebarAddAppProps> {
     render() {

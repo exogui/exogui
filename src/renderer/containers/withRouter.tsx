@@ -3,7 +3,6 @@ import {
     useLocation,
     useNavigate,
     useParams,
-    useSearchParams,
 } from "react-router-dom";
 
 /** @deprecated Use `React Router hooks` instead */

@@ -1,13 +1,7 @@
 import { app } from "@electron/remote";
-import { ExodosBackendInfo } from "@shared/interfaces";
 import * as React from "react";
 
-type OwnProps = {
-    /** Callback to initiate the update */
-    exodosBackendInfo: ExodosBackendInfo | undefined;
-};
-
-export type AboutPageProps = OwnProps;
+export type AboutPageProps = Record<string, never>;
 
 const discordlink = "https://discord.gg/37FYaUZ";
 const exoguiRepoLink = "https://github.com/margorski/exodos-launcher";
@@ -25,7 +19,7 @@ const link = (title: string, url: string): React.JSX.Element => {
     );
 };
 
-export function AboutPage(props: AboutPageProps) {
+export function AboutPage(_props: AboutPageProps) {
     // Render
     return (
         <div className="about-page simple-scroll">

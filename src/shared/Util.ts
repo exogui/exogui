@@ -268,11 +268,11 @@ export async function recursiveDirectory(
     return innerRecursiveDirectory(shared, "");
 }
 
-async function innerRecursiveDirectory(
+function innerRecursiveDirectory(
     shared: IRecursiveDirectorySharedObject,
     dirPath: string
 ): Promise<void> {
-    return new Promise<void>(async function (resolve, reject) {
+    return new Promise<void>(function (resolve, reject) {
         // Full path to the current folder
         const fullDirPath: string = path.join(
             shared.options.directoryPath,
@@ -297,32 +297,36 @@ async function innerRecursiveDirectory(
                     const filename = files[i];
                     fs.stat(
                         path.join(fullDirPath, filename),
-                        async function (err, stats) {
+                        function (err, stats) {
                             if (shared.abort) {
                                 return resolve();
                             } // (Abort exit point)
                             if (err) {
                                 reject(err);
                             } else {
-                                if (stats.isFile()) {
-                                    const p = shared.options.fileCallback({
-                                        shared: shared,
-                                        filename: filename,
-                                        relativePath: dirPath,
-                                    });
-                                    if (p) {
-                                        await p;
+                                const processEntry = async () => {
+                                    if (stats.isFile()) {
+                                        const p = shared.options.fileCallback({
+                                            shared: shared,
+                                            filename: filename,
+                                            relativePath: dirPath,
+                                        });
+                                        if (p) {
+                                            await p;
+                                        }
+                                    } else {
+                                        await innerRecursiveDirectory(
+                                            shared,
+                                            path.join(dirPath, filename)
+                                        ).catch(reject);
                                     }
-                                } else {
-                                    await innerRecursiveDirectory(
-                                        shared,
-                                        path.join(dirPath, filename)
-                                    ).catch(reject);
-                                }
-                            }
-                            filesOrFoldersLeft -= 1;
-                            if (filesOrFoldersLeft === 0) {
-                                resolve();
+                                };
+                                processEntry().finally(() => {
+                                    filesOrFoldersLeft -= 1;
+                                    if (filesOrFoldersLeft === 0) {
+                                        resolve();
+                                    }
+                                });
                             }
                         }
                     );

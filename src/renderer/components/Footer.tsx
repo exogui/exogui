@@ -32,9 +32,6 @@ type OwnProps = {
 
 export type FooterProps = OwnProps & WithPreferencesProps;
 
-export interface Footer {
-}
-
 /** The footer that is always visible at the bottom of the main window. */
 export class Footer extends React.Component<FooterProps> {
     static scaleSliderMax: number = 1000;

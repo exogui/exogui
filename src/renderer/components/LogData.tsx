@@ -53,8 +53,8 @@ export class LogData extends React.Component<LogDataProps> {
      * @param snapshot The return value of `getSnapshotBeforeUpdate`
      */
     componentDidUpdate(
-        prevProps: LogDataProps,
-        prevState: {},
+        _prevProps: LogDataProps,
+        _prevState: Record<string, never>,
         snapshot: LogDataSnapshot,
     ) {
         if (snapshot && snapshot.scrolledToBottom) {

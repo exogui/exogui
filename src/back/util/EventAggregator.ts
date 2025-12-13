@@ -2,9 +2,7 @@ import { AnyFunction, ArgumentTypesOf } from "@shared/interfaces";
 import { shallowStrictEquals } from "@shared/Util";
 
 /** A callable object that has the same argument types as T (and void as the return type). */
-interface CallableCopy<T extends AnyFunction> extends Function {
-    (...args: ArgumentTypesOf<T>): void;
-}
+type CallableCopy<T extends AnyFunction> = (...args: ArgumentTypesOf<T>) => void;
 
 type EqualsCheck<T extends AnyFunction> = (
     newArgs: ArgumentTypesOf<T>,

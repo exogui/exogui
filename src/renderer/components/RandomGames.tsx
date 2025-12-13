@@ -5,7 +5,6 @@ import {
     RandomGamesData,
     RandomGamesResponseData,
 } from "@shared/back/types";
-import { LOGOS } from "@shared/constants";
 import { IGameInfo } from "@shared/game/interfaces";
 import { findElementAncestor, getGameThumbnailUrl } from "../Util";
 import { GameGridItem } from "./GameGridItem";
@@ -17,6 +16,7 @@ type RandomGamesProps = {
 
 /** A small "grid" of randomly selected games. */
 export function RandomGames(props: RandomGamesProps) {
+    const { onLaunchGame: onLaunchGameProp } = props;
     const [games, setGames] = useState<IGameInfo[]>([]);
 
     React.useEffect(() => {
@@ -34,10 +34,10 @@ export function RandomGames(props: RandomGamesProps) {
     }, []);
 
     const onLaunchGame = React.useCallback(
-        (event: React.MouseEvent, gameId: string) => {
-            props.onLaunchGame(gameId);
+        (_event: React.MouseEvent, gameId: string) => {
+            onLaunchGameProp(gameId);
         },
-        [props.onLaunchGame]
+        [onLaunchGameProp]
     );
 
     const gameItems = React.useMemo(

@@ -30,7 +30,7 @@ export type EditableTextElementKeyArgs = {
 
 export type EditableTextElementProps<T> = {
     /** Function that renders the text element (render prop). */
-    children?: (args: EditableTextElementArgs<T>) => React.JSX.Element | void;
+    children?: (args: EditableTextElementArgs<T>) => React.JSX.Element | null;
     /** If the element is editable (if it can enter "edit mode"). */
     editable?: boolean;
     /** Called when editing is confirmed (when the user is done editing and attempts to "lock in" the edited text). */
@@ -57,26 +57,27 @@ export type EditableTextElementProps<T> = {
  */
 export function EditableTextElement<T>(props: EditableTextElementProps<T>) {
     // State
+    const { editable, onEditCancel, onEditConfirm, onEditKeyDown, text: textProp } = props;
     const [editing, setEditing] = React.useState(false);
-    const [text, setText] = React.useState(props.text);
+    const [text, setText] = React.useState(textProp);
     // Callbacks
     const startEdit = React.useCallback((): void => {
-        if (props.editable) {
+        if (editable) {
             setEditing(true);
         }
-    }, [props.editable, setEditing]);
+    }, [editable]);
     const cancelEdit = React.useCallback((): void => {
         setEditing(false);
-        if (props.onEditCancel) {
-            props.onEditCancel(text);
+        if (onEditCancel) {
+            onEditCancel(text);
         }
-    }, [props.onEditCancel, setEditing]);
+    }, [onEditCancel, text]);
     const confirmEdit = React.useCallback((): void => {
         setEditing(false);
-        if (props.onEditConfirm) {
-            props.onEditConfirm(text);
+        if (onEditConfirm) {
+            onEditConfirm(text);
         }
-    }, [props.onEditConfirm, setEditing]);
+    }, [onEditConfirm, text]);
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<{ value: string }>): void => {
             setText(event.target.value);
@@ -87,7 +88,7 @@ export function EditableTextElement<T>(props: EditableTextElementProps<T>) {
         (event: React.KeyboardEvent): void => {
             if (editing) {
                 const func =
-                    props.onEditKeyDown || EditableTextElement.onEditKeyDown;
+                    onEditKeyDown || EditableTextElement.onEditKeyDown;
                 func({
                     event,
                     cancel: cancelEdit,
@@ -95,15 +96,15 @@ export function EditableTextElement<T>(props: EditableTextElementProps<T>) {
                 });
             }
         },
-        [cancelEdit, confirmEdit, editing, props.onEditKeyDown],
+        [cancelEdit, confirmEdit, editing, onEditKeyDown],
     );
     // Stop editing if no longer editable
-    if (!props.editable && editing) {
+    if (!editable && editing) {
         setEditing(false);
     }
     // Update text while not editing
-    if (!editing && text !== props.text) {
-        setText(props.text);
+    if (!editing && text !== textProp) {
+        setText(textProp);
     }
     // Render
     return (
