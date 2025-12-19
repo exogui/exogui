@@ -2,6 +2,7 @@ import { englishTranslation } from "@renderer/lang/en";
 import { BackIn } from "@shared/back/types";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { memoizeOne } from "@shared/memoize";
+import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
 import { isExodosValidCheck } from "../../Util";
@@ -114,14 +115,10 @@ export class ConfigPage extends React.Component<
                                         this.state.currentTheme || "",
                                     ) || ""
                                 }
-                                placeholder={strings.noTheme}
                                 editable={true}
-                                items={[
-                                    ...this.props.themeList.map(
-                                        formatThemeItemName,
-                                    ),
-                                    "No Theme",
-                                ]}
+                                items={this.props.themeList.map(
+                                    formatThemeItemName,
+                                )}
                                 onChange={this.onCurrentThemeChange}
                                 onItemSelect={this.onCurrentThemeItemSelect}
                             />
@@ -254,21 +251,22 @@ export class ConfigPage extends React.Component<
             (t) => t.entryPath === value,
         );
         if (selectedTheme) {
-            this.setState({ currentTheme: selectedTheme.entryPath });
+            this.applyTheme(selectedTheme.entryPath);
         }
     };
 
     onCurrentThemeItemSelect = (_: string, index: number): void => {
-        // Note: Suggestions with index 0 to "length - 1" are filenames of themes.
-        //       Directly after that comes the "No Theme" suggestion.
-        let theme: string | undefined;
-        if (index < this.props.themeList.length) {
-            // (Select a Theme)
-            theme = this.props.themeList[index].entryPath;
-        } else {
-            theme = undefined;
-        } // (Deselect the current theme)
+        const theme = this.props.themeList[index]?.entryPath;
+        if (theme) {
+            this.applyTheme(theme);
+        }
+    };
+
+    applyTheme = (theme: string | undefined): void => {
         this.setState({ currentTheme: theme });
+        setTheme(theme);
+        window.External.config.data.currentTheme = theme;
+        window.External.back.request(BackIn.UPDATE_CONFIG, { currentTheme: theme });
     };
 
     getThemeName(entryPath: string): string | undefined {
@@ -290,7 +288,6 @@ export class ConfigPage extends React.Component<
             playlistFolderPath: this.state.playlistFolderPath,
             jsonFolderPath: this.state.jsonFolderPath,
             platformFolderPath: this.state.platformFolderPath,
-            themeFolderPath: this.state.themeFolderPath,
             useCustomTitlebar: this.state.useCustomTitlebar,
             nativePlatforms: this.state.nativePlatforms,
             backPortMin: this.state.backPortMin,

@@ -22,14 +22,13 @@ The `config.json` file is located in the root directory of the exogui installati
     "playlistFolderPath": "Data/Playlists",
     "jsonFolderPath": "Data",
     "platformFolderPath": "Data/Platforms",
-    "themeFolderPath": "Data/Themes",
     "useCustomTitlebar": false,
     "backPortMin": 12001,
     "backPortMax": 12100,
     "imagesPortMin": 12101,
     "imagesPortMax": 12200,
     "nativePlatforms": [],
-    "currentTheme": "Metal\\theme.css",
+    "currentTheme": "fancy.css",
     "showDeveloperTab": false,
     "vlcPort": 39421
 }
@@ -98,15 +97,6 @@ The `config.json` file is located in the root directory of the exogui installati
 -   **Contains:** LaunchBox XML files (`Platforms.xml`, `MS-DOS.xml`, etc.)
 -   **Full path example:** `{exodosPath}/Data/Platforms/`
 -   **Notes:** This is the most critical path - game data is loaded from these XML files
-
-#### `themeFolderPath`
-
--   **Type:** `string`
--   **Required:** Yes
--   **Default:** `"Data/Themes"`
--   **Description:** Path to the themes folder, relative to `exodosPath`
--   **Contains:** UI theme definitions (CSS, metadata)
--   **Full path example:** `{exodosPath}/Data/Themes/`
 
 ### UI Configuration
 
@@ -189,15 +179,14 @@ exogui uses dynamic port allocation within specified ranges. The backend tries p
 
 #### `currentTheme`
 
--   **Type:** `string | undefined`
+-   **Type:** `string`
 -   **Required:** No
--   **Default:** `"Metal\\theme.css"`
--   **Description:** Path to the currently active theme CSS file, relative to the theme folder
--   **Example:** `"Metal\\theme.css"`, `"Dark\\theme.css"`
+-   **Default:** `"fancy.css"`
+-   **Description:** Filename of the currently active theme CSS file
+-   **Example:** `"fancy.css"`, `"ocean.css"`, `"forest.css"`, `"sunset.css"`
 -   **Notes:**
-    -   Set to `undefined` or omit to use no theme (default styling)
-    -   Theme files are loaded from `{exodosPath}/{themeFolderPath}/`
-    -   Changing this requires an application restart
+    -   Themes are bundled with the application
+    -   Theme changes apply immediately without restart
 
 #### `showDeveloperTab`
 

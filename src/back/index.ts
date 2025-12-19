@@ -54,6 +54,7 @@ import { logFactory } from "./logging";
 import { PlaylistManager } from "./playlist/PlaylistManager";
 import { registerRequestCallbacks } from "./responses";
 import { SocketServer } from "./SocketServer";
+import { loadThemes } from "./Themes";
 import { BackState } from "./types";
 import { difObjects } from "./util/misc";
 import { VlcPlayer } from "./VlcPlayer";
@@ -163,6 +164,11 @@ async function initialize(message: any, _: any): Promise<void> {
     }
 
     await initializePlaylistManager();
+
+    // Load Themes from static folder
+    const themeFolderPath = path.join(__dirname, "../window/styles/themes");
+    state.themeFiles = await loadThemes(themeFolderPath);
+    console.log(`Loaded ${state.themeFiles.length} themes`);
 
     // Load Exec Mappings
     loadExecMappingsFile(

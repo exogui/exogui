@@ -10,7 +10,6 @@ import { startFileServer } from "./serverHelper";
 export interface IAssetsPaths {
     exodosPath: string;
     imageFolderPath: string;
-    themeFolderPath: string;
     logoFolderPath: string;
 }
 
@@ -98,23 +97,6 @@ export class FileServer {
                             urlPath.substring(index + 1)
                         );
                         if (filePath.startsWith(videosFolder)) {
-                            this._serveFile(req, res, filePath);
-                        }
-                    }
-                    break;
-
-                // Theme folder
-                case "themes":
-                    {
-                        const themeFolder = path.join(
-                            this._config.exodosPath,
-                            this._config.themeFolderPath
-                        );
-                        const index = urlPath.indexOf("/");
-                        const relativeUrl =
-                            index >= 0 ? urlPath.substr(index + 1) : urlPath;
-                        const filePath = path.join(themeFolder, relativeUrl);
-                        if (filePath.startsWith(themeFolder)) {
                             this._serveFile(req, res, filePath);
                         }
                     }

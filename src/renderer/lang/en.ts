@@ -31,8 +31,7 @@ export const englishTranslation = {
         useCustomTitleBar: "Use Custom Title Bar",
         useCustomTitleBarDesc: "Use a custom title bar at the top of this window.",
         theme: "Theme",
-        noTheme: "No Theme",
-        themeDesc: "File path of the theme to use (relative to the themes folder).",
+        themeDesc: "Select the visual theme for the application.",
         advancedHeader: "Advanced",
         showDeveloperTab: "Show Developer Tab",
         showDeveloperTabDesc:
@@ -48,8 +47,6 @@ export const englishTranslation = {
         jsonFolderPathDesc: "Path to the JSON data folder (relative to eXoDOS path).",
         platformFolderPath: "Platform Folder Path",
         platformFolderPathDesc: "Path to the platforms folder containing XML files (relative to eXoDOS path).",
-        themeFolderPath: "Theme Folder Path",
-        themeFolderPathDesc: "Path to the themes folder (relative to eXoDOS path).",
         networkHeader: "Network",
         backPortMin: "Backend Port Min",
         backPortMinDesc: "Lower limit of the port range for the backend WebSocket server.",

@@ -12,8 +12,6 @@ export type IAppConfigData = {
     jsonFolderPath: string;
     /** Path to the platform folder (relative to the exodos path) */
     platformFolderPath: string;
-    /** Path to the theme folder (relative to the exodos path) */
-    themeFolderPath: string;
     /** If the custom title bar should be used in MainWindow */
     useCustomTitlebar: boolean;
     /** Array of native locked platforms */

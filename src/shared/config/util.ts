@@ -17,14 +17,13 @@ const configDataDefaultBase: Readonly<IAppConfigData> = Object.freeze({
     playlistFolderPath: "Data/Playlists",
     jsonFolderPath: "Data",
     platformFolderPath: "Data/Platforms",
-    themeFolderPath: "Data/Themes",
     useCustomTitlebar: false,
     backPortMin: 12001,
     backPortMax: 12100,
     imagesPortMin: 12101,
     imagesPortMax: 12200,
     nativePlatforms: [],
-    currentTheme: "Metal\\theme.css",
+    currentTheme: "fancy.css",
     showDeveloperTab: false,
     vlcPort: 39421,
 });
@@ -96,10 +95,6 @@ export function overwriteConfigData(
     parser.prop(
         "platformFolderPath",
         (v) => (source.platformFolderPath = parseVarStr(str(v)))
-    );
-    parser.prop(
-        "themeFolderPath",
-        (v) => (source.themeFolderPath = parseVarStr(str(v)))
     );
     parser.prop("useCustomTitlebar", (v) => (source.useCustomTitlebar = !!v));
     parser.prop(
