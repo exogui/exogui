@@ -67,7 +67,7 @@ export function SplashScreen(props: SplashScreenProps) {
         <div className={"splash-screen" + extraClass}>
             <div className="splash-screen__logo" style={logoStyle} />
             <div className="splash-screen__status-block">
-                {errorMessage && !dismissed ? (
+                {errorMessage ? (
                     <>
                         <div className="splash-screen__status-header splash-screen__status-header--error">
                             {strings.errorLoading}
