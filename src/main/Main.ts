@@ -313,10 +313,6 @@ export function main(init: Init): void {
         window.setMenuBarVisibility(false);
         // and load the index.html of the app.
         window.loadFile(path.join(__dirname, "../window/renderer.html"));
-        // Open the DevTools. Don't open if using a remote debugger (like vscode)
-        if (Util.isDev && !process.env.REMOTE_DEBUG) {
-            window.webContents.openDevTools();
-        }
         // Maximize window
         if (mw.maximized) {
             window.maximize();

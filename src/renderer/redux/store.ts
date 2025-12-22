@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import gamesReducer from "./gamesSlice";
+import loadingReducer from "./loadingSlice";
 import searchReducer from "./searchSlice";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { addGamesMiddleware } from "./gamesMiddleware";
@@ -13,6 +14,7 @@ addSearchMiddleware();
 export const store = configureStore({
     reducer: {
         gamesState: gamesReducer,
+        loadingState: loadingReducer,
         searchState: searchReducer,
     },
     middleware: (getDefaultMiddleware) => {

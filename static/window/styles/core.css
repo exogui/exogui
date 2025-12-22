@@ -1892,16 +1892,28 @@ body {
   align-items: center;
   justify-content: center;
   user-select: none;
-  /* Position relative to the window - not the parent */
   position: fixed;
   top: 0;
+  left: 0;
+  background-color: var(--layout__primary-background);
+  opacity: 1;
+  transition: opacity 1s ease-in;
+  z-index: 9000;
 }
+
 .splash-screen--fade-out {
   opacity: 0;
   pointer-events: none;
 }
 .splash-screen__logo {
-  --size: 16rem;
+  width: 16rem;
+  height: 16rem;
+  background-image: url("../images/exogui-logo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 0, 0, 0.3);
 }
 .splash-screen__status-block {
   font-size: 1.5rem;
@@ -1941,6 +1953,56 @@ body {
 }
 .splash-screen__button:hover {
   background-color: #2980b9;
+}
+.splash-screen__progress-bar {
+  width: 300px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin: 1rem auto;
+  overflow: hidden;
+}
+.splash-screen__progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.splash-screen__status-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.splash-screen__status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+.splash-screen__status-icon {
+  width: 1.5rem;
+  text-align: center;
+  color: #888;
+  display: inline-block;
+}
+.splash-screen__status-icon--loading {
+  animation: spin 1s linear infinite;
+}
+.splash-screen__status-icon--done {
+  color: #4CAF50;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.splash-screen__status-label {
+  color: #ccc;
+}
+.splash-screen__status-detail {
+  color: #888;
+  font-size: 0.9rem;
 }
 
 /** Game Image Carousel */

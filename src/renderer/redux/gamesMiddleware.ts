@@ -5,13 +5,13 @@ import { GameParser } from "@shared/game/GameParser";
 import * as fs from "fs";
 import * as fsasync from "fs/promises";
 import * as path from "path";
+import { setGames, setLibraries } from "./gamesSlice";
 import {
-    GamesInitState,
-    initialize,
-    setGames,
-    setInitError,
-    setLibraries,
-} from "./gamesSlice";
+    initializeLoading,
+    setPlatformsLoaded,
+    setPlatformLoadingProgress,
+    setLoadingError,
+} from "./loadingSlice";
 import { startAppListening } from "./listenerMiddleware";
 import { initializeViews } from "./searchSlice";
 import { IGameCollection } from "@shared/game/interfaces";
@@ -32,13 +32,8 @@ import {
 
 export function addGamesMiddleware() {
     startAppListening({
-        matcher: isAnyOf(initialize),
+        matcher: isAnyOf(initializeLoading),
         effect: async (_action, listenerApi) => {
-            const state = listenerApi.getState();
-            if (state.gamesState.initState === GamesInitState.LOADED) {
-                return; // Already loaded
-            }
-
             try {
                 const startTime = Date.now();
                 const libraries: string[] = [];
@@ -52,7 +47,14 @@ export function addGamesMiddleware() {
                     path.join(platformsPath, "../Platforms.xml")
                 );
 
-                for (const platform of platforms) {
+                const totalPlatforms = platforms.length;
+                for (let i = 0; i < platforms.length; i++) {
+                    const platform = platforms[i];
+                    listenerApi.dispatch(setPlatformLoadingProgress({
+                        currentIndex: i + 1,
+                        total: totalPlatforms,
+                        currentName: platform,
+                    }));
                     try {
                         const platformCollection = await loadPlatform(
                             platform,
@@ -80,10 +82,11 @@ export function addGamesMiddleware() {
                 listenerApi.dispatch(setLibraries(libraries));
                 listenerApi.dispatch(initializeViews(libraries));
                 listenerApi.dispatch(setGames(collection.forRedux()));
+                listenerApi.dispatch(setPlatformsLoaded());
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
                 console.error(`Failed to initialize games: ${errorMessage}`);
-                listenerApi.dispatch(setInitError(errorMessage));
+                listenerApi.dispatch(setLoadingError(errorMessage));
             }
         },
     });

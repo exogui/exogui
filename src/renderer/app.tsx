@@ -24,8 +24,11 @@ import {
     withPreferences,
 } from "./containers/withPreferences";
 import { WithRouterProps, withRouter } from "./containers/withRouter";
-import { GamesInitState, initialize } from "./redux/gamesSlice";
-import { initializeViews } from "./redux/searchSlice";
+import {
+    initializeLoading,
+    setPlaylistsLoaded,
+    setExecLoaded,
+} from "./redux/loadingSlice";
 import { RootState } from "./redux/store";
 import { AppRouter, AppRouterProps } from "./router";
 import { ExodosResources, loadExoResources } from "./util/exoResources";
@@ -35,14 +38,14 @@ import { ExodosResources, loadExoResources } from "./util/exoResources";
 const mapState = (state: RootState) => ({
     searchState: state.searchState,
     totalGames: state.gamesState.totalGames,
-    gamesLoaded: state.gamesState.initState,
     libraries: state.gamesState.libraries,
-    gamesErrorMessage: state.gamesState.errorMessage,
+    loadingState: state.loadingState,
 });
 
 const mapDispatch = {
-    initializeGames: initialize,
-    initializeViews: initializeViews,
+    initializeLoading,
+    setPlaylistsLoaded,
+    setExecLoaded,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -55,12 +58,10 @@ export type AppState = {
     playlists: GamePlaylist[];
     playlistIconCache: Record<string, string>; // [PLAYLIST_ID] = ICON_BLOB_URL
     appPaths: Record<string, string>;
-    loaded: { [key in BackInit]: boolean };
     themeList: Theme[];
     gamesTotal: number;
     localeCode: string;
     exodosResources: ExodosResources;
-
     /** Stop rendering to force component unmounts */
     stopRender: boolean;
     /** Current parameters for ordering games. */
@@ -94,10 +95,6 @@ class App extends React.Component<AppProps, AppState> {
             playlists: window.External.initialPlaylists || [],
             playlistIconCache: {},
             appPaths: {},
-            loaded: {
-                0: false,
-                1: false,
-            },
             themeList: window.External.initialThemes,
             gamesTotal: -1,
             localeCode: window.External.initialLocaleCode,
@@ -208,31 +205,26 @@ class App extends React.Component<AppProps, AppState> {
             });
         });
 
-        this.props.initializeGames();
+        this.props.initializeLoading();
 
         window.External.back.register(
             BackOut.INIT_EVENT,
             async (event, data) => {
-                const loaded = { ...this.state.loaded };
                 for (const index of data) {
-                    loaded[index] = true;
-
-                    switch (index) {
-                        case BackInit.PLAYLISTS: {
-                            const playlists =
-                                await window.External.back.request(
-                                    BackIn.GET_PLAYLISTS
-                                );
-                            this.setState({
-                                playlists,
-                            });
-                            this.cachePlaylistIcons(playlists);
-                            break;
-                        }
+                    const numIndex = Number(index);
+                    if (numIndex === BackInit.PLAYLISTS) {
+                        const playlists =
+                            await window.External.back.request(
+                                BackIn.GET_PLAYLISTS
+                            );
+                        this.setState({ playlists });
+                        this.cachePlaylistIcons(playlists);
+                        this.props.setPlaylistsLoaded();
+                    }
+                    if (numIndex === BackInit.EXEC) {
+                        this.props.setExecLoaded();
                     }
                 }
-
-                this.setState({ loaded });
             }
         );
 
@@ -299,11 +291,15 @@ class App extends React.Component<AppProps, AppState> {
         );
 
         window.External.back.request(BackIn.INIT_LISTEN).then((data) => {
-            const nextLoaded = { ...this.state.loaded };
             for (const key of data) {
-                nextLoaded[key] = true;
+                const numKey = Number(key);
+                if (numKey === BackInit.PLAYLISTS) {
+                    this.props.setPlaylistsLoaded();
+                }
+                if (numKey === BackInit.EXEC) {
+                    this.props.setExecLoaded();
+                }
             }
-            this.setState({ loaded: nextLoaded });
         });
 
         // Cache playlist icons (if they are loaded)
@@ -326,12 +322,13 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     render() {
-        const hasError = this.props.gamesLoaded === GamesInitState.ERROR;
-        const loaded =
-            this.props.gamesLoaded === GamesInitState.LOADED &&
-            this.state.loaded[BackInit.PLAYLISTS] &&
-            this.state.loaded[BackInit.EXEC];
-        const showContent = loaded || (hasError && this.state.errorDismissed);
+        const { loadingState } = this.props;
+        const hasError = !!loadingState.errorMessage;
+        const allLoaded =
+            loadingState.platformsLoaded &&
+            loadingState.playlistsLoaded &&
+            loadingState.execLoaded;
+        const showContent = allLoaded || (hasError && this.state.errorDismissed);
         const libraryPath =
             getBrowseSubPath(this.props.location.pathname) ??
             Object.keys(this.props.searchState.views)?.[0] ??
@@ -365,14 +362,7 @@ class App extends React.Component<AppProps, AppState> {
                     <>
                         {/* Splash screen */}
                         <SplashScreen
-                            gamesLoaded={
-                                this.props.gamesLoaded === GamesInitState.LOADED
-                            }
-                            playlistsLoaded={
-                                this.state.loaded[BackInit.PLAYLISTS]
-                            }
-                            miscLoaded={this.state.loaded[BackInit.EXEC]}
-                            errorMessage={this.props.gamesErrorMessage}
+                            loadingState={loadingState}
                             onGoToConfig={this.onGoToConfig}
                         />
                         {/* Title-bar (if enabled) */}

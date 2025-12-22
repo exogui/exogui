@@ -840,9 +840,6 @@ body {
 .splash-screen {
   background: var(--layout__primary-background);
 }
-.splash-screen--fade-out {
-  transition: opacity 0.8s;
-}
 .splash-screen__status {
   color: var(--layout__primary-text-color);
 }
