@@ -67,6 +67,7 @@ export class DropdownInputField extends React.Component<
                     " input-dropdown__input-field__input__inner"
                 }
                 onChange={this.onInputChange}
+                onClick={this.onInputClick}
                 onKeyDown={this.onInputKeyDown}
                 reference={this.inputRef}
             />
@@ -82,7 +83,10 @@ export class DropdownInputField extends React.Component<
                     ref={this.rootRef}
                     onBlur={this.onBlur}
                 >
-                    <div className="input-dropdown__input-field">
+                    <div
+                        className="input-dropdown__input-field"
+                        onMouseDown={this.onFieldMouseDown}
+                    >
                         <input
                             className="input-dropdown__input-field__back"
                             tabIndex={-1}
@@ -93,8 +97,9 @@ export class DropdownInputField extends React.Component<
                         </div>
                         <div
                             className="input-dropdown__input-field__button"
-                            onMouseDown={this.onExpandButtonMouseDown}
-                        />
+                        >
+                            ▼
+                        </div>
                     </div>
                     <div
                         className={
@@ -213,6 +218,15 @@ export class DropdownInputField extends React.Component<
         }
     };
 
+    onInputClick = (event: React.MouseEvent): void => {
+        if (!this.props.disabled) {
+            if (!this.state.expanded) {
+                this.setState({ expanded: true });
+            }
+            event.stopPropagation();
+        }
+    };
+
     onInputChange = (event: React.ChangeEvent<InputElement>): void => {
         if (!this.props.disabled) {
             if (!this.state.expanded) {
@@ -255,6 +269,15 @@ export class DropdownInputField extends React.Component<
     onExpandButtonMouseDown = (): void => {
         if (!this.props.disabled) {
             this.setState({ expanded: !this.state.expanded });
+        }
+    };
+
+    onFieldMouseDown = (event: React.MouseEvent): void => {
+        if (!this.props.disabled) {
+            const target = event.target as HTMLElement;
+            if (!target.classList.contains("input-field")) {
+                this.setState({ expanded: !this.state.expanded });
+            }
         }
     };
 

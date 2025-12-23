@@ -228,6 +228,10 @@ body {
   width: 1.25em;
   flex: 0 0 auto;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 .input-dropdown--disabled .input-dropdown__input-field__button {
   cursor: default;
@@ -1938,33 +1942,34 @@ body {
 .splash-screen__hint {
   margin-top: 1.5rem;
   font-size: 1rem;
-  color: #888;
+  color: var(--layout__secondary-text-color);
 }
 .splash-screen__button {
   margin-top: 1.5rem;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
-  background-color: #3498db;
-  color: white;
+  background-color: var(--layout__game-item-background-selected);
+  color: var(--layout__highlighted-text-color);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 .splash-screen__button:hover {
-  background-color: #2980b9;
+  background-color: var(--layout__game-item-background-selected-hover);
 }
 .splash-screen__progress-bar {
   width: 300px;
   height: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--layout__tertiary-background);
+  border: 1px solid var(--layout__primary-outline-color);
   border-radius: 4px;
   margin: 1rem auto;
   overflow: hidden;
 }
 .splash-screen__progress-fill {
   height: 100%;
-  background-color: #4CAF50;
+  background-color: var(--layout__confirm-color);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -1984,24 +1989,24 @@ body {
 .splash-screen__status-icon {
   width: 1.5rem;
   text-align: center;
-  color: #888;
+  color: var(--layout__secondary-text-color);
   display: inline-block;
 }
 .splash-screen__status-icon--loading {
   animation: spin 1s linear infinite;
 }
 .splash-screen__status-icon--done {
-  color: #4CAF50;
+  color: var(--layout__confirm-color);
 }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 .splash-screen__status-label {
-  color: #ccc;
+  color: var(--layout__primary-text-color);
 }
 .splash-screen__status-detail {
-  color: #888;
+  color: var(--layout__secondary-text-color);
   font-size: 0.9rem;
 }
 
