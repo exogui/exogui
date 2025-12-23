@@ -12,6 +12,7 @@
     },
     "scripts": {
         "start": "npx electron ./build/main/index.js",
+        "dev": "npx concurrently --kill-others \"npx gulp watch\" \"npx nodemon\"",
         "build": "npx gulp build",
         "watch": "npx gulp watch",
         "pack": "npx gulp pack",
@@ -74,6 +75,7 @@
         "@types/uuid": "^10.0.0",
         "@types/ws": "^8.18.1",
         "babel-plugin-react-compiler": "^1.0.0",
+        "concurrently": "^9.2.1",
         "cross-env": "^10.1.0",
         "electron": "^39.2.5",
         "electron-builder": "^26.0.12",
@@ -83,6 +85,7 @@
         "fs-extra": "^11.2.0",
         "globals": "^16.5.0",
         "gulp": "^5.0.1",
+        "nodemon": "^3.1.11",
         "typescript": "^5.9.3",
         "typescript-eslint": "8.48.1"
     }

@@ -1,0 +1,7 @@
+{
+  "watch": ["build/**/*"],
+  "ext": "js,html,css,json",
+  "ignore": [],
+  "exec": "electron ./build/main/index.js",
+  "delay": 500
+}
