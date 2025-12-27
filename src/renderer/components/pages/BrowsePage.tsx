@@ -27,6 +27,7 @@ import { gameScaleSpan, openContextMenu } from "../../Util";
 import { GameGrid } from "../GameGrid";
 import { GameList } from "../GameList";
 import { GameOrderChangeEvent } from "../GameOrder";
+import { GamepadNavigationWrapper } from "../GamepadNavigationWrapper";
 import { InputElement } from "../InputField";
 import { ResizableSidebar, SidebarResizeEvent } from "../ResizableSidebar";
 import { SearchBar } from "../SearchBar";
@@ -205,21 +206,23 @@ class BrowsePage extends React.Component<
                             );
                             const width: number = (height * 0.7) | 0;
                             return (
-                                <GameGrid
-                                    games={view?.games}
-                                    gamesTotal={view?.games.length}
-                                    selectedGame={view?.selectedGame}
-                                    draggedGameId={draggedGameId}
-                                    noRowsRenderer={this.noRowsRendererMemo()}
-                                    onGameSelect={this.onGameSelect}
-                                    onGameLaunch={this.onGameLaunch}
-                                    onContextMenu={this.createGameContextMenu}
-                                    orderBy={order.orderBy}
-                                    orderReverse={order.orderReverse}
-                                    cellWidth={width}
-                                    cellHeight={height}
-                                    gridRef={this.gameGridOrListRefFunc}
-                                />
+                                <GamepadNavigationWrapper>
+                                    <GameGrid
+                                        games={view?.games}
+                                        gamesTotal={view?.games.length}
+                                        selectedGame={view?.selectedGame}
+                                        draggedGameId={draggedGameId}
+                                        noRowsRenderer={this.noRowsRendererMemo()}
+                                        onGameSelect={this.onGameSelect}
+                                        onGameLaunch={this.onGameLaunch}
+                                        onContextMenu={this.createGameContextMenu}
+                                        orderBy={order.orderBy}
+                                        orderReverse={order.orderReverse}
+                                        cellWidth={width}
+                                        cellHeight={height}
+                                        gridRef={this.gameGridOrListRefFunc}
+                                    />
+                                </GamepadNavigationWrapper>
                             );
                         } else {
                             const height: number = calcScale(
@@ -227,20 +230,22 @@ class BrowsePage extends React.Component<
                                 this.props.gameScale
                             );
                             return (
-                                <GameList
-                                    games={view?.games}
-                                    gamesTotal={view?.games.length}
-                                    selectedGame={view?.selectedGame}
-                                    draggedGameId={draggedGameId}
-                                    noRowsRenderer={this.noRowsRendererMemo()}
-                                    onGameSelect={this.onGameSelect}
-                                    onGameLaunch={this.onGameLaunch}
-                                    onContextMenu={this.createGameContextMenu}
-                                    orderBy={order.orderBy}
-                                    orderReverse={order.orderReverse}
-                                    rowHeight={height}
-                                    listRef={this.gameGridOrListRefFunc}
-                                />
+                                <GamepadNavigationWrapper>
+                                    <GameList
+                                        games={view?.games}
+                                        gamesTotal={view?.games.length}
+                                        selectedGame={view?.selectedGame}
+                                        draggedGameId={draggedGameId}
+                                        noRowsRenderer={this.noRowsRendererMemo()}
+                                        onGameSelect={this.onGameSelect}
+                                        onGameLaunch={this.onGameLaunch}
+                                        onContextMenu={this.createGameContextMenu}
+                                        orderBy={order.orderBy}
+                                        orderReverse={order.orderReverse}
+                                        rowHeight={height}
+                                        listRef={this.gameGridOrListRefFunc}
+                                    />
+                                </GamepadNavigationWrapper>
                             );
                         }
                     })()}
