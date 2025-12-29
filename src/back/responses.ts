@@ -117,6 +117,23 @@ export function registerRequestCallbacks(state: BackState): void {
         });
     });
 
+    state.socketServer.register(BackIn.LAUNCH_ADDAPP, async (event, game, addApp) => {
+        GameLauncher.launchAdditionalApplication({
+            addApp,
+            fpPath: path.resolve(state.config.exodosPath),
+            native:
+                (game &&
+                    state.config.nativePlatforms.some(
+                        (p) => p === game.platform
+                    )) ||
+                false,
+            mappings: state.commandMappings,
+            execMappings: state.execMappings,
+            openDialog: state.socketServer.showMessageBoxFactory(state, event.client),
+            openExternal: state.socketServer.openExternal(event.client),
+        });
+    });
+
     state.socketServer.register(BackIn.PLAY_AUDIO_FILE, async (event, filePath) => {
         try {
             if (state.preferences.gameMusicPlay) {

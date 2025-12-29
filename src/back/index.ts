@@ -9,7 +9,6 @@ import {
     GetPlaylistResponse,
     GetRendererInitDataResponse,
     InitEventData,
-    LaunchAddAppData,
     LaunchExodosContentData,
     LaunchGameData,
     LocaleUpdateData,
@@ -396,37 +395,6 @@ async function onMessage(event: WebSocket.MessageEvent): Promise<void> {
                     id: req.id,
                     type: BackOut.GENERIC_RESPONSE,
                     data: state.execMappings,
-                });
-            }
-            break;
-
-        case BackIn.LAUNCH_ADDAPP:
-            {
-                const reqData: LaunchAddAppData = req.data;
-                const { game, addApp } = reqData;
-
-                if (addApp) {
-                    GameLauncher.launchAdditionalApplication({
-                        addApp,
-                        fpPath: path.resolve(state.config.exodosPath),
-                        native:
-                            (game &&
-                                state.config.nativePlatforms.some(
-                                    (p) => p === game.platform
-                                )) ||
-                            false,
-                        mappings: state.commandMappings,
-                        execMappings: state.execMappings,
-                        openDialog: openDialog(event.target),
-                        openExternal: openExternal(event.target),
-                    });
-                    break;
-                }
-
-                respond(event.target, {
-                    id: req.id,
-                    type: BackOut.GENERIC_RESPONSE,
-                    data: undefined,
                 });
             }
             break;
