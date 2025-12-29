@@ -223,12 +223,6 @@ export namespace GameLauncher {
         const platform = process.platform;
         let filePath = relativePath;
 
-        // Bat files won't work on Wine, force a .command file on non-Windows platforms instead.
-        if (platform !== "win32" && filePath.endsWith(".bat")) {
-            filePath = filePath.substring(0, filePath.length - 4) + ".command";
-        }
-
-        // Check exec mappings for native platform executables
         if (platform !== "win32" && native) {
             for (let i = 0; i < execMappings.length; i++) {
                 const mapping = execMappings[i];
@@ -244,6 +238,10 @@ export namespace GameLauncher {
                     break;
                 }
             }
+        }
+
+        if (platform !== "win32" && filePath.endsWith(".bat")) {
+            filePath = filePath.substring(0, filePath.length - 4) + ".command";
         }
 
         return fixSlashes(path.join(fpPath, filePath));
