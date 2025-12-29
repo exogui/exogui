@@ -174,7 +174,9 @@ function getCopyFiles() {
         },
         "./lang",
         "./licenses",
-        "./mappings.json",
+        "./mappings.linux.json",
+        "./mappings.win32.json",
+        "./mappings.darwin.json",
         "./platform_options.json",
         {
             from: "./LICENSE",
