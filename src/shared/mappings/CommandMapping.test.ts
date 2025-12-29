@@ -151,7 +151,7 @@ describe("CommandMapping.createCommand", () => {
                 mockMappingsWindows
             );
 
-            expect(result.cwd).toBe(".");
+            expect(result.cwd).toBe("C:\\exodos\\Games\\Doom");
         });
 
         it("should NOT handle foobar2000.exe specially on Windows", () => {

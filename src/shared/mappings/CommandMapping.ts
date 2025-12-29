@@ -1,6 +1,5 @@
 import { IAppCommandsMappingData } from "./interfaces";
-import { escapeShell } from "../Util";
-import * as path from "path";
+import { preparePathForShell } from "../Util";
 
 const FOOBAR_EXECUTABLE = "foobar2000.exe";
 
@@ -18,10 +17,6 @@ export const getAllowedExtensionsForMappings = (
     return new Set(extensions.map((e) => e.toLowerCase()));
 };
 
-function windowsSlashes(str: string) {
-    return str.replace(/\//g, "\\");
-}
-
 export type Command = {
     command: string;
     cwd?: string;
@@ -32,23 +27,22 @@ export const createCommand = (
     args: string,
     mappings: IAppCommandsMappingData
 ): Command => {
-    const escFilename: string = process.platform !== "win32" ? escapeShell(filename) : windowsSlashes(filename);
+    const escFilename: string = preparePathForShell(filename, { quote: process.platform === "win32" });
     const escArgs: string = escapeArgsForShell(args).join(" ");
 
-    const specialCommand = _handleSoundtrackCommand(filename, escFilename, escArgs);
-    if (specialCommand) return specialCommand;
+    const soundtrackCommand = _handleSoundtrackCommand(filename, escFilename, escArgs);
+    if (soundtrackCommand) return soundtrackCommand;
 
     const { command, includeArgs, includeFilename, setCwdToFileDir } = getCommandMapping(
         filename,
         mappings
     );
 
-    const quotedFilename = process.platform === "win32" ? `"${escFilename}"` : escFilename;
-    const finalCommand = `${command} ${includeFilename ? quotedFilename : ""} ${includeArgs ? escArgs : ""}`.trim();
+    const finalCommand = `${command} ${includeFilename ? escFilename : ""} ${includeArgs ? escArgs : ""}`.trim();
     const result: Command = { command: finalCommand };
 
     if (setCwdToFileDir) {
-        result.cwd = path.dirname(escFilename);
+        result.cwd = preparePathForShell(filename, { extractDir: true });
     }
 
     return result;
