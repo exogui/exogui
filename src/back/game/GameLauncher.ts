@@ -43,8 +43,9 @@ export namespace GameLauncher {
      * Handles special applicationPath values (`:message:`, `:extras:`) that may exist in LaunchBox XML.
      * Not confirmed to be used in eXoDOS collections - kept for compatibility.
      * @returns true if special case was handled, false if should proceed with normal launch
+     * @private
      */
-    function handleSpecialApplicationPath(
+    function _handleSpecialApplicationPath(
         applicationPath: string,
         launchCommand: string,
         fpPath: string,
@@ -90,7 +91,7 @@ export namespace GameLauncher {
     ): Promise<void> {
         const command = createCommand(appPath, appArgs, mappings);
         const proc = exec(command.command, { cwd: command.cwd });
-        logProcessOutput(proc);
+        _logProcessOutput(proc);
         log(logSource, `Launch command (PID: ${proc.pid}) [ path: "${appPath}", arg: "${appArgs}", command: ${command} ]`);
         return new Promise((resolve, reject) => {
             if (proc.killed) {
@@ -109,7 +110,7 @@ export namespace GameLauncher {
     export async function launchAdditionalApplication(
         opts: LaunchAddAppOpts
     ): Promise<void> {
-        const handled = handleSpecialApplicationPath(
+        const handled = _handleSpecialApplicationPath(
             opts.addApp.applicationPath,
             opts.addApp.launchCommand,
             opts.fpPath,
@@ -118,7 +119,7 @@ export namespace GameLauncher {
         );
 
         if (!handled) {
-            const appPath = resolveApplicationPath(
+            const appPath = _resolveApplicationPath(
                 opts.addApp.applicationPath,
                 opts.fpPath,
                 opts.execMappings,
@@ -160,7 +161,7 @@ export namespace GameLauncher {
             }
         }
 
-        const gamePath = resolveApplicationPath(
+        const gamePath = _resolveApplicationPath(
             opts.game.applicationPath,
             opts.fpPath,
             opts.execMappings,
@@ -176,7 +177,7 @@ export namespace GameLauncher {
         }
 
         const proc = exec(command.command, { cwd: command.cwd });
-        logProcessOutput(proc);
+        _logProcessOutput(proc);
         log(logSource, `Launch Game "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +
             `    launchCommand:   "${opts.game.launchCommand}",\n` +
@@ -192,7 +193,7 @@ export namespace GameLauncher {
             getFilename(opts.game.applicationPath),
             "install.command"
         );
-        const gamePath = resolveApplicationPath(
+        const gamePath = _resolveApplicationPath(
             setupPath,
             opts.fpPath,
             opts.execMappings,
@@ -201,7 +202,7 @@ export namespace GameLauncher {
 
         const command = createCommand(gamePath, opts.game.launchCommand, opts.mappings);
         const proc = exec(command.command, { cwd: command.cwd });
-        logProcessOutput(proc);
+        _logProcessOutput(proc);
         log(logSource, `Launch Game Setup "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +
             `    launchCommand:   "${opts.game.launchCommand}",\n` +
@@ -211,8 +212,9 @@ export namespace GameLauncher {
     /**
      * Resolves an application path to an absolute path.
      * Handles .bat -> .command conversion and exec mappings for native ports.
+     * @private
      */
-    export function resolveApplicationPath(
+    function _resolveApplicationPath(
         relativePath: string,
         fpPath: string,
         execMappings: ExecMapping[],
@@ -247,9 +249,10 @@ export namespace GameLauncher {
         return fixSlashes(path.join(fpPath, filePath));
     }
 
-    function logProcessOutput(proc: ChildProcess): void {
-        // Log for debugging purposes
-        // (might be a bad idea to fill the console with junk?)
+    /**
+     * @private
+     */
+    function _logProcessOutput(proc: ChildProcess): void {
         const logStuff = (event: string, args: any[]): void => {
             log(logSource, `${event} (PID: ${padStart(
                 proc.pid ?? -1,
