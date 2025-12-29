@@ -38,6 +38,51 @@ type LaunchBaseOpts = {
 export namespace GameLauncher {
     const logSource = "Game Launcher";
 
+    /**
+     * @deprecated Legacy feature from Flashpoint Launcher
+     * Handles special applicationPath values (`:message:`, `:extras:`) that may exist in LaunchBox XML.
+     * Not confirmed to be used in eXoDOS collections - kept for compatibility.
+     * @returns true if special case was handled, false if should proceed with normal launch
+     */
+    function handleSpecialApplicationPath(
+        applicationPath: string,
+        launchCommand: string,
+        fpPath: string,
+        openDialog: ShowMessageBoxFunc,
+        openExternal: OpenExternalFunc
+    ): boolean {
+        switch (applicationPath) {
+            case ":message:": {
+                openDialog({
+                    type: "info",
+                    title: "About This Game",
+                    message: launchCommand,
+                    buttons: ["Ok"],
+                });
+                return true;
+            }
+            case ":extras:": {
+                const folderPath = fixSlashes(
+                    path.join(fpPath, path.posix.join("Extras", launchCommand))
+                );
+                openExternal(folderPath, { activate: true })
+                .catch((error) => {
+                    if (error) {
+                        openDialog({
+                            type: "error",
+                            title: "Failed to Open Extras",
+                            message: `${error.toString()}\nPath: ${folderPath}`,
+                            buttons: ["Ok"],
+                        });
+                    }
+                });
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
     export function launchCommand(
         appPath: string,
         appArgs: string,
@@ -64,53 +109,22 @@ export namespace GameLauncher {
     export async function launchAdditionalApplication(
         opts: LaunchAddAppOpts
     ): Promise<void> {
-        // @FIXTHIS It is not possible to open dialog windows from the back process (all electron APIs are undefined).
-        switch (opts.addApp.applicationPath) {
-            case ":message:": {
-                opts.openDialog({
-                    type: "info",
-                    title: "About This Game",
-                    message: opts.addApp.launchCommand,
-                    buttons: ["Ok"],
-                });
-                break;
-            }
-            case ":extras:": {
-                const folderPath = fixSlashes(
-                    path.join(
-                        opts.fpPath,
-                        path.posix.join("Extras", opts.addApp.launchCommand)
-                    )
-                );
-                return opts
-                .openExternal(folderPath, { activate: true })
-                .catch((error) => {
-                    if (error) {
-                        opts.openDialog({
-                            type: "error",
-                            title: "Failed to Open Extras",
-                            message:
-                                    `${error.toString()}\n` +
-                                    `Path: ${folderPath}`,
-                            buttons: ["Ok"],
-                        });
-                    }
-                });
-            }
-            default: {
-                const appPath: string = fixSlashes(
-                    path.join(
-                        opts.fpPath,
-                        getApplicationPath(
-                            opts.addApp.applicationPath,
-                            opts.execMappings,
-                            opts.native
-                        )
-                    )
-                );
-                const appArgs: string = opts.addApp.launchCommand;
-                return launchCommand(appPath, appArgs, opts.mappings);
-            }
+        const handled = handleSpecialApplicationPath(
+            opts.addApp.applicationPath,
+            opts.addApp.launchCommand,
+            opts.fpPath,
+            opts.openDialog,
+            opts.openExternal
+        );
+
+        if (!handled) {
+            const appPath = resolveApplicationPath(
+                opts.addApp.applicationPath,
+                opts.fpPath,
+                opts.execMappings,
+                opts.native
+            );
+            return launchCommand(appPath, opts.addApp.launchCommand, opts.mappings);
         }
     }
 
@@ -119,11 +133,11 @@ export namespace GameLauncher {
      * @param game Game to launch
      */
     export async function launchGame(opts: LaunchGameOpts): Promise<void> {
-        // Abort if placeholder (placeholders are not "actual" games)
         if (opts.game.placeholder) {
             return;
         }
-        // Run all provided additional applications with "AutoRunBefore" enabled
+
+        // Run AutoRunBefore additional applications
         if (opts.addApps) {
             const addAppOpts: Omit<LaunchAddAppOpts, "addApp"> = {
                 fpPath: opts.fpPath,
@@ -145,22 +159,17 @@ export namespace GameLauncher {
                 }
             }
         }
-        // Launch game
-        const gamePath: string = fixSlashes(
-            path.join(
-                opts.fpPath,
-                getApplicationPath(
-                    opts.game.applicationPath,
-                    opts.execMappings,
-                    opts.native
-                )
-            )
+
+        const gamePath = resolveApplicationPath(
+            opts.game.applicationPath,
+            opts.fpPath,
+            opts.execMappings,
+            opts.native
         );
-        const gameArgs: string = opts.game.launchCommand;
 
         let command: Command;
         try {
-            command = createCommand(gamePath, gameArgs, opts.mappings);
+            command = createCommand(gamePath, opts.game.launchCommand, opts.mappings);
         } catch (e) {
             log(logSource, `Launch Game "${opts.game.title}" failed. Error: ${e}`);
             return;
@@ -175,29 +184,22 @@ export namespace GameLauncher {
     }
 
     /**
-     * Launch a game
-     * @param game Game to launch
+     * Launch game setup/installer
+     * @param game Game to launch setup for
      */
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
-        // Launch game
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
             "install.command"
         );
-        const gamePath: string = fixSlashes(
-            path.join(
-                opts.fpPath,
-                getApplicationPath(setupPath, opts.execMappings, opts.native)
-            )
+        const gamePath = resolveApplicationPath(
+            setupPath,
+            opts.fpPath,
+            opts.execMappings,
+            opts.native
         );
 
-        const gameArgs: string = opts.game.launchCommand;
-        const command = createCommand(
-            gamePath,
-            gameArgs,
-            opts.mappings
-        );
-
+        const command = createCommand(gamePath, opts.game.launchCommand, opts.mappings);
         const proc = exec(command.command, { cwd: command.cwd });
         logProcessOutput(proc);
         log(logSource, `Launch Game Setup "${opts.game.title}" (PID: ${proc.pid}) [\n` +
@@ -207,40 +209,42 @@ export namespace GameLauncher {
     }
 
     /**
-     * The paths provided in the Game/AdditionalApplication XMLs are only accurate
-     * on Windows. So we replace them with other hard-coded paths here.
+     * Resolves an application path to an absolute path.
+     * Handles .bat -> .command conversion and exec mappings for native ports.
      */
-    function getApplicationPath(
-        filePath: string,
+    export function resolveApplicationPath(
+        relativePath: string,
+        fpPath: string,
         execMappings: ExecMapping[],
         native: boolean
     ): string {
         const platform = process.platform;
+        let filePath = relativePath;
 
-        // Bat files won't work on Wine, force a .sh file on non-Windows platforms instead. Sh File may not exist.
+        // Bat files won't work on Wine, force a .command file on non-Windows platforms instead.
         if (platform !== "win32" && filePath.endsWith(".bat")) {
-            return filePath.substring(0, filePath.length - 4) + ".command";
+            filePath = filePath.substring(0, filePath.length - 4) + ".command";
         }
 
-        // Skip mapping if on Windows or Native application was not requested
+        // Check exec mappings for native platform executables
         if (platform !== "win32" && native) {
             for (let i = 0; i < execMappings.length; i++) {
                 const mapping = execMappings[i];
                 if (mapping.win32 === filePath) {
                     switch (platform) {
                         case "linux":
-                            return mapping.linux || mapping.win32;
+                            filePath = mapping.linux || mapping.win32;
+                            break;
                         case "darwin":
-                            return mapping.darwin || mapping.win32;
-                        default:
-                            return filePath;
+                            filePath = mapping.darwin || mapping.win32;
+                            break;
                     }
+                    break;
                 }
             }
         }
 
-        // No Native exec found, return Windows/XML application path
-        return filePath;
+        return fixSlashes(path.join(fpPath, filePath));
     }
 
     function logProcessOutput(proc: ChildProcess): void {
