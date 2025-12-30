@@ -1,6 +1,5 @@
 import { IAppCommandsMappingData } from "./interfaces";
-import { escapeShell } from "../Util";
-import * as path from "path";
+import { preparePathForShell } from "../Util";
 
 const FOOBAR_EXECUTABLE = "foobar2000.exe";
 
@@ -18,10 +17,6 @@ export const getAllowedExtensionsForMappings = (
     return new Set(extensions.map((e) => e.toLowerCase()));
 };
 
-function windowsSlashes(str: string) {
-    return str.replace(/\//g, "\\");
-}
-
 export type Command = {
     command: string;
     cwd?: string;
@@ -32,38 +27,42 @@ export const createCommand = (
     args: string,
     mappings: IAppCommandsMappingData
 ): Command => {
-    const escFilename: string = process.platform !== "win32" ? escapeShell(filename) : windowsSlashes(filename);
+    const escFilename: string = preparePathForShell(filename, { quote: process.platform === "win32" });
     const escArgs: string = escapeArgsForShell(args).join(" ");
 
-    if (process.platform === "win32") {
-        const filedir = path.dirname(escFilename);
-        return {
-            cwd: filedir,
-            command: `start "" "${escFilename}" ${escArgs}`
-        };
-    }
+    const soundtrackCommand = _handleSoundtrackCommand(filename, escFilename, escArgs);
+    if (soundtrackCommand) return soundtrackCommand;
 
-    const isSoundtrack = filename
-    .toLocaleLowerCase()
-    .endsWith(FOOBAR_EXECUTABLE);
-    if (isSoundtrack) return createSoundtrackCommand(escFilename, args);
-
-    const { command, includeArgs, includeFilename } = getCommandMapping(
+    const { command, includeArgs, includeFilename, setCwdToFileDir } = getCommandMapping(
         filename,
         mappings
     );
-    return {
-        command: `${command} ${includeFilename ? escFilename : ""} ${includeArgs ? escArgs : ""}`.trim()
-    };
+
+    const finalCommand = `${command} ${includeFilename ? escFilename : ""} ${includeArgs ? escArgs : ""}`.trim();
+    const result: Command = { command: finalCommand };
+
+    if (setCwdToFileDir) {
+        result.cwd = preparePathForShell(filename, { extractDir: true });
+    }
+
+    return result;
 };
 
-const createSoundtrackCommand = (escFilename: string, args: string): Command => {
-    const foobarDirectory = escFilename.slice(0, -FOOBAR_EXECUTABLE.length);
-    return {
-        cwd: foobarDirectory,
-        command: `flatpak run com.retro_exo.wine ${FOOBAR_EXECUTABLE} ${args}`
-    };
-};
+/**
+ * Foobar2000 requires cwd set to its directory and relative filename (not absolute path).
+ * On Linux/Mac uses Wine via flatpak. On Windows handled by normal .exe mapping.
+ */
+function _handleSoundtrackCommand(filename: string, escFilename: string, args: string): Command | null {
+    const isSoundtrackCommand = filename.toLowerCase().endsWith(FOOBAR_EXECUTABLE);
+    if (isSoundtrackCommand && process.platform !== "win32") {
+        const foobarDirectory = escFilename.slice(0, -FOOBAR_EXECUTABLE.length);
+        return {
+            cwd: foobarDirectory,
+            command: `flatpak run com.retro_exo.wine ${FOOBAR_EXECUTABLE} ${args}`
+        };
+    }
+    return null;
+}
 
 const getCommandMapping = (
     filename: string,

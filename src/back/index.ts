@@ -8,7 +8,7 @@ import {
 import { IGameInfo } from "@shared/game/interfaces";
 import { GamePlaylist } from "@shared/interfaces";
 import { ILogEntry, ILogPreEntry } from "@shared/Log/interface";
-import { DefaultCommandMapping } from "@shared/mappings/interfaces";
+import { EmptyCommandMapping } from "@shared/mappings/interfaces";
 import { PreferencesFile } from "@shared/preferences/PreferencesFile";
 import {
     createErrorProxy,
@@ -62,7 +62,7 @@ const state: BackState = {
     execMappings: [],
     queries: {},
     commandMappings: {
-        defaultMapping: DefaultCommandMapping,
+        defaultMapping: EmptyCommandMapping,
         commandsMapping: [],
     },
     vlcPlayer: undefined,
@@ -70,7 +70,7 @@ const state: BackState = {
 
 export const preferencesFilename = "preferences.json";
 export const configFilename = "config.json";
-const commandMappingsFilename = "mappings.json";
+const commandMappingsFilename = `mappings.${process.platform}.json`;
 
 process.on("message", initialize);
 process.on("disconnect", () => {
@@ -99,13 +99,12 @@ async function initialize(message: any, _: any): Promise<void> {
     state.config = await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
+    const mappingsPath = path.join(state.configFolder, commandMappingsFilename);
     try {
-        state.commandMappings = await readJsonFile(
-            path.join(state.configFolder, commandMappingsFilename)
-        );
+        state.commandMappings = await readJsonFile(mappingsPath);
     } catch (e) {
         console.error(
-            `Cannot load mappings file. ${e}. Check if file exists and have valid values. Without that file most of the entries won't work.`
+            `Cannot load mappings file "${commandMappingsFilename}". ${e}. Check if file exists and have valid values. Without that file most of the entries won't work.`
         );
     }
 

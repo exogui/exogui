@@ -1,8 +1,9 @@
 export type ICommandMapping = {
     extensions: string[];
     command: string;
-    includeFilename: true;
-    includeArgs: true;
+    includeFilename: boolean;
+    includeArgs: boolean;
+    setCwdToFileDir?: boolean;
 };
 
 export type IAppCommandsMappingData = {
@@ -10,8 +11,8 @@ export type IAppCommandsMappingData = {
     commandsMapping: ICommandMapping[];
 };
 
-export const DefaultCommandMapping: ICommandMapping = {
-    command: "xdg-open",
+export const EmptyCommandMapping: ICommandMapping = {
+    command: "",
     extensions: [],
     includeArgs: true,
     includeFilename: true,

@@ -1,0 +1,11 @@
+{
+    "defaultMapping": {
+        "extensions": [],
+        "command": "start \"\"",
+        "includeFilename": true,
+        "includeArgs": true,
+        "setCwdToFileDir": true
+    },
+    "commandsMapping": [
+    ]
+}
