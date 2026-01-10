@@ -1,0 +1,58 @@
+{
+    "defaultMapping": {
+        "extensions": [],
+        "command": "open",
+        "includeFilename": true,
+        "includeArgs": true
+    },
+    "commandsMapping": [
+        {
+            "extensions": ["avi", "flac", "mp3", "mp4", "wav"],
+            "command": "open -a mpv --args --force-window",
+            "includeFilename": true,
+            "includeArgs": false
+        },
+        {
+            "extensions": ["bmp", "gif", "jfif", "pdf", "png"],
+            "command": "open",
+            "includeFilename": true,
+            "includeArgs": false
+        },
+        {
+            "extensions": ["cbr", "jpeg", "jpg"],
+            "command": "open",
+            "includeFilename": true,
+            "includeArgs": false
+        },
+        {
+            "extensions": ["doc", "docx", "rtf", "txt"],
+            "command": "open",
+            "includeFilename": true,
+            "includeArgs": false
+        },
+        {
+            "extensions": ["exe"],
+            "command": "wine",
+            "includeFilename": true,
+            "includeArgs": true
+        },
+        {
+            "extensions": ["command"],
+            "command": "",
+            "includeFilename": true,
+            "includeArgs": true
+        },
+        {
+            "extensions": ["htm", "html"],
+            "command": "open",
+            "includeFilename": true,
+            "includeArgs": false
+        },
+        {
+            "extensions": ["xls", "xlsx", "ods"],
+            "command": "open",
+            "includeFilename": true,
+            "includeArgs": false
+        }
+    ]
+}

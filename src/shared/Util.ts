@@ -506,6 +506,27 @@ export function escapeShell(cmd: string) {
     return cmd.replace(/(["\s'$!()&`\\])/g, "\\$1");
 }
 
+export function preparePathForShell(filePath: string, options?: { quote?: boolean; extractDir?: boolean }): string {
+    const platform = process.platform;
+
+    let processedPath = filePath;
+
+    if (options?.extractDir) {
+        if (platform === "win32") {
+            processedPath = path.win32.dirname(filePath);
+        } else {
+            processedPath = path.posix.dirname(filePath);
+        }
+    }
+
+    if (platform === "win32") {
+        const windowsPath = processedPath.replace(/\//g, "\\");
+        return options?.quote ? `"${windowsPath}"` : windowsPath;
+    } else {
+        return escapeShell(processedPath);
+    }
+}
+
 export function removeLowestDirectory(filePath: string, popCount = 1): string {
     const normalizedPath = path.normalize(filePath).replace(/\\/g, "/");
     const pathSegments = normalizedPath.split("/");
