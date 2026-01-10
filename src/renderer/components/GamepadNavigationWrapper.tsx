@@ -12,9 +12,7 @@ export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
     const { onSelect, enabled = true } = props;
 
     const dispatchKeyboardEvent = React.useCallback((key: string) => {
-        console.log(`[GamepadNavigationWrapper] dispatchKeyboardEvent called: key=${key}`);
         if (!containerRef.current) {
-            console.log("[GamepadNavigationWrapper] containerRef.current is null");
             return;
         }
 
@@ -26,12 +24,8 @@ export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
         });
 
         const focusedElement = containerRef.current.querySelector(".game-grid, .game-list");
-        console.log("[GamepadNavigationWrapper] focusedElement:", focusedElement);
         if (focusedElement) {
-            console.log("[GamepadNavigationWrapper] Dispatching event to element");
             focusedElement.dispatchEvent(event);
-        } else {
-            console.log("[GamepadNavigationWrapper] No focusedElement found!");
         }
     }, []);
 
@@ -53,7 +47,6 @@ export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
     }, [dispatchKeyboardEvent]);
 
     const handleSelect = React.useCallback(() => {
-        console.log("[GamepadNavigationWrapper] handleSelect called, calling onSelect");
         if (onSelect) {
             onSelect();
         }
