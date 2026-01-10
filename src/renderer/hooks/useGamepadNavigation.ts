@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type GamepadNavigationDirection = "up" | "down" | "left" | "right" | "select";
 
@@ -17,6 +17,9 @@ export function useGamepadNavigation(
     const lastInputTime = useRef<number>(0);
     const lastDirection = useRef<GamepadNavigationDirection | null>(null);
     const animationFrameId = useRef<number | null>(null);
+    const [windowFocused, setWindowFocused] = useState(() =>
+        typeof document !== "undefined" ? document.hasFocus() : true
+    );
 
     const callbacksRef = useRef(callbacks);
 
@@ -25,7 +28,20 @@ export function useGamepadNavigation(
     }, [callbacks]);
 
     useEffect(() => {
-        if (!enabled) {
+        const handleFocus = () => setWindowFocused(true);
+        const handleBlur = () => setWindowFocused(false);
+
+        window.addEventListener("focus", handleFocus);
+        window.addEventListener("blur", handleBlur);
+
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+            window.removeEventListener("blur", handleBlur);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!enabled || !windowFocused) {
             return;
         }
 
@@ -88,5 +104,5 @@ export function useGamepadNavigation(
                 cancelAnimationFrame(animationFrameId.current);
             }
         };
-    }, [enabled]);
+    }, [enabled, windowFocused]);
 }
