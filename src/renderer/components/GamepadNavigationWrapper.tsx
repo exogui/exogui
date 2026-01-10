@@ -4,13 +4,19 @@ import { GamepadNavigationDirection, useGamepadNavigation } from "../hooks/useGa
 export type GamepadNavigationWrapperProps = {
     children: React.ReactNode;
     enabled?: boolean;
+    onSelect?: () => void;
 };
 
 export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const { onSelect, enabled = true } = props;
 
     const dispatchKeyboardEvent = React.useCallback((key: string) => {
-        if (!containerRef.current) return;
+        console.log(`[GamepadNavigationWrapper] dispatchKeyboardEvent called: key=${key}`);
+        if (!containerRef.current) {
+            console.log("[GamepadNavigationWrapper] containerRef.current is null");
+            return;
+        }
 
         const event = new KeyboardEvent("keydown", {
             key: key,
@@ -20,8 +26,12 @@ export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
         });
 
         const focusedElement = containerRef.current.querySelector(".game-grid, .game-list");
+        console.log("[GamepadNavigationWrapper] focusedElement:", focusedElement);
         if (focusedElement) {
+            console.log("[GamepadNavigationWrapper] Dispatching event to element");
             focusedElement.dispatchEvent(event);
+        } else {
+            console.log("[GamepadNavigationWrapper] No focusedElement found!");
         }
     }, []);
 
@@ -43,15 +53,18 @@ export function GamepadNavigationWrapper(props: GamepadNavigationWrapperProps) {
     }, [dispatchKeyboardEvent]);
 
     const handleSelect = React.useCallback(() => {
-        dispatchKeyboardEvent("Enter");
-    }, [dispatchKeyboardEvent]);
+        console.log("[GamepadNavigationWrapper] handleSelect called, calling onSelect");
+        if (onSelect) {
+            onSelect();
+        }
+    }, [onSelect]);
 
     useGamepadNavigation(
         {
             onNavigate: handleNavigate,
             onSelect: handleSelect,
         },
-        props.enabled !== false
+        enabled
     );
 
     return (

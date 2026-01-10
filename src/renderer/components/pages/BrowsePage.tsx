@@ -206,7 +206,7 @@ class BrowsePage extends React.Component<
                             );
                             const width: number = (height * 0.7) | 0;
                             return (
-                                <GamepadNavigationWrapper>
+                                <GamepadNavigationWrapper onSelect={this.onGamepadSelect}>
                                     <GameGrid
                                         games={view?.games}
                                         gamesTotal={view?.games.length}
@@ -230,7 +230,7 @@ class BrowsePage extends React.Component<
                                 this.props.gameScale
                             );
                             return (
-                                <GamepadNavigationWrapper>
+                                <GamepadNavigationWrapper onSelect={this.onGamepadSelect}>
                                     <GameList
                                         games={view?.games}
                                         gamesTotal={view?.games.length}
@@ -361,6 +361,13 @@ class BrowsePage extends React.Component<
                 view: this.props.gameLibrary,
                 game,
             });
+        }
+    };
+
+    onGamepadSelect = (): void => {
+        const view = this.props.searchState.views[this.props.gameLibrary];
+        if (view?.selectedGame) {
+            this.onGameLaunch(view.selectedGame.id);
         }
     };
 

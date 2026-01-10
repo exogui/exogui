@@ -66,7 +66,9 @@ export function useGamepadNavigation(
             const aButton = gamepad.buttons[0]?.pressed;
 
             if (aButton && callbacksRef.current.onSelect) {
+                console.log("[useGamepadNavigation] Button 0 pressed, calling onSelect");
                 if (lastDirection.current !== "select" || now - lastInputTime.current > REPEAT_DELAY) {
+                    console.log("[useGamepadNavigation] Triggering onSelect callback");
                     callbacksRef.current.onSelect();
                     lastDirection.current = "select";
                     lastInputTime.current = now;
