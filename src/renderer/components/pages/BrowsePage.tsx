@@ -27,6 +27,7 @@ import { gameScaleSpan, openContextMenu } from "../../Util";
 import { GameGrid } from "../GameGrid";
 import { GameList } from "../GameList";
 import { GameOrderChangeEvent } from "../GameOrder";
+import { GamepadNavigationWrapper } from "../GamepadNavigationWrapper";
 import { InputElement } from "../InputField";
 import { ResizableSidebar, SidebarResizeEvent } from "../ResizableSidebar";
 import { SearchBar } from "../SearchBar";
@@ -109,6 +110,9 @@ class BrowsePage extends React.Component<
             this.props.forceSearch({
                 view: this.props.gameLibrary,
             });
+        } else if (view && view.games.length > 0 && !view.selectedGame) {
+            // Games are already loaded, select the first game
+            this.onGameSelect(view.games[0]);
         }
 
         updatePreferencesData({
@@ -116,7 +120,10 @@ class BrowsePage extends React.Component<
         });
     }
 
-    componentDidUpdate(prevProps: BrowsePageProps) {
+    componentDidUpdate(prevProps: ConnectedBrowsePageProps) {
+        const prevView = prevProps.searchState.views[prevProps.gameLibrary];
+        const currentView = this.props.searchState.views[this.props.gameLibrary];
+
         if (prevProps.gameLibrary !== this.props.gameLibrary) {
             const view = this.props.searchState.views[this.props.gameLibrary];
             if (view && view.games.length === 0) {
@@ -124,7 +131,18 @@ class BrowsePage extends React.Component<
                 this.props.forceSearch({
                     view: this.props.gameLibrary,
                 });
+            } else if (view && view.games.length > 0 && !view.selectedGame) {
+                // Games loaded for new library, select the first game
+                this.onGameSelect(view.games[0]);
             }
+        }
+
+        // Select first game when games are first loaded (transition from 0 to > 0 games)
+        if (prevView && currentView &&
+            prevView.games.length === 0 &&
+            currentView.games.length > 0 &&
+            !currentView.selectedGame) {
+            this.onGameSelect(currentView.games[0]);
         }
 
         if (this.props.playlists !== prevProps.playlists) {
@@ -205,21 +223,23 @@ class BrowsePage extends React.Component<
                             );
                             const width: number = (height * 0.7) | 0;
                             return (
-                                <GameGrid
-                                    games={view?.games}
-                                    gamesTotal={view?.games.length}
-                                    selectedGame={view?.selectedGame}
-                                    draggedGameId={draggedGameId}
-                                    noRowsRenderer={this.noRowsRendererMemo()}
-                                    onGameSelect={this.onGameSelect}
-                                    onGameLaunch={this.onGameLaunch}
-                                    onContextMenu={this.createGameContextMenu}
-                                    orderBy={order.orderBy}
-                                    orderReverse={order.orderReverse}
-                                    cellWidth={width}
-                                    cellHeight={height}
-                                    gridRef={this.gameGridOrListRefFunc}
-                                />
+                                <GamepadNavigationWrapper onSelect={this.onGamepadSelect}>
+                                    <GameGrid
+                                        games={view?.games}
+                                        gamesTotal={view?.games.length}
+                                        selectedGame={view?.selectedGame}
+                                        draggedGameId={draggedGameId}
+                                        noRowsRenderer={this.noRowsRendererMemo()}
+                                        onGameSelect={this.onGameSelect}
+                                        onGameLaunch={this.onGameLaunch}
+                                        onContextMenu={this.createGameContextMenu}
+                                        orderBy={order.orderBy}
+                                        orderReverse={order.orderReverse}
+                                        cellWidth={width}
+                                        cellHeight={height}
+                                        gridRef={this.gameGridOrListRefFunc}
+                                    />
+                                </GamepadNavigationWrapper>
                             );
                         } else {
                             const height: number = calcScale(
@@ -227,20 +247,22 @@ class BrowsePage extends React.Component<
                                 this.props.gameScale
                             );
                             return (
-                                <GameList
-                                    games={view?.games}
-                                    gamesTotal={view?.games.length}
-                                    selectedGame={view?.selectedGame}
-                                    draggedGameId={draggedGameId}
-                                    noRowsRenderer={this.noRowsRendererMemo()}
-                                    onGameSelect={this.onGameSelect}
-                                    onGameLaunch={this.onGameLaunch}
-                                    onContextMenu={this.createGameContextMenu}
-                                    orderBy={order.orderBy}
-                                    orderReverse={order.orderReverse}
-                                    rowHeight={height}
-                                    listRef={this.gameGridOrListRefFunc}
-                                />
+                                <GamepadNavigationWrapper onSelect={this.onGamepadSelect}>
+                                    <GameList
+                                        games={view?.games}
+                                        gamesTotal={view?.games.length}
+                                        selectedGame={view?.selectedGame}
+                                        draggedGameId={draggedGameId}
+                                        noRowsRenderer={this.noRowsRendererMemo()}
+                                        onGameSelect={this.onGameSelect}
+                                        onGameLaunch={this.onGameLaunch}
+                                        onContextMenu={this.createGameContextMenu}
+                                        orderBy={order.orderBy}
+                                        orderReverse={order.orderReverse}
+                                        rowHeight={height}
+                                        listRef={this.gameGridOrListRefFunc}
+                                    />
+                                </GamepadNavigationWrapper>
                             );
                         }
                     })()}
@@ -356,6 +378,13 @@ class BrowsePage extends React.Component<
                 view: this.props.gameLibrary,
                 game,
             });
+        }
+    };
+
+    onGamepadSelect = (): void => {
+        const view = this.props.searchState.views[this.props.gameLibrary];
+        if (view?.selectedGame) {
+            this.onGameLaunch(view.selectedGame.id);
         }
     };
 
