@@ -110,6 +110,9 @@ class BrowsePage extends React.Component<
             this.props.forceSearch({
                 view: this.props.gameLibrary,
             });
+        } else if (view && view.games.length > 0) {
+            // Games are already loaded, focus the grid/list
+            this.focusGameGridOrList();
         }
 
         updatePreferencesData({
@@ -117,7 +120,10 @@ class BrowsePage extends React.Component<
         });
     }
 
-    componentDidUpdate(prevProps: BrowsePageProps) {
+    componentDidUpdate(prevProps: ConnectedBrowsePageProps) {
+        const prevView = prevProps.searchState.views[prevProps.gameLibrary];
+        const currentView = this.props.searchState.views[this.props.gameLibrary];
+
         if (prevProps.gameLibrary !== this.props.gameLibrary) {
             const view = this.props.searchState.views[this.props.gameLibrary];
             if (view && view.games.length === 0) {
@@ -125,7 +131,17 @@ class BrowsePage extends React.Component<
                 this.props.forceSearch({
                     view: this.props.gameLibrary,
                 });
+            } else if (view && view.games.length > 0) {
+                // Games loaded for new library, focus the grid/list
+                this.focusGameGridOrList();
             }
+        }
+
+        // Focus when games are first loaded (transition from 0 to > 0 games)
+        if (prevView && currentView &&
+            prevView.games.length === 0 &&
+            currentView.games.length > 0) {
+            this.focusGameGridOrList();
         }
 
         if (this.props.playlists !== prevProps.playlists) {
