@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Generate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.generate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Generate version string
+        id: generate
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          DATE=$(date +%Y%m%d)
+          SHA=$(git rev-parse --short HEAD)
+          FULL_VERSION="${VERSION}-${DATE}-${SHA}"
+          echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${FULL_VERSION}"
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            runner: ubuntu-latest
+            script: release:linux
+            artifact-pattern: "*.tar.gz"
+
+          - name: Windows
+            runner: windows-latest
+            script: release:win32
+            artifact-pattern: "*.exe"
+
+          - name: macOS (Intel)
+            runner: macos-13
+            script: release:darwin
+            artifact-pattern: "*.dmg"
+
+          - name: macOS (Apple Silicon)
+            runner: macos-latest
+            script: release:m1
+            artifact-pattern: "*.dmg"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build ${{ matrix.name }}
+        run: npm run ${{ matrix.script }}
+
+      - name: List dist directory
+        shell: bash
+        run: ls -la dist/ || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-artifacts
+          path: dist/${{ matrix.artifact-pattern }}
+          if-no-files-found: warn
+
+  release:
+    name: Create Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.version }}
+          name: Release ${{ needs.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
+          body: |
+            Automated release for commit ${{ github.sha }}
+
+            Version: ${{ needs.version.outputs.version }}
+
+            ## Artifacts
+            - Linux: tar.gz archive
+            - Windows: NSIS installer (.exe)
+            - macOS (Intel): DMG disk image
+            - macOS (Apple Silicon): DMG disk image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
