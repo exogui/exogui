@@ -68,8 +68,13 @@ export function main(init: Init): void {
     startup();
 
     async function startup() {
-        if (process.env.APPIMAGE) {
+        // Disable sandbox for Linux (required for AppImage and some distros)
+        if (process.platform === "linux") {
             app.commandLine.appendSwitch("no-sandbox");
+            // Enable Wayland window decorations (helps with icon display)
+            app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
+            // Set WM_CLASS for proper Wayland icon matching
+            app.commandLine.appendSwitch("class", "exogui");
         }
         app.disableHardwareAcceleration();
 
@@ -159,6 +164,9 @@ export function main(init: Init): void {
             state.config = mainData.config;
 
             app.whenReady().then(() => {
+                // Set app name for Wayland WM_CLASS matching with .desktop file
+                app.setName("exogui");
+
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
                 createMainWindow();
             });
