@@ -40,7 +40,7 @@ jobs:
           - name: Linux
             runner: ubuntu-latest
             script: release:linux
-            artifact-pattern: "*.tar.gz"
+            artifact-pattern: "*.{tar.gz,AppImage}"
 
           - name: Windows
             runner: windows-latest
@@ -115,9 +115,12 @@ jobs:
             Version: ${{ needs.version.outputs.version }}
 
             ## Artifacts
-            - Linux: tar.gz archive
+            - Linux: AppImage and tar.gz archive
             - Windows: NSIS installer (.exe)
             - macOS (Intel): DMG disk image
             - macOS (Apple Silicon): DMG disk image
+
+            ### Linux Notes
+            Run AppImage with: `./exogui-*.AppImage --no-sandbox`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
