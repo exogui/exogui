@@ -48,7 +48,7 @@ jobs:
             artifact-pattern: "*.exe"
 
           - name: macOS (Intel)
-            runner: macos-13
+            runner: macos-15-intel
             script: release:darwin
             artifact-pattern: "*.dmg"
 
