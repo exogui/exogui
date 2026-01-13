@@ -20,6 +20,7 @@ import {
     BrowserWindow,
     ipcMain,
     IpcMainEvent,
+    nativeImage,
     screen,
     session,
     shell
@@ -294,6 +295,9 @@ export function main(init: Init): void {
         const mw = getInitialWindowSize();
 
         remoteMain.initialize();
+        const iconPath = path.join(__dirname, "../window/images/icon.png");
+        const icon = nativeImage.createFromPath(iconPath);
+
         const window = new BrowserWindow({
             title: APP_TITLE,
             x: mw.x,
@@ -301,7 +305,7 @@ export function main(init: Init): void {
             width: mw.width,
             height: mw.height,
             frame: !state.config.useCustomTitlebar,
-            icon: path.join(__dirname, "../window/images/icon.png"),
+            icon: icon,
             webPreferences: {
                 preload: path.resolve(__dirname, "./MainWindowPreload.js"),
                 nodeIntegration: true,
