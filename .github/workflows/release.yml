@@ -40,12 +40,16 @@ jobs:
           - name: Linux
             runner: ubuntu-latest
             script: release:linux
-            artifact-pattern: "*.{tar.gz,AppImage}"
+            artifact-pattern: |
+              *.tar.gz
+              *.AppImage
 
           - name: Windows
             runner: windows-latest
             script: release:win32
-            artifact-pattern: "*.{exe,zip}"
+            artifact-pattern: |
+              *.exe
+              *.zip
 
           - name: macOS (Intel)
             runner: macos-15-intel
