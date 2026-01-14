@@ -99,6 +99,7 @@ gulp.task("pack", (done) => {
                 },
                 win: {
                     icon: "./icons/icon.ico",
+                    target: ["nsis", "zip"],
                 },
                 mac: {
                     icon: "./icons/icon.icns",
@@ -156,7 +157,10 @@ function execute(command, callback) {
 function createBuildTargets(os, arch) {
     switch (os) {
         case "win32":
-            return Platform.WINDOWS.createTarget("nsis", archFromString(arch));
+            return Platform.WINDOWS.createTarget(
+                ["nsis", "zip"],
+                archFromString(arch),
+            );
         case "darwin":
             return Platform.MAC.createTarget("dmg", archFromString(arch));
         case "linux":
