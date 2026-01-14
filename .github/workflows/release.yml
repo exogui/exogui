@@ -40,12 +40,12 @@ jobs:
           - name: Linux
             runner: ubuntu-latest
             script: release:linux
-            artifact-pattern: "*.tar.gz"
+            artifact-pattern: "*.{tar.gz,AppImage}"
 
           - name: Windows
             runner: windows-latest
             script: release:win32
-            artifact-pattern: "*.exe"
+            artifact-pattern: "*.{exe,zip}"
 
           - name: macOS (Intel)
             runner: macos-15-intel
@@ -115,9 +115,16 @@ jobs:
             Version: ${{ needs.version.outputs.version }}
 
             ## Artifacts
-            - Linux: tar.gz archive
-            - Windows: NSIS installer (.exe)
+            - Linux: AppImage and tar.gz archive
+            - Windows: NSIS installer (.exe) and portable zip archive
             - macOS (Intel): DMG disk image
             - macOS (Apple Silicon): DMG disk image
+
+            ### Linux Notes
+            Run AppImage with: `./exogui-*.AppImage --no-sandbox`
+
+            ### Windows Notes
+            - `.exe` - Full installer with shortcuts and uninstaller
+            - `.zip` - Portable version, extract and run (no installation required)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

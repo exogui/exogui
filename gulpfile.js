@@ -88,14 +88,18 @@ gulp.task("pack", (done) => {
                 files: ["./build"],
                 extraFiles: copyFiles, // Files to copy to the build folder
                 compression: "store", // Only used if a compressed target (like 7z, nsis, dmg etc)
-                target: "dir", // Keep unpacked versions of every pack
                 asar: true,
                 publish: publish,
                 linux: {
                     publish: "github",
+                    target: ["AppImage", "tar.gz", "dir"],
+                    category: "Game",
+                    icon: "./static/icons/",
+                    executableArgs: ["--no-sandbox"],
                 },
                 win: {
                     icon: "./icons/icon.ico",
+                    target: ["nsis", "zip"],
                 },
                 mac: {
                     icon: "./icons/icon.icns",
@@ -153,12 +157,15 @@ function execute(command, callback) {
 function createBuildTargets(os, arch) {
     switch (os) {
         case "win32":
-            return Platform.WINDOWS.createTarget("nsis", archFromString(arch));
+            return Platform.WINDOWS.createTarget(
+                ["nsis", "zip"],
+                archFromString(arch),
+            );
         case "darwin":
             return Platform.MAC.createTarget("dmg", archFromString(arch));
         case "linux":
             return Platform.LINUX.createTarget(
-                ["tar.gz", "dir"],
+                ["AppImage", "tar.gz", "dir"],
                 archFromString(arch),
             );
     }

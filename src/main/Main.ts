@@ -20,6 +20,7 @@ import {
     BrowserWindow,
     ipcMain,
     IpcMainEvent,
+    nativeImage,
     screen,
     session,
     shell
@@ -67,8 +68,13 @@ export function main(init: Init): void {
     startup();
 
     async function startup() {
-        if (process.env.APPIMAGE) {
+        // Disable sandbox for Linux (required for AppImage and some distros)
+        if (process.platform === "linux") {
             app.commandLine.appendSwitch("no-sandbox");
+            // Enable Wayland window decorations (helps with icon display)
+            app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
+            // Set WM_CLASS for proper Wayland icon matching
+            app.commandLine.appendSwitch("class", "exogui");
         }
         app.disableHardwareAcceleration();
 
@@ -158,6 +164,9 @@ export function main(init: Init): void {
             state.config = mainData.config;
 
             app.whenReady().then(() => {
+                // Set app name for Wayland WM_CLASS matching with .desktop file
+                app.setName("exogui");
+
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
                 createMainWindow();
             });
@@ -294,6 +303,9 @@ export function main(init: Init): void {
         const mw = getInitialWindowSize();
 
         remoteMain.initialize();
+        const iconPath = path.join(__dirname, "../window/images/icon.png");
+        const icon = nativeImage.createFromPath(iconPath);
+
         const window = new BrowserWindow({
             title: APP_TITLE,
             x: mw.x,
@@ -301,7 +313,7 @@ export function main(init: Init): void {
             width: mw.width,
             height: mw.height,
             frame: !state.config.useCustomTitlebar,
-            icon: path.join(__dirname, "../window/images/icon.png"),
+            icon: icon,
             webPreferences: {
                 preload: path.resolve(__dirname, "./MainWindowPreload.js"),
                 nodeIntegration: true,
