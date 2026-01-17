@@ -36,6 +36,7 @@ export function addGamesMiddleware() {
         effect: async (_action, listenerApi) => {
             try {
                 const startTime = Date.now();
+                console.log("[PERF] ========== GAME LOADING START ==========");
                 const libraries: string[] = [];
                 const collection: GameCollection = new GameCollection();
 
@@ -43,9 +44,12 @@ export function addGamesMiddleware() {
                     window.External.config.fullExodosPath,
                     window.External.config.data.platformFolderPath
                 );
+
+                const readPlatformsStart = Date.now();
                 const { platforms } = await readPlatformsFile(
                     path.join(platformsPath, "../Platforms.xml")
                 );
+                console.log(`[PERF] Read Platforms.xml (${platforms.length} platforms): ${Date.now() - readPlatformsStart}ms`);
 
                 const totalPlatforms = platforms.length;
                 for (let i = 0; i < platforms.length; i++) {
@@ -77,7 +81,7 @@ export function addGamesMiddleware() {
                         console.error(`Failed to load platform ${err}`);
                     }
                 }
-                console.debug(`Load time - ${Date.now() - startTime}ms`);
+                console.log(`[PERF] ========== TOTAL GAME LOADING TIME: ${Date.now() - startTime}ms ==========`);
                 libraries.sort();
                 listenerApi.dispatch(setLibraries(libraries));
                 listenerApi.dispatch(initializeViews(libraries));
@@ -93,9 +97,11 @@ export function addGamesMiddleware() {
 }
 
 async function loadPlatform(platform: string, platformsPath: string) {
-    console.log(`Loading platform ${platform} from ${platformsPath}`);
+    const platformStartTime = Date.now();
+    console.log(`[PERF] Loading platform ${platform} from ${platformsPath} - START`);
 
     try {
+        const findFileStart = Date.now();
         const platformFileCaseInsensitive =
             await findPlatformFileCaseInsensitive(
                 `${platform}.xml`,
@@ -105,14 +111,18 @@ async function loadPlatform(platform: string, platformsPath: string) {
             platformsPath,
             platformFileCaseInsensitive
         );
+        console.log(`[PERF] ${platform} - Find file: ${Date.now() - findFileStart}ms`);
 
         if ((await fs.promises.stat(platformFile)).isFile()) {
             console.debug(`Platform file found: ${platformFile}`);
 
+            const readFileStart = Date.now();
             const content = await fs.promises.readFile(platformFile, {
                 encoding: "utf-8",
             });
+            console.log(`[PERF] ${platform} - Read XML file (${content.length} bytes): ${Date.now() - readFileStart}ms`);
 
+            const parseXmlStart = Date.now();
             const parser = new XMLParser({
                 numberParseOptions: {
                     leadingZeros: true,
@@ -133,30 +143,35 @@ async function loadPlatform(platform: string, platformsPath: string) {
                 },
             });
             const data: any | undefined = parser.parse(content.toString());
+            console.log(`[PERF] ${platform} - Parse XML: ${Date.now() - parseXmlStart}ms`);
 
             if (!formatPlatformFileData(data)) {
                 throw new Error(`Failed to parse XML file: ${platformFile}`);
             }
 
-            const startTime = Date.now();
+            const imagesStart = Date.now();
             const images = await loadPlatformImages(platform);
-            console.log(`Images - ${Date.now() - startTime}`);
-            const videos = loadPlatformVideos(platform);
-            console.log(`Videos - ${Date.now() - startTime}`);
+            console.log(`[PERF] ${platform} - Load images: ${Date.now() - imagesStart}ms`);
 
+            const videosStart = Date.now();
+            const videos = loadPlatformVideos(platform);
+            console.log(`[PERF] ${platform} - Load videos: ${Date.now() - videosStart}ms`);
+
+            const parseGamesStart = Date.now();
             const platformCollection = GameParser.parse(
                 data,
                 platform,
                 window.External.config.fullExodosPath
             );
+            console.log(`[PERF] ${platform} - Parse games (${platformCollection.games.length} games): ${Date.now() - parseGamesStart}ms`);
 
-            console.log(`Parsing - ${Date.now() - startTime}`);
-
+            const mapMediaStart = Date.now();
             for (const game of platformCollection.games) {
                 mapGamesMedia(game, images, videos);
             }
+            console.log(`[PERF] ${platform} - Map media: ${Date.now() - mapMediaStart}ms`);
 
-            console.log(`Add apps - ${Date.now() - startTime}`);
+            console.log(`[PERF] ${platform} - TOTAL: ${Date.now() - platformStartTime}ms`);
 
             return platformCollection;
         } else {

@@ -18,16 +18,20 @@ export interface PlatformsFile {
  * @param filePath Path of the file.
  */
 export function readPlatformsFile(filePath: string): Promise<PlatformsFile> {
-    console.log(`Reading Platforms.xml file in the ${filePath} directory`);
+    const startTime = Date.now();
+    console.log(`[PERF] Reading Platforms.xml file: ${filePath}`);
     return new Promise((resolve, reject) => {
         fs.readFile(filePath, (error, data) => {
             if (error) {
                 reject(error);
             } else {
+                console.log(`[PERF] Platforms.xml read complete (${data.length} bytes): ${Date.now() - startTime}ms`);
                 let parsed: any;
                 try {
+                    const parseStart = Date.now();
                     const parser = new XMLParser();
                     parsed = parser.parse(data.toString());
+                    console.log(`[PERF] Platforms.xml parse complete: ${Date.now() - parseStart}ms`);
                 } catch {
                     parsed = {};
                 }

@@ -13,6 +13,7 @@ import {
     IAppPreferencesData,
     IAppPreferencesDataMainWindow,
 } from "@shared/preferences/interfaces";
+import { getResourcesPath } from "@shared/ResourcePath";
 import { createErrorProxy } from "@shared/Util";
 import { ChildProcess, fork } from "child_process";
 import {
@@ -122,11 +123,7 @@ export function main(init: Init): void {
                     secret: state._secret,
                     isDev: Util.isDev,
                     exePath: path.dirname(app.getPath("exe")),
-                    basePath: process.env.APPIMAGE
-                        ? app.getAppPath()
-                        : (process.platform === "darwin" && !Util.isDev)
-                            ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
-                            : process.cwd(),
+                    basePath: getResourcesPath(app, Util.isDev),
                     acceptRemote: !!init.args["host-remote"],
                 };
                 state.backProc.send(JSON.stringify(msg));
