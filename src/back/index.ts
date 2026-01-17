@@ -99,7 +99,7 @@ async function initialize(message: any, _: any): Promise<void> {
     state.config = await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
-    const mappingsPath = path.join(state.configFolder, commandMappingsFilename);
+    const mappingsPath = path.join(state.basePath, commandMappingsFilename);
     try {
         state.commandMappings = await readJsonFile(mappingsPath);
     } catch (e) {
