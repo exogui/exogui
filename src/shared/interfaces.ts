@@ -88,6 +88,9 @@ export interface IMainWindowExternal {
     initialPlaylists?: GamePlaylist[];
     initialLocaleCode: string;
 
+    /** Whether VLC player is available for background music (Windows only). */
+    vlcAvailable: boolean;
+
     /**
      * Wait for the preload to initialize.
      * @returns A promise that resolves when initialization is complete, or nothing if already initialized.

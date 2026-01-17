@@ -181,6 +181,7 @@ export type GetRendererInitDataResponse = {
     themes: Theme[];
     playlists?: GamePlaylist[];
     localeCode: string;
+    vlcAvailable: boolean;
 };
 
 export type GetGamesTotalResponseData = number;

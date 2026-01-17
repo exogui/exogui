@@ -75,44 +75,48 @@ export class Footer extends React.Component<FooterProps> {
                 <div className="footer__wrap footer__right">
                     <div>
                         <div className="footer__right__inner">
-                            {/* Volume Slider */}
-                            <div className="footer__wrap footer__scale-slider">
-                                <div className="footer__scale-slider__inner">
-                                    <div className="footer__scale-slider__icon footer__scale-slider__icon--left simple-center">
-                                        <div>🔈</div>
+                            {/* Volume Slider (only if VLC is available) */}
+                            {window.External.vlcAvailable && (
+                                <>
+                                    <div className="footer__wrap footer__scale-slider">
+                                        <div className="footer__scale-slider__inner">
+                                            <div className="footer__scale-slider__icon footer__scale-slider__icon--left simple-center">
+                                                <div>🔈</div>
+                                            </div>
+                                            <div className="footer__scale-slider__icon footer__scale-slider__icon--center simple-center" />
+                                            <div className="footer__scale-slider__icon footer__scale-slider__icon--right simple-center">
+                                                <div>🔊</div>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                className="footer__scale-slider__input hidden-slider"
+                                                value={window.External.preferences.data.gameMusicVolume * 100}
+                                                min={0}
+                                                max={100}
+                                                onChange={this.onVolumeSliderChange}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="footer__scale-slider__icon footer__scale-slider__icon--center simple-center" />
-                                    <div className="footer__scale-slider__icon footer__scale-slider__icon--right simple-center">
-                                        <div>🔊</div>
+                                    {/* Volume Slider Percent */}
+                                    <div className="footer__wrap footer__scale-percent">
+                                        <p>
+                                            {Math.round(window.External.preferences.data.gameMusicVolume * 100)}%
+                                        </p>
                                     </div>
-                                    <input
-                                        type="range"
-                                        className="footer__scale-slider__input hidden-slider"
-                                        value={window.External.preferences.data.gameMusicVolume * 100}
-                                        min={0}
-                                        max={100}
-                                        onChange={this.onVolumeSliderChange}
-                                    />
-                                </div>
-                            </div>
-                            {/* Volume Slider Percent */}
-                            <div className="footer__wrap footer__scale-percent">
-                                <p>
-                                    {Math.round(window.External.preferences.data.gameMusicVolume * 100)}%
-                                </p>
-                            </div>
-                            {/* Music Toggle */}
-                            <div className="footer__wrap">
-                                <SimpleButton
-                                    onClick={() => {
-                                        const shouldPlay = !window.External.preferences.data.gameMusicPlay;
-                                        updatePreferencesData({
-                                            gameMusicPlay: shouldPlay
-                                        });
-                                        window.External.back.send(BackIn.TOGGLE_MUSIC, shouldPlay);
-                                    }}
-                                    value={window.External.preferences.data.gameMusicPlay ? "Stop": "Play"} />
-                            </div>
+                                    {/* Music Toggle */}
+                                    <div className="footer__wrap">
+                                        <SimpleButton
+                                            onClick={() => {
+                                                const shouldPlay = !window.External.preferences.data.gameMusicPlay;
+                                                updatePreferencesData({
+                                                    gameMusicPlay: shouldPlay
+                                                });
+                                                window.External.back.send(BackIn.TOGGLE_MUSIC, shouldPlay);
+                                            }}
+                                            value={window.External.preferences.data.gameMusicPlay ? "Stop": "Play"} />
+                                    </div>
+                                </>
+                            )}
                             {/* Layout Selector */}
                             <div className="footer__wrap">
                                 <div>

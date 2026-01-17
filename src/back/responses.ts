@@ -69,7 +69,8 @@ export function registerRequestCallbacks(state: BackState): void {
             playlists: state.init[BackInit.PLAYLISTS]
                 ? state.playlistManager.playlists
                 : undefined,
-            localeCode: state.localeCode
+            localeCode: state.localeCode,
+            vlcAvailable: state.vlcPlayer !== undefined
         };
     });
 
