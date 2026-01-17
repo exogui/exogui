@@ -10,7 +10,15 @@ After making changes to `config.json`, you must **restart exogui** for the chang
 
 ## Location
 
-The `config.json` file is located in the root directory of the exogui installation.
+The `config.json` and `preferences.json` files are located in different directories depending on the build type:
+
+- **Linux AppImage**: `~/.config/exogui/`
+- **Linux tar.gz**: Application directory (where you extracted the archive)
+- **Windows**: Application installation directory (e.g., `C:\Program Files\exogui\`)
+- **macOS**: `~/Library/Application Support/exogui/`
+- **Development mode**: Project root directory
+
+**Note:** Other application resource files (mappings.json, 7zip binaries, lang/, licenses/) are bundled with the application and located separately from user configuration files.
 
 ## File Structure
 
