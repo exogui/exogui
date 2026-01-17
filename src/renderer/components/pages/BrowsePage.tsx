@@ -24,7 +24,7 @@ import {
     withPreferences,
 } from "../../containers/withPreferences";
 import { gameScaleSpan, openContextMenu } from "../../Util";
-import { GameGrid } from "../GameGrid";
+import { GameGridWithWrapping } from "../GameGridWithWrapping";
 import { GameList } from "../GameList";
 import { GameOrderChangeEvent } from "../GameOrder";
 import { GamepadNavigationWrapper } from "../GamepadNavigationWrapper";
@@ -224,7 +224,8 @@ class BrowsePage extends React.Component<
                             const width: number = (height * 0.7) | 0;
                             return (
                                 <GamepadNavigationWrapper onSelect={this.onGamepadSelect}>
-                                    <GameGrid
+                                    <GameGridWithWrapping
+                                        enableWrapping={true}
                                         games={view?.games}
                                         gamesTotal={view?.games.length}
                                         selectedGame={view?.selectedGame}

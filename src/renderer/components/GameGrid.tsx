@@ -57,7 +57,7 @@ export type GameGridProps = {
 
 /** A grid of cells, where each cell displays a game. */
 export class GameGrid extends React.Component<GameGridProps> {
-    wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
+    wrapperRef: React.RefObject<HTMLDivElement | null> = React.createRef();
     /** Most recently reference passed to the "gridRef" callback prop. */
     prevWrapperRef: HTMLDivElement | null = null;
     /** Number of columns in the grid from the most recent render. */
