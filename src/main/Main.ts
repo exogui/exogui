@@ -28,6 +28,7 @@ import {
 } from "electron";
 import * as path from "path";
 import * as WebSocket from "ws";
+import { AutoUpdater } from "./AutoUpdater";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -47,6 +48,8 @@ type MainState = {
     isQuitting: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
+    /** Auto-updater instance */
+    autoUpdater?: AutoUpdater;
 };
 
 export function main(init: Init): void {
@@ -160,12 +163,28 @@ export function main(init: Init): void {
             state.preferences = mainData.preferences;
             state.config = mainData.config;
 
+            // Initialize auto-updater
+            state.autoUpdater = new AutoUpdater({
+                enabled: state.preferences.enableAutoUpdate,
+                checkOnStartup: true,
+                startupCheckDelay: 5000,
+                autoDownload: true,
+                autoInstallOnQuit: false,
+            });
+
             app.whenReady().then(() => {
                 // Set app name for Wayland WM_CLASS matching with .desktop file
                 app.setName("exogui");
 
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
-                createMainWindow();
+                const window = createMainWindow();
+                state.window = window;
+
+                // Set window reference for auto-updater dialogs
+                if (state.autoUpdater) {
+                    state.autoUpdater.setMainWindow(window);
+                    state.autoUpdater.start();
+                }
             });
         }
     }
@@ -195,6 +214,11 @@ export function main(init: Init): void {
     }
 
     function onAppWillQuit(event: Electron.Event): void {
+        // Cleanup auto-updater
+        if (state.autoUpdater) {
+            state.autoUpdater.cleanup();
+        }
+
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
             state.socket.send(BackIn.QUIT);

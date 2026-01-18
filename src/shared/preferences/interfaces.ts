@@ -34,6 +34,8 @@ export type IAppPreferencesData = {
     gameMusicPlay: boolean;
     /** Game music volume */
     gameMusicVolume: number;
+    /** Enable automatic updates (Linux AppImage only) */
+    enableAutoUpdate: boolean;
 };
 
 export type IAppPreferencesDataMainWindow = {

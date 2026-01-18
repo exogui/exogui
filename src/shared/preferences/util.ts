@@ -54,6 +54,7 @@ export const defaultPreferencesData: Readonly<IAppPreferencesData> =
         }),
         gameMusicPlay: true,
         gameMusicVolume: 0.5,
+        enableAutoUpdate: true,
     });
 
 /**
@@ -115,6 +116,7 @@ export function overwritePreferenceData(
     );
     parser.prop("gameMusicVolume", (v) => (source.gameMusicVolume = num(v)), true);
     parser.prop("gameMusicPlay", (v) => (source.gameMusicPlay = !!v), true);
+    parser.prop("enableAutoUpdate", (v) => (source.enableAutoUpdate = !!v), true);
     // Parse window object
     parseMainWindow(parser.prop("mainWindow"), source.mainWindow);
     parser
