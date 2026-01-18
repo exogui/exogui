@@ -30,6 +30,6 @@ export type IAppConfigData = {
     showDeveloperTab: boolean;
     /** Port number for VLC media player HTTP interface. */
     vlcPort: number;
-    /** Enable automatic updates (Linux AppImage only) */
-    enableAutoUpdate: boolean;
+    /** Enable online updates (Linux AppImage only) */
+    enableOnlineUpdate: boolean;
 };

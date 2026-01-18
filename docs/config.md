@@ -39,7 +39,7 @@ The `config.json` and `preferences.json` files are located in different director
     "currentTheme": "fancy.css",
     "showDeveloperTab": false,
     "vlcPort": 39421,
-    "enableAutoUpdate": true
+    "enableOnlineUpdate": true
 }
 ```
 
@@ -224,12 +224,12 @@ exogui uses dynamic port allocation within specified ranges. The backend tries p
 
 ### Update Settings
 
-#### `enableAutoUpdate`
+#### `enableOnlineUpdate`
 
 -   **Type:** `boolean`
 -   **Required:** Yes
 -   **Default:** `true`
--   **Description:** Enable automatic updates for the application (Linux AppImage only)
+-   **Description:** Enable online updates for the application (Linux AppImage only)
 -   **Platform Support:**
     -   ✅ **Linux AppImage**: Fully supported
     -   ❌ **Other formats**: No effect (tar.gz, Snap, Flatpak use different update mechanisms)
@@ -241,7 +241,7 @@ exogui uses dynamic port allocation within specified ranges. The backend tries p
     -   Downloads update to temporary location if newer version available
     -   User can choose to install immediately or on next restart
 -   **Notes:**
-    -   To disable automatic updates, change this value to `false` and restart exogui
-    -   See [docs/auto-updates.md](auto-updates.md) for complete details
+    -   To disable online updates, change this value to `false` and restart exogui
+    -   See [docs/online-updates.md](online-updates.md) for complete details
 
 **Note:** All configuration changes require an application restart to take effect.

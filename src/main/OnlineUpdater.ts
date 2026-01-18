@@ -1,8 +1,8 @@
 import { app, BrowserWindow, dialog } from "electron";
 import type { AppUpdater, UpdateInfo } from "electron-updater";
 
-export type AutoUpdaterConfig = {
-    /** Enable auto-updater (only works on supported platforms) */
+export type OnlineUpdaterConfig = {
+    /** Enable online updater (only works on supported platforms) */
     enabled: boolean;
     /** Check for updates on startup */
     checkOnStartup: boolean;
@@ -14,7 +14,7 @@ export type AutoUpdaterConfig = {
     autoInstallOnQuit: boolean;
 };
 
-export type AutoUpdaterCallbacks = {
+export type OnlineUpdaterCallbacks = {
     /** Called when an update is available */
     onUpdateAvailable?: (info: UpdateInfo) => void;
     /** Called when no update is available */
@@ -27,10 +27,10 @@ export type AutoUpdaterCallbacks = {
     onDownloadProgress?: (progress: { percent: number; transferred: number; total: number }) => void;
 };
 
-export type AutoUpdaterState = {
-    /** Is auto-updater available on this platform? */
+export type OnlineUpdaterState = {
+    /** Is online updater available on this platform? */
     available: boolean;
-    /** Is auto-updater currently enabled? */
+    /** Is online updater currently enabled? */
     enabled: boolean;
     /** Current update status */
     status: "idle" | "checking" | "available" | "downloading" | "downloaded" | "error";
@@ -43,18 +43,18 @@ export type AutoUpdaterState = {
 };
 
 /**
- * AutoUpdater manager for Linux AppImage builds.
+ * OnlineUpdater manager for Linux AppImage builds.
  * Only works when app is packaged as AppImage and published to GitHub Releases.
  */
-export class AutoUpdater {
-    private config: AutoUpdaterConfig;
-    private callbacks: AutoUpdaterCallbacks;
-    private state: AutoUpdaterState;
+export class OnlineUpdater {
+    private config: OnlineUpdaterConfig;
+    private callbacks: OnlineUpdaterCallbacks;
+    private state: OnlineUpdaterState;
     private mainWindow?: BrowserWindow;
     private updateCheckTimeout?: NodeJS.Timeout;
-    private _autoUpdater?: AppUpdater;
+    private _updater?: AppUpdater;
 
-    constructor(config: Partial<AutoUpdaterConfig> = {}, callbacks: AutoUpdaterCallbacks = {}) {
+    constructor(config: Partial<OnlineUpdaterConfig> = {}, callbacks: OnlineUpdaterCallbacks = {}) {
         this.config = {
             enabled: config.enabled ?? true,
             checkOnStartup: config.checkOnStartup ?? true,
@@ -72,22 +72,22 @@ export class AutoUpdater {
             downloadProgress: 0,
         };
 
-        console.log(`[AutoUpdater] Initialized. Supported: ${this.state.available}, Enabled: ${this.state.enabled}`);
+        console.log(`[OnlineUpdater] Initialized. Supported: ${this.state.available}, Enabled: ${this.state.enabled}`);
         if (this.state.enabled) {
-            this.initializeAutoUpdater();
+            this.initializeUpdater();
         }
     }
 
     /**
-     * Initialize auto-updater asynchronously.
+     * Initialize online updater asynchronously.
      */
-    private async initializeAutoUpdater(): Promise<void> {
+    private async initializeUpdater(): Promise<void> {
         try {
-            await this.loadAutoUpdater();
+            await this.loadUpdater();
             this.setupEventHandlers();
-            this.configureAutoUpdater();
+            this.configureUpdater();
         } catch (error) {
-            console.error("[AutoUpdater] Failed to initialize:", error);
+            console.error("[OnlineUpdater] Failed to initialize:", error);
             this.state.enabled = false;
         }
     }
@@ -96,16 +96,16 @@ export class AutoUpdater {
      * Lazy-load electron-updater only when needed (production AppImage).
      * This prevents import errors in development mode.
      */
-    private async loadAutoUpdater(): Promise<AppUpdater> {
-        if (!this._autoUpdater) {
+    private async loadUpdater(): Promise<AppUpdater> {
+        if (!this._updater) {
             const { autoUpdater } = await import("electron-updater");
-            this._autoUpdater = autoUpdater;
+            this._updater = autoUpdater;
         }
-        return this._autoUpdater;
+        return this._updater;
     }
 
     /**
-     * Check if auto-updater is supported on the current platform.
+     * Check if online updater is supported on the current platform.
      * Currently only Linux AppImage is supported.
      */
     private isPlatformSupported(): boolean {
@@ -127,40 +127,39 @@ export class AutoUpdater {
     /**
      * Configure electron-updater settings.
      */
-    private configureAutoUpdater(): void {
-        if (!this._autoUpdater) return;
-        this._autoUpdater.autoDownload = this.config.autoDownload;
-        this._autoUpdater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
-        this._autoUpdater.allowDowngrade = false;
-        this._autoUpdater.logger = console;
+    private configureUpdater(): void {
+        if (!this._updater) return;
+        this._updater.autoDownload = this.config.autoDownload;
+        this._updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
+        this._updater.allowDowngrade = false;
+        this._updater.logger = console;
     }
 
     /**
      * Setup event handlers for electron-updater.
      */
     private setupEventHandlers(): void {
-        if (!this._autoUpdater) return;
+        if (!this._updater) return;
 
-        this._autoUpdater.on("checking-for-update", () => {
-            console.log("[AutoUpdater] Checking for updates...");
+        this._updater.on("checking-for-update", () => {
+            console.log("[OnlineUpdater] Checking for updates...");
             this.state.status = "checking";
         });
 
-        this._autoUpdater.on("update-available", (info: UpdateInfo) => {
-            console.log("[AutoUpdater] Update available:", info.version);
+        this._updater.on("update-available", (info: UpdateInfo) => {
+            console.log("[OnlineUpdater] Update available:", info.version);
             this.state.status = "available";
             this.state.updateInfo = info;
 
             if (this.callbacks.onUpdateAvailable) {
                 this.callbacks.onUpdateAvailable(info);
             } else {
-                // Default behavior: show notification
                 this.showUpdateAvailableNotification(info);
             }
         });
 
-        this._autoUpdater.on("update-not-available", (info: UpdateInfo) => {
-            console.log("[AutoUpdater] Update not available. Current version is latest.");
+        this._updater.on("update-not-available", (info: UpdateInfo) => {
+            console.log("[OnlineUpdater] Update not available. Current version is latest.");
             this.state.status = "idle";
             this.state.updateInfo = info;
 
@@ -169,8 +168,8 @@ export class AutoUpdater {
             }
         });
 
-        this._autoUpdater.on("download-progress", (progress) => {
-            console.log(`[AutoUpdater] Download progress: ${progress.percent.toFixed(2)}%`);
+        this._updater.on("download-progress", (progress) => {
+            console.log(`[OnlineUpdater] Download progress: ${progress.percent.toFixed(2)}%`);
             this.state.status = "downloading";
             this.state.downloadProgress = progress.percent;
 
@@ -183,8 +182,8 @@ export class AutoUpdater {
             }
         });
 
-        this._autoUpdater.on("update-downloaded", (info: UpdateInfo) => {
-            console.log("[AutoUpdater] Update downloaded:", info.version);
+        this._updater.on("update-downloaded", (info: UpdateInfo) => {
+            console.log("[OnlineUpdater] Update downloaded:", info.version);
             this.state.status = "downloaded";
             this.state.updateInfo = info;
             this.state.downloadProgress = 100;
@@ -192,13 +191,12 @@ export class AutoUpdater {
             if (this.callbacks.onUpdateDownloaded) {
                 this.callbacks.onUpdateDownloaded(info);
             } else {
-                // Default behavior: prompt user to restart
                 this.showUpdateDownloadedDialog(info);
             }
         });
 
-        this._autoUpdater.on("error", (error: Error) => {
-            console.error("[AutoUpdater] Error:", error);
+        this._updater.on("error", (error: Error) => {
+            console.error("[OnlineUpdater] Error:", error);
             this.state.status = "error";
             this.state.lastError = error;
 
@@ -261,12 +259,12 @@ export class AutoUpdater {
      */
     start(): void {
         if (!this.state.enabled) {
-            console.log("[AutoUpdater] Auto-updater is disabled or not supported on this platform.");
+            console.log("[OnlineUpdater] Online updater is disabled or not supported on this platform.");
             return;
         }
 
         if (this.config.checkOnStartup) {
-            console.log(`[AutoUpdater] Scheduling update check in ${this.config.startupCheckDelay}ms...`);
+            console.log(`[OnlineUpdater] Scheduling update check in ${this.config.startupCheckDelay}ms...`);
             this.updateCheckTimeout = setTimeout(() => {
                 this.checkForUpdates();
             }, this.config.startupCheckDelay);
@@ -277,16 +275,16 @@ export class AutoUpdater {
      * Manually check for updates.
      */
     async checkForUpdates(): Promise<UpdateInfo | null> {
-        if (!this.state.enabled || !this._autoUpdater) {
-            console.log("[AutoUpdater] Cannot check for updates: not supported or disabled.");
+        if (!this.state.enabled || !this._updater) {
+            console.log("[OnlineUpdater] Cannot check for updates: not supported or disabled.");
             return null;
         }
 
         try {
-            const result = await this._autoUpdater.checkForUpdates();
+            const result = await this._updater.checkForUpdates();
             return result?.updateInfo ?? null;
         } catch (error) {
-            console.error("[AutoUpdater] Failed to check for updates:", error);
+            console.error("[OnlineUpdater] Failed to check for updates:", error);
             return null;
         }
     }
@@ -295,20 +293,20 @@ export class AutoUpdater {
      * Manually download update (if auto-download is disabled).
      */
     async downloadUpdate(): Promise<void> {
-        if (!this.state.enabled || !this._autoUpdater) {
-            console.log("[AutoUpdater] Cannot download update: not supported or disabled.");
+        if (!this.state.enabled || !this._updater) {
+            console.log("[OnlineUpdater] Cannot download update: not supported or disabled.");
             return;
         }
 
         if (this.state.status !== "available") {
-            console.log("[AutoUpdater] No update available to download.");
+            console.log("[OnlineUpdater] No update available to download.");
             return;
         }
 
         try {
-            await this._autoUpdater.downloadUpdate();
+            await this._updater.downloadUpdate();
         } catch (error) {
-            console.error("[AutoUpdater] Failed to download update:", error);
+            console.error("[OnlineUpdater] Failed to download update:", error);
         }
     }
 
@@ -316,37 +314,37 @@ export class AutoUpdater {
      * Quit and install the downloaded update.
      */
     quitAndInstall(): void {
-        if (!this.state.enabled || !this._autoUpdater) {
-            console.log("[AutoUpdater] Cannot install update: not supported or disabled.");
+        if (!this.state.enabled || !this._updater) {
+            console.log("[OnlineUpdater] Cannot install update: not supported or disabled.");
             return;
         }
 
         if (this.state.status !== "downloaded") {
-            console.log("[AutoUpdater] No update downloaded to install.");
+            console.log("[OnlineUpdater] No update downloaded to install.");
             return;
         }
 
-        console.log("[AutoUpdater] Quitting and installing update...");
+        console.log("[OnlineUpdater] Quitting and installing update...");
         // isSilent = false, isForceRunAfter = true
-        this._autoUpdater.quitAndInstall(false, true);
+        this._updater.quitAndInstall(false, true);
     }
 
     /**
-     * Get current state of the auto-updater.
+     * Get current state of the online updater.
      */
-    getState(): Readonly<AutoUpdaterState> {
+    getState(): Readonly<OnlineUpdaterState> {
         return { ...this.state };
     }
 
     /**
      * Update configuration.
      */
-    updateConfig(config: Partial<AutoUpdaterConfig>): void {
+    updateConfig(config: Partial<OnlineUpdaterConfig>): void {
         this.config = { ...this.config, ...config };
         this.state.enabled = this.config.enabled && this.state.available;
 
         if (this.state.enabled) {
-            this.configureAutoUpdater();
+            this.configureUpdater();
         }
     }
 
@@ -359,6 +357,6 @@ export class AutoUpdater {
             this.updateCheckTimeout = undefined;
         }
 
-        this._autoUpdater?.removeAllListeners();
+        this._updater?.removeAllListeners();
     }
 }

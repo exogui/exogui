@@ -28,7 +28,7 @@ import {
 } from "electron";
 import * as path from "path";
 import * as WebSocket from "ws";
-import { AutoUpdater } from "./AutoUpdater";
+import { OnlineUpdater } from "./OnlineUpdater";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -48,8 +48,8 @@ type MainState = {
     isQuitting: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
-    /** Auto-updater instance */
-    autoUpdater?: AutoUpdater;
+    /** Online updater instance */
+    onlineUpdater?: OnlineUpdater;
 };
 
 export function main(init: Init): void {
@@ -163,9 +163,9 @@ export function main(init: Init): void {
             state.preferences = mainData.preferences;
             state.config = mainData.config;
 
-            // Initialize auto-updater
-            state.autoUpdater = new AutoUpdater({
-                enabled: state.config.enableAutoUpdate,
+            // Initialize online updater
+            state.onlineUpdater = new OnlineUpdater({
+                enabled: state.config.enableOnlineUpdate,
                 checkOnStartup: true,
                 startupCheckDelay: 5000,
                 autoDownload: true,
@@ -180,10 +180,10 @@ export function main(init: Init): void {
                 const window = createMainWindow();
                 state.window = window;
 
-                // Set window reference for auto-updater dialogs
-                if (state.autoUpdater) {
-                    state.autoUpdater.setMainWindow(window);
-                    state.autoUpdater.start();
+                // Set window reference for online updater dialogs
+                if (state.onlineUpdater) {
+                    state.onlineUpdater.setMainWindow(window);
+                    state.onlineUpdater.start();
                 }
             });
         }
@@ -214,9 +214,9 @@ export function main(init: Init): void {
     }
 
     function onAppWillQuit(event: Electron.Event): void {
-        // Cleanup auto-updater
-        if (state.autoUpdater) {
-            state.autoUpdater.cleanup();
+        // Cleanup online updater
+        if (state.onlineUpdater) {
+            state.onlineUpdater.cleanup();
         }
 
         if (!init.args["connect-remote"] && !state.isQuitting) {

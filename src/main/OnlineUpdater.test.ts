@@ -1,4 +1,4 @@
-import { AutoUpdater, AutoUpdaterConfig, AutoUpdaterCallbacks } from "./AutoUpdater";
+import { OnlineUpdater, OnlineUpdaterConfig, OnlineUpdaterCallbacks } from "./OnlineUpdater";
 import { autoUpdater } from "electron-updater";
 
 // Mock electron and electron-updater
@@ -31,7 +31,7 @@ jest.mock("electron-updater", () => ({
     },
 }));
 
-describe("AutoUpdater", () => {
+describe("OnlineUpdater", () => {
     let originalPlatform: string;
     let originalEnv: NodeJS.ProcessEnv;
 
@@ -59,7 +59,7 @@ describe("AutoUpdater", () => {
             process.env.APPIMAGE = "/path/to/app.AppImage";
             process.env.NODE_ENV = "production";
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(true);
@@ -71,7 +71,7 @@ describe("AutoUpdater", () => {
             delete process.env.APPIMAGE;
             process.env.NODE_ENV = "production";
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(false);
@@ -82,7 +82,7 @@ describe("AutoUpdater", () => {
             Object.defineProperty(process, "platform", { value: "win32" });
             process.env.NODE_ENV = "production";
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(false);
@@ -93,7 +93,7 @@ describe("AutoUpdater", () => {
             Object.defineProperty(process, "platform", { value: "darwin" });
             process.env.NODE_ENV = "production";
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(false);
@@ -105,7 +105,7 @@ describe("AutoUpdater", () => {
             process.env.APPIMAGE = "/path/to/app.AppImage";
             process.env.NODE_ENV = "development";
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(false);
@@ -122,38 +122,38 @@ describe("AutoUpdater", () => {
         });
 
         test("uses default configuration when none provided", () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.enabled).toBe(true);
         });
 
         test("respects enabled:false in config", () => {
-            const config: Partial<AutoUpdaterConfig> = {
+            const config: Partial<OnlineUpdaterConfig> = {
                 enabled: false,
             };
 
-            const updater = new AutoUpdater(config);
+            const updater = new OnlineUpdater(config);
             const state = updater.getState();
 
             expect(state.enabled).toBe(false);
         });
 
         test("respects custom configuration", () => {
-            const config: Partial<AutoUpdaterConfig> = {
+            const config: Partial<OnlineUpdaterConfig> = {
                 enabled: true,
                 checkOnStartup: false,
                 autoDownload: false,
                 autoInstallOnQuit: true,
             };
 
-            const updater = new AutoUpdater(config);
+            const updater = new OnlineUpdater(config);
             // Just verify it doesn't throw - actual config is private
             expect(updater).toBeDefined();
         });
 
         test("allows updating configuration after construction", () => {
-            const updater = new AutoUpdater({ enabled: true });
+            const updater = new OnlineUpdater({ enabled: true });
 
             updater.updateConfig({ enabled: false });
             let state = updater.getState();
@@ -173,7 +173,7 @@ describe("AutoUpdater", () => {
         });
 
         test("initial state is correct", () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.status).toBe("idle");
@@ -183,7 +183,7 @@ describe("AutoUpdater", () => {
         });
 
         test("getState returns a copy, not reference", () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state1 = updater.getState();
             const state2 = updater.getState();
 
@@ -200,7 +200,7 @@ describe("AutoUpdater", () => {
         });
 
         test("accepts callbacks in constructor", () => {
-            const callbacks: AutoUpdaterCallbacks = {
+            const callbacks: OnlineUpdaterCallbacks = {
                 onUpdateAvailable: jest.fn(),
                 onUpdateNotAvailable: jest.fn(),
                 onUpdateDownloaded: jest.fn(),
@@ -208,12 +208,12 @@ describe("AutoUpdater", () => {
                 onDownloadProgress: jest.fn(),
             };
 
-            const updater = new AutoUpdater({}, callbacks);
+            const updater = new OnlineUpdater({}, callbacks);
             expect(updater).toBeDefined();
         });
 
         test("works without callbacks", () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             expect(updater).toBeDefined();
         });
     });
@@ -226,7 +226,7 @@ describe("AutoUpdater", () => {
         });
 
         test("cleanup removes listeners", async () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
 
             await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -236,7 +236,7 @@ describe("AutoUpdater", () => {
         });
 
         test("cleanup can be called multiple times", () => {
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
 
             updater.cleanup();
             updater.cleanup();
@@ -252,7 +252,7 @@ describe("AutoUpdater", () => {
             const originalAppImage = process.env.APPIMAGE;
             delete process.env.APPIMAGE;
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
             const state = updater.getState();
 
             expect(state.available).toBe(false);
@@ -267,7 +267,7 @@ describe("AutoUpdater", () => {
         test("disabled updater methods return early without errors", () => {
             Object.defineProperty(process, "platform", { value: "win32" }); // Not supported
 
-            const updater = new AutoUpdater();
+            const updater = new OnlineUpdater();
 
             // These should all return early without throwing
             updater.start();

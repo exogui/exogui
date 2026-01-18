@@ -26,7 +26,7 @@ const configDataDefaultBase: Readonly<IAppConfigData> = Object.freeze({
     currentTheme: "fancy.css",
     showDeveloperTab: false,
     vlcPort: 39421,
-    enableAutoUpdate: true,
+    enableOnlineUpdate: true,
 });
 
 /**
@@ -109,7 +109,7 @@ export function overwriteConfigData(
     parser.prop("currentTheme", (v) => (source.currentTheme = str(v)), true);
     parser.prop("showDeveloperTab", (v) => (source.showDeveloperTab = !!v));
     parser.prop("vlcPort", (v) => (source.vlcPort = num(v)));
-    parser.prop("enableAutoUpdate", (v) => (source.enableAutoUpdate = !!v), true);
+    parser.prop("enableOnlineUpdate", (v) => (source.enableOnlineUpdate = !!v), true);
     // Do some alterations
     source.exodosPath = fixSlashes(source.exodosPath); // (Clean path)
     // Return

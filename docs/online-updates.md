@@ -1,6 +1,6 @@
-# Automatic Updates
+# Online Updates
 
-exogui supports automatic updates for select platforms using [electron-updater](https://www.electron.build/auto-update).
+exogui supports online updates for select platforms using [electron-updater](https://www.electron.build/online update).
 
 ## How It Works
 
@@ -30,10 +30,10 @@ On restart: Install update automatically
 
 ### Configuration
 
-Auto-updates can be enabled/disabled in config:
+Online updates can be enabled/disabled in config:
 
 - **Location**: `config.json` (see [config.md](./config.md) for file location)
-- **Setting**: `enableAutoUpdate: true/false`
+- **Setting**: `enableOnlineUpdate: true/false`
 - **Default**: `true`
 
 ## Platform Support Matrix
@@ -80,11 +80,11 @@ files:
 
 ### Update Requirements
 
-For automatic updates to work:
+For online updates to work:
 
 1. ✅ App must be **packaged** (not development build)
 2. ✅ Platform must be **supported** (see matrix above)
-3. ✅ `enableAutoUpdate` config set to `true`
+3. ✅ `enableOnlineUpdate` config set to `true`
 4. ✅ GitHub release must be **published** (not draft)
 5. ✅ Release must contain `latest-*.yml` manifest file
 6. ✅ Internet connection available
@@ -103,7 +103,7 @@ AppImage has built-in update support:
 
 ### For Maintainers
 
-To publish a new version with auto-updates:
+To publish a new version with online-updates:
 
 ```bash
 # 1. Bump version in package.json
@@ -140,7 +140,7 @@ If publishing manually:
 ### Updates Not Detected
 
 **Check:**
-1. Is `enableAutoUpdate` set to `true` in config.json?
+1. Is `enableOnlineUpdate` set to `true` in config.json?
 2. Is the app running as packaged AppImage? (check `process.env.APPIMAGE`)
 3. Is there a newer version published on GitHub?
 4. Does the GitHub release contain `latest-linux.yml`?
@@ -163,7 +163,7 @@ If publishing manually:
 Edit `config.json` (see [config.md](./config.md)):
 ```json
 {
-  "enableAutoUpdate": false
+  "enableOnlineUpdate": false
 }
 ```
 
@@ -186,5 +186,5 @@ Potential future enhancements:
 ## Related Documentation
 
 - [Configuration Files](./config.md) - Description of the configuration files
-- [electron-updater](https://www.electron.build/auto-update) - Official documentation
+- [electron-updater](https://www.electron.build/online update) - Official documentation
 - [GitHub Releases](https://github.com/margorski/exodos-launcher/releases) - Published releases
