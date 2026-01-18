@@ -50,8 +50,7 @@ User preferences store all non-configuration settings that control the appearanc
     },
     "showLogSource": {},
     "gameMusicPlay": true,
-    "gameMusicVolume": 0.5,
-    "enableAutoUpdate": true
+    "gameMusicVolume": 0.5
 }
 ```
 
@@ -204,32 +203,6 @@ User preferences store all non-configuration settings that control the appearanc
 -   **Description:** Volume level for game music
 -   **Range:** `0.0` (muted) to `1.0` (full volume)
 -   **UI Control:** Volume slider
-
-### Update Settings
-
-#### `enableAutoUpdate`
-
--   **Type:** `boolean`
--   **Default:** `true`
--   **Description:** Enable automatic updates for the application (Linux AppImage only)
--   **Purpose:**
-    -   When `true`, exogui automatically checks for updates on startup
-    -   Downloads updates in the background when available
-    -   Notifies user when update is ready to install
--   **Platform Support:**
-    -   ✅ **Linux AppImage**: Fully supported
-    -   ❌ **Other formats**: No effect (tar.gz, Snap, Flatpak use different update mechanisms)
-    -   ❌ **Windows/macOS**: Currently disabled (requires code signing certificates)
--   **Behavior:**
-    -   Checks for updates 5 seconds after app startup (non-blocking)
-    -   Only works in production builds (not development mode)
-    -   Compares version in GitHub releases with current version
-    -   Downloads update to temporary location if newer version available
-    -   User can choose to install immediately or on next restart
--   **UI Control:** Currently no UI toggle (manual edit only)
--   **Related Documentation:** See [docs/auto-updates.md](auto-updates.md) for complete details
-
-**Note:** To disable automatic updates, change this value to `false` and restart exogui.
 
 ## Runtime Modifications
 

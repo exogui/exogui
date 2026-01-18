@@ -165,7 +165,7 @@ export function main(init: Init): void {
 
             // Initialize auto-updater
             state.autoUpdater = new AutoUpdater({
-                enabled: state.preferences.enableAutoUpdate,
+                enabled: state.config.enableAutoUpdate,
                 checkOnStartup: true,
                 startupCheckDelay: 5000,
                 autoDownload: true,

@@ -225,8 +225,10 @@ describe("AutoUpdater", () => {
             process.env.NODE_ENV = "production";
         });
 
-        test("cleanup removes listeners", () => {
+        test("cleanup removes listeners", async () => {
             const updater = new AutoUpdater();
+
+            await new Promise((resolve) => setTimeout(resolve, 10));
 
             updater.cleanup();
 

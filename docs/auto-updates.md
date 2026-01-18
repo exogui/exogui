@@ -30,9 +30,9 @@ On restart: Install update automatically
 
 ### Configuration
 
-Auto-updates can be enabled/disabled in preferences:
+Auto-updates can be enabled/disabled in config:
 
-- **Location**: `preferences.json` (see [config.md](./config.md) for file location)
+- **Location**: `config.json` (see [config.md](./config.md) for file location)
 - **Setting**: `enableAutoUpdate: true/false`
 - **Default**: `true`
 
@@ -84,7 +84,7 @@ For automatic updates to work:
 
 1. ✅ App must be **packaged** (not development build)
 2. ✅ Platform must be **supported** (see matrix above)
-3. ✅ `enableAutoUpdate` preference set to `true`
+3. ✅ `enableAutoUpdate` config set to `true`
 4. ✅ GitHub release must be **published** (not draft)
 5. ✅ Release must contain `latest-*.yml` manifest file
 6. ✅ Internet connection available
@@ -140,7 +140,7 @@ If publishing manually:
 ### Updates Not Detected
 
 **Check:**
-1. Is `enableAutoUpdate` set to `true` in preferences?
+1. Is `enableAutoUpdate` set to `true` in config.json?
 2. Is the app running as packaged AppImage? (check `process.env.APPIMAGE`)
 3. Is there a newer version published on GitHub?
 4. Does the GitHub release contain `latest-linux.yml`?
@@ -159,8 +159,8 @@ If publishing manually:
 
 ### Disable Auto-Updates
 
-**Option 1: Via Preferences**
-Edit `preferences.json` (see [config.md](./config.md)):
+**Option 1: Via Config**
+Edit `config.json` (see [config.md](./config.md)):
 ```json
 {
   "enableAutoUpdate": false
@@ -185,6 +185,6 @@ Potential future enhancements:
 
 ## Related Documentation
 
-- [Configuration Files](./config.md) - Where preferences.json is stored
+- [Configuration Files](./config.md) - Description of the configuration files
 - [electron-updater](https://www.electron.build/auto-update) - Official documentation
 - [GitHub Releases](https://github.com/margorski/exodos-launcher/releases) - Published releases
