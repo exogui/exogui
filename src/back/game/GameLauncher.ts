@@ -191,7 +191,7 @@ export namespace GameLauncher {
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
-            "install.command"
+            "install.bat" // extension will be fixed in _resolveApplicationPath
         );
         const gamePath = _resolveApplicationPath(
             setupPath,
