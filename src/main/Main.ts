@@ -168,9 +168,12 @@ export function main(init: Init): void {
                 enabled: state.config.enableOnlineUpdate,
                 checkOnStartup: true,
                 startupCheckDelay: 5000,
-                autoDownload: true,
+                autoDownload: false,
                 autoInstallOnQuit: false,
             });
+
+            // Expose updater availability to config
+            state.config.onlineUpdateSupported = state.onlineUpdater.getState().available;
 
             app.whenReady().then(() => {
                 // Set app name for Wayland WM_CLASS matching with .desktop file
@@ -180,9 +183,36 @@ export function main(init: Init): void {
                 const window = createMainWindow();
                 state.window = window;
 
-                // Set window reference for online updater dialogs
+                // Set window reference for online updater
                 if (state.onlineUpdater) {
                     state.onlineUpdater.setMainWindow(window);
+                    state.onlineUpdater.setSocketClient(state.socket);
+
+                    // Register handlers for updater requests from renderer (via backend)
+                    state.socket.register(BackOut.UPDATER_START_DOWNLOAD_REQUEST, async () => {
+                        await state.onlineUpdater?.downloadUpdate();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST, () => {
+                        state.onlineUpdater?.handleCancelRequest();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_SKIP_REQUEST, () => {
+                        state.onlineUpdater?.handleSkipRequest();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_INSTALL_NOW_REQUEST, () => {
+                        state.onlineUpdater?.quitAndInstall();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_DISMISS_ERROR_REQUEST, () => {
+                        state.onlineUpdater?.handleDismissError();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_CHECK_REQUEST, async () => {
+                        await state.onlineUpdater?.checkForUpdates();
+                    });
+
                     state.onlineUpdater.start();
                 }
             });

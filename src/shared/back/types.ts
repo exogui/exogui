@@ -41,6 +41,17 @@ export enum BackIn {
     PLAY_AUDIO_FILE,
     TOGGLE_MUSIC,
     SET_VOLUME,
+    UPDATE_START_DOWNLOAD,
+    UPDATE_CANCEL_DOWNLOAD,
+    UPDATE_SKIP,
+    UPDATE_INSTALL_NOW,
+    UPDATE_DISMISS_ERROR,
+    CHECK_FOR_UPDATES,
+    NOTIFY_UPDATE_AVAILABLE,
+    NOTIFY_UPDATE_DOWNLOAD_PROGRESS,
+    NOTIFY_UPDATE_DOWNLOADED,
+    NOTIFY_UPDATE_ERROR,
+    NOTIFY_UPDATE_CANCELLED,
 }
 
 type UnknownCallback = (...args: any[]) => any;
@@ -73,6 +84,17 @@ export type BackInTemplate = SocketTemplate<BackIn, {
     [BackIn.PLAY_AUDIO_FILE]: (filePath: string) => void;
     [BackIn.TOGGLE_MUSIC]: (newState: boolean) => void;
     [BackIn.SET_VOLUME]: (volume: number) => void;
+    [BackIn.UPDATE_START_DOWNLOAD]: () => void;
+    [BackIn.UPDATE_CANCEL_DOWNLOAD]: () => void;
+    [BackIn.UPDATE_SKIP]: () => void;
+    [BackIn.UPDATE_INSTALL_NOW]: () => void;
+    [BackIn.UPDATE_DISMISS_ERROR]: () => void;
+    [BackIn.CHECK_FOR_UPDATES]: () => void;
+    [BackIn.NOTIFY_UPDATE_AVAILABLE]: (data: UpdateAvailableData) => void;
+    [BackIn.NOTIFY_UPDATE_DOWNLOAD_PROGRESS]: (data: UpdateDownloadProgressData) => void;
+    [BackIn.NOTIFY_UPDATE_DOWNLOADED]: (data: UpdateDownloadedData) => void;
+    [BackIn.NOTIFY_UPDATE_ERROR]: (data: UpdateErrorData) => void;
+    [BackIn.NOTIFY_UPDATE_CANCELLED]: () => void;
 }>;
 
 export enum BackOut {
@@ -93,6 +115,17 @@ export enum BackOut {
     PLAYLIST_REMOVE,
     GAME_CHANGE,
     QUIT,
+    UPDATE_AVAILABLE,
+    UPDATE_DOWNLOAD_PROGRESS,
+    UPDATE_DOWNLOADED,
+    UPDATE_ERROR,
+    UPDATE_CANCELLED,
+    UPDATER_START_DOWNLOAD_REQUEST,
+    UPDATER_CANCEL_DOWNLOAD_REQUEST,
+    UPDATER_SKIP_REQUEST,
+    UPDATER_INSTALL_NOW_REQUEST,
+    UPDATER_DISMISS_ERROR_REQUEST,
+    UPDATER_CHECK_REQUEST,
 }
 
 export type BackOutTemplate = SocketTemplate<BackOut, {
@@ -113,6 +146,17 @@ export type BackOutTemplate = SocketTemplate<BackOut, {
     [BackOut.PLAYLIST_REMOVE]: (filename: string) => void;
     [BackOut.GAME_CHANGE]: (game: IGameInfo) => void;
     [BackOut.QUIT]: UnknownCallback;
+    [BackOut.UPDATE_AVAILABLE]: (data: UpdateAvailableData) => void;
+    [BackOut.UPDATE_DOWNLOAD_PROGRESS]: (data: UpdateDownloadProgressData) => void;
+    [BackOut.UPDATE_DOWNLOADED]: (data: UpdateDownloadedData) => void;
+    [BackOut.UPDATE_ERROR]: (data: UpdateErrorData) => void;
+    [BackOut.UPDATE_CANCELLED]: () => void;
+    [BackOut.UPDATER_START_DOWNLOAD_REQUEST]: () => void;
+    [BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST]: () => void;
+    [BackOut.UPDATER_SKIP_REQUEST]: () => void;
+    [BackOut.UPDATER_INSTALL_NOW_REQUEST]: () => void;
+    [BackOut.UPDATER_DISMISS_ERROR_REQUEST]: () => void;
+    [BackOut.UPDATER_CHECK_REQUEST]: () => void;
 }>;
 
 export const BackRes = {
@@ -319,3 +363,28 @@ export type PlaylistUpdateData = GamePlaylist;
 export type PlaylistRemoveData = string;
 
 export type GetPlaylistResponse = GamePlaylist[];
+
+export type UpdateAvailableData = {
+    version: string;
+    currentVersion: string;
+    releaseName: string;
+    releaseNotes: string;
+    size: number;
+};
+
+export type UpdateDownloadProgressData = {
+    percent: number;
+    transferred: number;
+    total: number;
+    bytesPerSecond: number;
+};
+
+export type UpdateDownloadedData = {
+    version: string;
+    releaseName: string;
+};
+
+export type UpdateErrorData = {
+    message: string;
+    details?: string;
+};

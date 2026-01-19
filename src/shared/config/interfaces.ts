@@ -32,4 +32,6 @@ export type IAppConfigData = {
     vlcPort: number;
     /** Enable online updates (Linux AppImage only) */
     enableOnlineUpdate: boolean;
+    /** If online updates are supported on this platform (read-only, set by OnlineUpdater) */
+    onlineUpdateSupported?: boolean;
 };

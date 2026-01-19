@@ -188,6 +188,41 @@ export class ConfigPage extends React.Component<
                         </div>
                     </div>
 
+                    {/* -- Updates -- */}
+                    <div className="setting">
+                        <p className="setting__title">
+                            {strings.updatesHeader}
+                        </p>
+                        <div className="setting__body">
+                            {/* Enable Online Updates */}
+                            <ConfigBoxCheckbox
+                                title={strings.enableOnlineUpdates}
+                                description={strings.enableOnlineUpdatesDesc}
+                                checked={this.state.enableOnlineUpdate}
+                                onToggle={this.onEnableOnlineUpdateChange}
+                                disabled={!this.isUpdateSupported()}
+                            />
+                            {!this.isUpdateSupported() && (
+                                <div className="config-page__note config-page__note--warning">
+                                    <strong>Note:</strong> {strings.updatesNotSupported}
+                                </div>
+                            )}
+                            {this.isUpdateSupported() && (
+                                <ConfigBox
+                                    title={strings.checkForUpdates}
+                                    description={strings.checkForUpdatesDesc}
+                                >
+                                    <input
+                                        type="button"
+                                        value={strings.checkNow}
+                                        className="simple-button"
+                                        onClick={this.onCheckForUpdatesClick}
+                                    />
+                                </ConfigBox>
+                            )}
+                        </div>
+                    </div>
+
                     {/* -- Save & Restart -- */}
                     <div className="setting">
                         <div className="setting__row">
@@ -246,6 +281,18 @@ export class ConfigPage extends React.Component<
         this.setState({ showDeveloperTab: isChecked });
     };
 
+    onEnableOnlineUpdateChange = (isChecked: boolean): void => {
+        this.setState({ enableOnlineUpdate: isChecked });
+    };
+
+    isUpdateSupported = (): boolean => {
+        return window.External.config.data.onlineUpdateSupported ?? false;
+    };
+
+    onCheckForUpdatesClick = (): void => {
+        window.External.back.send(BackIn.CHECK_FOR_UPDATES);
+    };
+
     onCurrentThemeChange = (value: string): void => {
         const selectedTheme = this.props.themeList.find(
             (t) => t.entryPath === value,
@@ -297,6 +344,7 @@ export class ConfigPage extends React.Component<
             currentTheme: this.state.currentTheme,
             showDeveloperTab: this.state.showDeveloperTab,
             vlcPort: this.state.vlcPort,
+            enableOnlineUpdate: this.state.enableOnlineUpdate,
         };
 
         window.External.back
