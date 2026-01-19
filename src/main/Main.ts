@@ -193,10 +193,6 @@ export function main(init: Init): void {
                         await state.onlineUpdater?.downloadUpdate();
                     });
 
-                    state.socket.register(BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST, () => {
-                        state.onlineUpdater?.handleCancelRequest();
-                    });
-
                     state.socket.register(BackOut.UPDATER_SKIP_REQUEST, () => {
                         state.onlineUpdater?.handleSkipRequest();
                     });

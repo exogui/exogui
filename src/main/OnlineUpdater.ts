@@ -299,17 +299,6 @@ export class OnlineUpdater {
     }
 
     /**
-     * Handle user request to cancel the current update process.
-     */
-    handleCancelRequest(): void {
-        console.log("[OnlineUpdater] Received cancel request from UI");
-        if (this._updater) {
-            this.state.status = "idle";
-            this.socketClient?.send(BackIn.NOTIFY_UPDATE_CANCELLED);
-        }
-    }
-
-    /**
      * Handle user request to skip the current update.
      */
     handleSkipRequest(): void {

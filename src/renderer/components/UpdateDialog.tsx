@@ -13,10 +13,11 @@ export type UpdateDialogProps = {
     downloadProgress?: UpdateDownloadProgressData;
     downloadedInfo?: UpdateDownloadedData;
     error?: UpdateErrorData;
+    hideDialog: () => void;
 };
 
 export function UpdateDialog(props: UpdateDialogProps) {
-    const { status, updateInfo, downloadProgress, downloadedInfo, error } = props;
+    const { status, updateInfo, downloadProgress, downloadedInfo, error, hideDialog } = props;
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const firstFocusableRef = React.useRef<HTMLButtonElement>(null);
 
@@ -31,7 +32,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
             if (status === "available") {
                 handleSkip();
             } else if (status === "downloading") {
-                handleCancelDownload();
+                hideDialog();
             } else if (status === "error") {
                 handleDismissError();
             }
@@ -43,7 +44,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
             if (status === "available") {
                 handleSkip();
             } else if (status === "downloading") {
-                handleCancelDownload();
+                hideDialog();
             } else if (status === "error") {
                 handleDismissError();
             }
@@ -52,10 +53,6 @@ export function UpdateDialog(props: UpdateDialogProps) {
 
     const handleStartDownload = () => {
         window.External.back.send(BackIn.UPDATE_START_DOWNLOAD);
-    };
-
-    const handleCancelDownload = () => {
-        window.External.back.send(BackIn.UPDATE_CANCEL_DOWNLOAD);
     };
 
     const handleSkip = () => {
@@ -97,7 +94,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
                 {status === "downloading" && downloadProgress && (
                     <DownloadingState
                         data={downloadProgress}
-                        onCancel={handleCancelDownload}
+                        onHide={hideDialog}
                         firstFocusableRef={firstFocusableRef}
                     />
                 )}
@@ -194,12 +191,12 @@ function AvailableState(props: AvailableStateProps) {
 
 type DownloadingStateProps = {
     data: UpdateDownloadProgressData;
-    onCancel: () => void;
+    onHide: () => void;
     firstFocusableRef: React.RefObject<HTMLButtonElement>;
 };
 
 function DownloadingState(props: DownloadingStateProps) {
-    const { data, onCancel, firstFocusableRef } = props;
+    const { data, onHide, firstFocusableRef } = props;
 
     const formatBytes = (bytes: number): string => {
         if (bytes === 0) return "0 B";
@@ -238,14 +235,17 @@ function DownloadingState(props: DownloadingStateProps) {
                         </span>
                     </div>
                 </div>
+                <div className="update-dialog__note">
+                    Download will continue in the background if you hide this dialog.
+                </div>
             </div>
             <div className="update-dialog__actions">
                 <button
                     ref={firstFocusableRef}
                     className="update-dialog__button update-dialog__button--secondary"
-                    onClick={onCancel}
+                    onClick={onHide}
                 >
-                    Cancel Download
+                    Hide
                 </button>
             </div>
         </>

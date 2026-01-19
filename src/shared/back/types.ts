@@ -42,7 +42,6 @@ export enum BackIn {
     TOGGLE_MUSIC,
     SET_VOLUME,
     UPDATE_START_DOWNLOAD,
-    UPDATE_CANCEL_DOWNLOAD,
     UPDATE_SKIP,
     UPDATE_INSTALL_NOW,
     UPDATE_DISMISS_ERROR,
@@ -85,7 +84,6 @@ export type BackInTemplate = SocketTemplate<BackIn, {
     [BackIn.TOGGLE_MUSIC]: (newState: boolean) => void;
     [BackIn.SET_VOLUME]: (volume: number) => void;
     [BackIn.UPDATE_START_DOWNLOAD]: () => void;
-    [BackIn.UPDATE_CANCEL_DOWNLOAD]: () => void;
     [BackIn.UPDATE_SKIP]: () => void;
     [BackIn.UPDATE_INSTALL_NOW]: () => void;
     [BackIn.UPDATE_DISMISS_ERROR]: () => void;
@@ -121,7 +119,6 @@ export enum BackOut {
     UPDATE_ERROR,
     UPDATE_CANCELLED,
     UPDATER_START_DOWNLOAD_REQUEST,
-    UPDATER_CANCEL_DOWNLOAD_REQUEST,
     UPDATER_SKIP_REQUEST,
     UPDATER_INSTALL_NOW_REQUEST,
     UPDATER_DISMISS_ERROR_REQUEST,
@@ -152,7 +149,6 @@ export type BackOutTemplate = SocketTemplate<BackOut, {
     [BackOut.UPDATE_ERROR]: (data: UpdateErrorData) => void;
     [BackOut.UPDATE_CANCELLED]: () => void;
     [BackOut.UPDATER_START_DOWNLOAD_REQUEST]: () => void;
-    [BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST]: () => void;
     [BackOut.UPDATER_SKIP_REQUEST]: () => void;
     [BackOut.UPDATER_INSTALL_NOW_REQUEST]: () => void;
     [BackOut.UPDATER_DISMISS_ERROR_REQUEST]: () => void;

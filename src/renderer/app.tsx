@@ -416,6 +416,7 @@ class App extends React.Component<AppProps, AppState> {
                             downloadProgress={this.props.updateDialogState.downloadProgress}
                             downloadedInfo={this.props.updateDialogState.downloadedInfo}
                             error={this.props.updateDialogState.error}
+                            hideDialog={this.props.hideDialog}
                         />
                         {/* Splash screen */}
                         <SplashScreen

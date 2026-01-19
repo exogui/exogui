@@ -233,10 +233,6 @@ export function registerRequestCallbacks(state: BackState): void {
         state.socketServer.broadcast(BackOut.UPDATER_START_DOWNLOAD_REQUEST);
     });
 
-    state.socketServer.register(BackIn.UPDATE_CANCEL_DOWNLOAD, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST);
-    });
-
     state.socketServer.register(BackIn.UPDATE_SKIP, (event) => {
         state.socketServer.broadcast(BackOut.UPDATER_SKIP_REQUEST);
     });
