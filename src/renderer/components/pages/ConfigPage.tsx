@@ -194,31 +194,32 @@ export class ConfigPage extends React.Component<
                             {strings.updatesHeader}
                         </p>
                         <div className="setting__body">
-                            {/* Enable Online Updates */}
-                            <ConfigBoxCheckbox
-                                title={strings.enableOnlineUpdates}
-                                description={strings.enableOnlineUpdatesDesc}
-                                checked={this.state.enableOnlineUpdate}
-                                onToggle={this.onEnableOnlineUpdateChange}
-                                disabled={!this.isUpdateSupported()}
-                            />
-                            {!this.isUpdateSupported() && (
+                            {this.isUpdateSupported() ? (
+                                <>
+                                    {/* Enable Online Updates */}
+                                    <ConfigBoxCheckbox
+                                        title={strings.enableOnlineUpdates}
+                                        description={strings.enableOnlineUpdatesDesc}
+                                        checked={this.state.enableOnlineUpdate}
+                                        onToggle={this.onEnableOnlineUpdateChange}
+                                    />
+                                    {/* Check for Updates */}
+                                    <ConfigBox
+                                        title={strings.checkForUpdates}
+                                        description={strings.checkForUpdatesDesc}
+                                    >
+                                        <input
+                                            type="button"
+                                            value={strings.checkNow}
+                                            className="simple-button"
+                                            onClick={this.onCheckForUpdatesClick}
+                                        />
+                                    </ConfigBox>
+                                </>
+                            ) : (
                                 <div className="config-page__note config-page__note--warning">
                                     <strong>Note:</strong> {strings.updatesNotSupported}
                                 </div>
-                            )}
-                            {this.isUpdateSupported() && (
-                                <ConfigBox
-                                    title={strings.checkForUpdates}
-                                    description={strings.checkForUpdatesDesc}
-                                >
-                                    <input
-                                        type="button"
-                                        value={strings.checkNow}
-                                        className="simple-button"
-                                        onClick={this.onCheckForUpdatesClick}
-                                    />
-                                </ConfigBox>
                             )}
                         </div>
                     </div>
