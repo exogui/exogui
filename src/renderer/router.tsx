@@ -7,6 +7,7 @@ import { Paths } from "./Paths";
 import { GameOrderChangeEvent } from "./components/GameOrder";
 import { AboutPage, AboutPageProps } from "./components/pages/About";
 import BrowsePage, { BrowsePageProps } from "./components/pages/BrowsePage";
+import { DeveloperPage } from "./components/pages/DeveloperPage";
 import { NotFoundPage } from "./components/pages/NotFoundPage";
 import {
     ConnectedConfigPage,
@@ -67,6 +68,10 @@ export class AppRouter extends React.Component<AppRouterProps> {
                 <Route
                     path={Paths.ABOUT}
                     element={<AboutPage {...aboutProps} />}
+                />
+                <Route
+                    path={Paths.DEVELOPER}
+                    element={<DeveloperPage />}
                 />
                 <Route Component={NotFoundPage} />
             </Routes>

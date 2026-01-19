@@ -28,6 +28,7 @@ import {
 } from "electron";
 import * as path from "path";
 import * as WebSocket from "ws";
+import { OnlineUpdater } from "./OnlineUpdater";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -47,6 +48,8 @@ type MainState = {
     isQuitting: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
+    /** Online updater instance */
+    onlineUpdater?: OnlineUpdater;
 };
 
 export function main(init: Init): void {
@@ -160,12 +163,58 @@ export function main(init: Init): void {
             state.preferences = mainData.preferences;
             state.config = mainData.config;
 
+            // Initialize online updater
+            state.onlineUpdater = new OnlineUpdater({
+                enabled: state.config.enableOnlineUpdate,
+                checkOnStartup: true,
+                startupCheckDelay: 5000,
+                autoDownload: false,
+                autoInstallOnQuit: false,
+            });
+
+            // Expose updater availability to config
+            state.config.onlineUpdateSupported = state.onlineUpdater.getState().available;
+
             app.whenReady().then(() => {
                 // Set app name for Wayland WM_CLASS matching with .desktop file
                 app.setName("exogui");
 
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
-                createMainWindow();
+                const window = createMainWindow();
+                state.window = window;
+
+                // Set window reference for online updater
+                if (state.onlineUpdater) {
+                    state.onlineUpdater.setMainWindow(window);
+                    state.onlineUpdater.setSocketClient(state.socket);
+
+                    // Register handlers for updater requests from renderer (via backend)
+                    state.socket.register(BackOut.UPDATER_START_DOWNLOAD_REQUEST, async () => {
+                        await state.onlineUpdater?.downloadUpdate();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_CANCEL_DOWNLOAD_REQUEST, () => {
+                        state.onlineUpdater?.handleCancelRequest();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_SKIP_REQUEST, () => {
+                        state.onlineUpdater?.handleSkipRequest();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_INSTALL_NOW_REQUEST, () => {
+                        state.onlineUpdater?.quitAndInstall();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_DISMISS_ERROR_REQUEST, () => {
+                        state.onlineUpdater?.handleDismissError();
+                    });
+
+                    state.socket.register(BackOut.UPDATER_CHECK_REQUEST, async () => {
+                        await state.onlineUpdater?.checkForUpdates();
+                    });
+
+                    state.onlineUpdater.start();
+                }
             });
         }
     }
@@ -195,6 +244,11 @@ export function main(init: Init): void {
     }
 
     function onAppWillQuit(event: Electron.Event): void {
+        // Cleanup online updater
+        if (state.onlineUpdater) {
+            state.onlineUpdater.cleanup();
+        }
+
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
             state.socket.send(BackIn.QUIT);
