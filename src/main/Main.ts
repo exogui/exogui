@@ -172,9 +172,6 @@ export function main(init: Init): void {
                 autoInstallOnQuit: false,
             });
 
-            // Expose updater availability to config
-            state.config.onlineUpdateSupported = state.onlineUpdater.getState().available;
-
             app.whenReady().then(() => {
                 // Set app name for Wayland WM_CLASS matching with .desktop file
                 app.setName("exogui");
@@ -304,6 +301,7 @@ export function main(init: Init): void {
             installed: !!state._installed,
             host: state.backHost.href,
             secret: state._secret,
+            onlineUpdateSupported: state.onlineUpdater?.getState().available,
         };
         event.returnValue = data;
     }

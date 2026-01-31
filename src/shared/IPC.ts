@@ -7,6 +7,7 @@ export type InitRendererData = {
     installed: boolean;
     host: string;
     secret: string;
+    onlineUpdateSupported?: boolean;
 };
 
 export const FlashInitChannel = "renderer-flash-init";

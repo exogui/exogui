@@ -132,6 +132,8 @@ const onInit = (async () => {
         fullExodosPath: path.resolve(config.exodosPath),
         fullJsonFolderPath: path.resolve(config.exodosPath, config.jsonFolderPath)
     };
+    // Set runtime capability from Main (not from config file)
+    window.External.config.data.onlineUpdateSupported = data.onlineUpdateSupported;
     window.External.commandMappings = commandMappings;
     window.External.fileServerPort = fileServerPort;
     window.External.log.entries = log;
