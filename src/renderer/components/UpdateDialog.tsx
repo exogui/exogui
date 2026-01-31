@@ -1,5 +1,6 @@
 import * as React from "react";
-import { BackIn } from "@shared/back/types";
+import { ipcRenderer } from "electron";
+import { UpdaterIPC } from "@shared/interfaces";
 import {
     UpdateAvailableData,
     UpdateDownloadedData,
@@ -52,19 +53,19 @@ export function UpdateDialog(props: UpdateDialogProps) {
     };
 
     const handleStartDownload = () => {
-        window.External.back.send(BackIn.UPDATE_START_DOWNLOAD);
+        ipcRenderer.send(UpdaterIPC.START_DOWNLOAD);
     };
 
     const handleSkip = () => {
-        window.External.back.send(BackIn.UPDATE_SKIP);
+        ipcRenderer.send(UpdaterIPC.SKIP_UPDATE);
     };
 
     const handleInstallNow = () => {
-        window.External.back.send(BackIn.UPDATE_INSTALL_NOW);
+        ipcRenderer.send(UpdaterIPC.INSTALL_NOW);
     };
 
     const handleDismissError = () => {
-        window.External.back.send(BackIn.UPDATE_DISMISS_ERROR);
+        ipcRenderer.send(UpdaterIPC.DISMISS_ERROR);
     };
 
     if (status === "hidden") {

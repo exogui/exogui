@@ -7,7 +7,7 @@ import {
 } from "@shared/back/types";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { APP_TITLE } from "@shared/constants";
-import { WindowIPC } from "@shared/interfaces";
+import { WindowIPC, UpdaterIPC } from "@shared/interfaces";
 import { InitRendererChannel, InitRendererData } from "@shared/IPC";
 import {
     IAppPreferencesData,
@@ -186,27 +186,47 @@ export function main(init: Init): void {
                 // Set window reference for online updater
                 if (state.onlineUpdater) {
                     state.onlineUpdater.setMainWindow(window);
-                    state.onlineUpdater.setSocketClient(state.socket);
 
-                    // Register handlers for updater requests from renderer (via backend)
-                    state.socket.register(BackOut.UPDATER_START_DOWNLOAD_REQUEST, async () => {
+                    // Register handlers for updater requests from renderer (direct IPC)
+                    ipcMain.on(UpdaterIPC.START_DOWNLOAD, async () => {
                         await state.onlineUpdater?.downloadUpdate();
                     });
 
-                    state.socket.register(BackOut.UPDATER_SKIP_REQUEST, () => {
+                    ipcMain.on(UpdaterIPC.SKIP_UPDATE, () => {
                         state.onlineUpdater?.handleSkipRequest();
                     });
 
-                    state.socket.register(BackOut.UPDATER_INSTALL_NOW_REQUEST, () => {
+                    ipcMain.on(UpdaterIPC.INSTALL_NOW, () => {
                         state.onlineUpdater?.quitAndInstall();
                     });
 
-                    state.socket.register(BackOut.UPDATER_DISMISS_ERROR_REQUEST, () => {
+                    ipcMain.on(UpdaterIPC.DISMISS_ERROR, () => {
                         state.onlineUpdater?.handleDismissError();
                     });
 
-                    state.socket.register(BackOut.UPDATER_CHECK_REQUEST, async () => {
+                    ipcMain.on(UpdaterIPC.CHECK_FOR_UPDATES, async () => {
                         await state.onlineUpdater?.checkForUpdates();
+                    });
+
+                    // Test-only handlers for DeveloperPage
+                    ipcMain.on(UpdaterIPC.TEST_UPDATE_AVAILABLE, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_AVAILABLE, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_DOWNLOAD_PROGRESS, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_DOWNLOAD_PROGRESS, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_DOWNLOADED, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_DOWNLOADED, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_ERROR, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_ERROR, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_CANCELLED, () => {
+                        window.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
                     });
 
                     state.onlineUpdater.start();

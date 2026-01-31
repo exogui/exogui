@@ -1,5 +1,7 @@
 import { englishTranslation } from "@renderer/lang/en";
+import { ipcRenderer } from "electron";
 import { BackIn } from "@shared/back/types";
+import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
@@ -291,7 +293,7 @@ export class ConfigPage extends React.Component<
     };
 
     onCheckForUpdatesClick = (): void => {
-        window.External.back.send(BackIn.CHECK_FOR_UPDATES);
+        ipcRenderer.send(UpdaterIPC.CHECK_FOR_UPDATES);
     };
 
     onCurrentThemeChange = (value: string): void => {

@@ -1,8 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import type { AppUpdater, UpdateInfo } from "electron-updater";
-import { SocketClient } from "@shared/back/SocketClient";
-import { BackIn } from "@shared/back/types";
-import type * as WebSocket from "ws";
+import { UpdaterIPC } from "@shared/interfaces";
 
 export type OnlineUpdaterConfig = {
     /** Enable online updater (only works on supported platforms) */
@@ -56,7 +54,6 @@ export class OnlineUpdater {
     private mainWindow?: BrowserWindow;
     private updateCheckTimeout?: NodeJS.Timeout;
     private _updater?: AppUpdater;
-    private socketClient?: SocketClient<WebSocket>;
 
     constructor(config: Partial<OnlineUpdaterConfig> = {}, callbacks: OnlineUpdaterCallbacks = {}) {
         this.config = {
@@ -185,8 +182,8 @@ export class OnlineUpdater {
                 });
             }
 
-            if (this.socketClient) {
-                this.socketClient.send(BackIn.NOTIFY_UPDATE_DOWNLOAD_PROGRESS, {
+            if (this.mainWindow) {
+                this.mainWindow.webContents.send(UpdaterIPC.UPDATE_DOWNLOAD_PROGRESS, {
                     percent: progress.percent,
                     transferred: progress.transferred,
                     total: progress.total,
@@ -217,8 +214,8 @@ export class OnlineUpdater {
                 this.callbacks.onError(error);
             }
 
-            if (this.socketClient) {
-                this.socketClient.send(BackIn.NOTIFY_UPDATE_ERROR, {
+            if (this.mainWindow) {
+                this.mainWindow.webContents.send(UpdaterIPC.UPDATE_ERROR, {
                     message: error.message || "An error occurred while updating",
                     details: error.stack,
                 });
@@ -248,8 +245,8 @@ export class OnlineUpdater {
      * Asks user for confirmation to download.
      */
     private async showUpdateAvailableNotification(info: UpdateInfo): Promise<void> {
-        if (!this.socketClient) {
-            console.warn("[OnlineUpdater] Cannot show update notification: socket client not set");
+        if (!this.mainWindow) {
+            console.warn("[OnlineUpdater] Cannot show update notification: main window not set");
             return;
         }
 
@@ -257,7 +254,7 @@ export class OnlineUpdater {
         const releaseName = info.releaseName || `Version ${info.version}`;
         const size = info?.files?.[0]?.size ?? 0;
 
-        this.socketClient.send(BackIn.NOTIFY_UPDATE_AVAILABLE, {
+        this.mainWindow.webContents.send(UpdaterIPC.UPDATE_AVAILABLE, {
             version: info.version,
             currentVersion: app.getVersion(),
             releaseName: releaseName,
@@ -271,14 +268,14 @@ export class OnlineUpdater {
      * Show dialog that update has been downloaded.
      */
     private showUpdateDownloadedDialog(info: UpdateInfo): void {
-        if (!this.socketClient) {
-            console.warn("[OnlineUpdater] Cannot show update downloaded notification: socket client not set");
+        if (!this.mainWindow) {
+            console.warn("[OnlineUpdater] Cannot show update downloaded notification: main window not set");
             return;
         }
 
         const releaseName = info.releaseName || `Version ${info.version}`;
 
-        this.socketClient.send(BackIn.NOTIFY_UPDATE_DOWNLOADED, {
+        this.mainWindow.webContents.send(UpdaterIPC.UPDATE_DOWNLOADED, {
             version: info.version,
             releaseName: releaseName,
         });
@@ -292,19 +289,12 @@ export class OnlineUpdater {
     }
 
     /**
-     * Set the socket client for IPC communication.
-     */
-    setSocketClient(client: SocketClient<WebSocket>): void {
-        this.socketClient = client;
-    }
-
-    /**
      * Handle user request to skip the current update.
      */
     handleSkipRequest(): void {
         console.log("[OnlineUpdater] User skipped update");
         this.state.status = "idle";
-        this.socketClient?.send(BackIn.NOTIFY_UPDATE_CANCELLED);
+        this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
     }
 
     /**
@@ -313,7 +303,7 @@ export class OnlineUpdater {
     handleDismissError(): void {
         console.log("[OnlineUpdater] Error dismissed by user");
         this.state.status = "idle";
-        this.socketClient?.send(BackIn.NOTIFY_UPDATE_CANCELLED);
+        this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
     }
 
     /**

@@ -208,44 +208,4 @@ export function registerRequestCallbacks(state: BackState): void {
     state.socketServer.register(BackIn.QUIT, () => {
         exit();
     });
-
-    state.socketServer.register(BackIn.NOTIFY_UPDATE_AVAILABLE, (event, data) => {
-        state.socketServer.broadcast(BackOut.UPDATE_AVAILABLE, data);
-    });
-
-    state.socketServer.register(BackIn.NOTIFY_UPDATE_DOWNLOAD_PROGRESS, (event, data) => {
-        state.socketServer.broadcast(BackOut.UPDATE_DOWNLOAD_PROGRESS, data);
-    });
-
-    state.socketServer.register(BackIn.NOTIFY_UPDATE_DOWNLOADED, (event, data) => {
-        state.socketServer.broadcast(BackOut.UPDATE_DOWNLOADED, data);
-    });
-
-    state.socketServer.register(BackIn.NOTIFY_UPDATE_ERROR, (event, data) => {
-        state.socketServer.broadcast(BackOut.UPDATE_ERROR, data);
-    });
-
-    state.socketServer.register(BackIn.NOTIFY_UPDATE_CANCELLED, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATE_CANCELLED);
-    });
-
-    state.socketServer.register(BackIn.UPDATE_START_DOWNLOAD, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_START_DOWNLOAD_REQUEST);
-    });
-
-    state.socketServer.register(BackIn.UPDATE_SKIP, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_SKIP_REQUEST);
-    });
-
-    state.socketServer.register(BackIn.UPDATE_INSTALL_NOW, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_INSTALL_NOW_REQUEST);
-    });
-
-    state.socketServer.register(BackIn.UPDATE_DISMISS_ERROR, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_DISMISS_ERROR_REQUEST);
-    });
-
-    state.socketServer.register(BackIn.CHECK_FOR_UPDATES, (event) => {
-        state.socketServer.broadcast(BackOut.UPDATER_CHECK_REQUEST);
-    });
 }

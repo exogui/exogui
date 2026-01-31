@@ -21,9 +21,11 @@ Check GitHub Releases for latest-*.yml
     ↓
 Compare versions: remote > current ?
     ↓
-If YES: Download update in background
+If YES: Show update dialog
     ↓
-Notify user: "Update ready, restart now or later?"
+User clicks "Download" → Download update
+    ↓
+Download complete → Prompt to restart
     ↓
 On restart: Install update automatically
 ```
@@ -179,9 +181,9 @@ Potential future enhancements:
 - [ ] Windows NSIS support (when code signing certificate available)
 - [ ] macOS DMG support (when Apple Developer account + notarization available)
 - [ ] Update channel selection (stable/beta)
-- [ ] Manual "Check for Updates" button in UI
-- [ ] Update download progress indicator
-- [ ] Release notes display
+- [x] Manual "Check for Updates" button in UI
+- [x] Update download progress indicator
+- [x] Release notes display
 
 ## Related Documentation
 

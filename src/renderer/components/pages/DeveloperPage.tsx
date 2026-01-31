@@ -1,12 +1,13 @@
 import * as React from "react";
-import { BackIn } from "@shared/back/types";
+import { ipcRenderer } from "electron";
+import { UpdaterIPC } from "@shared/interfaces";
 
 export function DeveloperPage() {
     const [downloadProgress, setDownloadProgress] = React.useState(0);
     const [isDownloading, setIsDownloading] = React.useState(false);
 
     const testUpdateAvailable = () => {
-        window.External.back.send(BackIn.NOTIFY_UPDATE_AVAILABLE, {
+        ipcRenderer.send(UpdaterIPC.TEST_UPDATE_AVAILABLE, {
             version: "1.3.0",
             currentVersion: "1.2.4",
             releaseName: "Feature Update - Online Updater",
@@ -46,7 +47,7 @@ export function DeveloperPage() {
                 const total = 125829120;
                 const bytesPerSecond = 2500000 + Math.random() * 1000000;
 
-                window.External.back.send(BackIn.NOTIFY_UPDATE_DOWNLOAD_PROGRESS, {
+                ipcRenderer.send(UpdaterIPC.TEST_DOWNLOAD_PROGRESS, {
                     percent: next,
                     transferred: transferred,
                     total: total,
@@ -59,14 +60,14 @@ export function DeveloperPage() {
     };
 
     const testUpdateDownloaded = () => {
-        window.External.back.send(BackIn.NOTIFY_UPDATE_DOWNLOADED, {
+        ipcRenderer.send(UpdaterIPC.TEST_DOWNLOADED, {
             version: "1.3.0",
             releaseName: "Feature Update - Online Updater",
         });
     };
 
     const testUpdateError = () => {
-        window.External.back.send(BackIn.NOTIFY_UPDATE_ERROR, {
+        ipcRenderer.send(UpdaterIPC.TEST_ERROR, {
             message: "Failed to download update",
             details: `Error: ECONNREFUSED: Connection refused
     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1148:16)
@@ -80,7 +81,7 @@ export function DeveloperPage() {
     const testCancelUpdate = () => {
         setIsDownloading(false);
         setDownloadProgress(0);
-        window.External.back.send(BackIn.NOTIFY_UPDATE_CANCELLED);
+        ipcRenderer.send(UpdaterIPC.TEST_CANCELLED);
     };
 
     const testFullFlow = async () => {
@@ -96,7 +97,7 @@ export function DeveloperPage() {
             const total = 125829120;
             const bytesPerSecond = 2500000 + Math.random() * 1000000;
 
-            window.External.back.send(BackIn.NOTIFY_UPDATE_DOWNLOAD_PROGRESS, {
+            ipcRenderer.send(UpdaterIPC.TEST_DOWNLOAD_PROGRESS, {
                 percent: i,
                 transferred: transferred,
                 total: total,

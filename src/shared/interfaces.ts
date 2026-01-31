@@ -147,6 +147,39 @@ export enum WindowIPC {
     WINDOW_RESIZE = "window-resize",
 }
 
+export enum UpdaterIPC {
+    /** Main -> Renderer: Update is available */
+    UPDATE_AVAILABLE = "updater:update-available",
+    /** Main -> Renderer: Download progress update */
+    UPDATE_DOWNLOAD_PROGRESS = "updater:download-progress",
+    /** Main -> Renderer: Update downloaded */
+    UPDATE_DOWNLOADED = "updater:downloaded",
+    /** Main -> Renderer: Update error */
+    UPDATE_ERROR = "updater:error",
+    /** Main -> Renderer: Update cancelled/dismissed */
+    UPDATE_CANCELLED = "updater:cancelled",
+    /** Renderer -> Main: Start download */
+    START_DOWNLOAD = "updater:start-download",
+    /** Renderer -> Main: Skip update */
+    SKIP_UPDATE = "updater:skip",
+    /** Renderer -> Main: Install now */
+    INSTALL_NOW = "updater:install-now",
+    /** Renderer -> Main: Dismiss error */
+    DISMISS_ERROR = "updater:dismiss-error",
+    /** Renderer -> Main: Check for updates */
+    CHECK_FOR_UPDATES = "updater:check",
+    /** Test-only: Renderer -> Main: Simulate update available */
+    TEST_UPDATE_AVAILABLE = "updater:test-available",
+    /** Test-only: Renderer -> Main: Simulate download progress */
+    TEST_DOWNLOAD_PROGRESS = "updater:test-progress",
+    /** Test-only: Renderer -> Main: Simulate update downloaded */
+    TEST_DOWNLOADED = "updater:test-downloaded",
+    /** Test-only: Renderer -> Main: Simulate update error */
+    TEST_ERROR = "updater:test-error",
+    /** Test-only: Renderer -> Main: Simulate cancelled */
+    TEST_CANCELLED = "updater:test-cancelled",
+}
+
 /** IPC channels used to relay game manager events from  */
 
 export type IBackProcessInfo = {

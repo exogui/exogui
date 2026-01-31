@@ -5,7 +5,7 @@ import { Theme } from "@shared/ThemeFile";
 import { getFileServerURL } from "@shared/Util";
 import { BackIn, BackInit, BackOut } from "@shared/back/types";
 import { APP_TITLE } from "@shared/constants";
-import { ExodosBackendInfo, GamePlaylist, WindowIPC } from "@shared/interfaces";
+import { ExodosBackendInfo, GamePlaylist, WindowIPC, UpdaterIPC } from "@shared/interfaces";
 import { getLibraryItemTitle } from "@shared/library/util";
 import { memoizeOne } from "@shared/memoize";
 import { updatePreferencesData } from "@shared/preferences/util";
@@ -304,40 +304,25 @@ class App extends React.Component<AppProps, AppState> {
             }
         );
 
-        window.External.back.register(
-            BackOut.UPDATE_AVAILABLE,
-            (event, data) => {
-                this.props.showUpdateAvailable(data);
-            }
-        );
+        ipcRenderer.on(UpdaterIPC.UPDATE_AVAILABLE, (event, data) => {
+            this.props.showUpdateAvailable(data);
+        });
 
-        window.External.back.register(
-            BackOut.UPDATE_DOWNLOAD_PROGRESS,
-            (event, data) => {
-                this.props.showDownloading(data);
-            }
-        );
+        ipcRenderer.on(UpdaterIPC.UPDATE_DOWNLOAD_PROGRESS, (event, data) => {
+            this.props.showDownloading(data);
+        });
 
-        window.External.back.register(
-            BackOut.UPDATE_DOWNLOADED,
-            (event, data) => {
-                this.props.showDownloaded(data);
-            }
-        );
+        ipcRenderer.on(UpdaterIPC.UPDATE_DOWNLOADED, (event, data) => {
+            this.props.showDownloaded(data);
+        });
 
-        window.External.back.register(
-            BackOut.UPDATE_ERROR,
-            (event, data) => {
-                this.props.showError(data);
-            }
-        );
+        ipcRenderer.on(UpdaterIPC.UPDATE_ERROR, (event, data) => {
+            this.props.showError(data);
+        });
 
-        window.External.back.register(
-            BackOut.UPDATE_CANCELLED,
-            () => {
-                this.props.hideDialog();
-            }
-        );
+        ipcRenderer.on(UpdaterIPC.UPDATE_CANCELLED, () => {
+            this.props.hideDialog();
+        });
 
         window.External.back.request(BackIn.INIT_LISTEN).then((data) => {
             for (const key of data) {
