@@ -39,27 +39,33 @@ jobs:
         include:
           - name: Linux
             runner: ubuntu-latest
-            script: release:linux
+            script: publish:linux
             artifact-pattern: |
               dist/*.tar.gz
               dist/*.AppImage
+              dist/*.yml
 
           - name: Windows
             runner: windows-latest
-            script: release:win32
+            script: publish:win32
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
+              dist/*.yml
 
           - name: macOS (Intel)
             runner: macos-15-intel
-            script: release:darwin
-            artifact-pattern: "dist/*.dmg"
+            script: publish:darwin
+            artifact-pattern: |
+              dist/*.dmg
+              dist/*.yml
 
           - name: macOS (Apple Silicon)
             runner: macos-latest
-            script: release:m1
-            artifact-pattern: "dist/*.dmg"
+            script: publish:m1
+            artifact-pattern: |
+              dist/*.dmg
+              dist/*.yml
 
     steps:
       - uses: actions/checkout@v4
