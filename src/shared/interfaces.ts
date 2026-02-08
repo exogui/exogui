@@ -1,6 +1,7 @@
 import { OpenDialogOptions } from "electron";
 import { SocketClient } from "./back/SocketClient";
 import { IAppConfigData } from "./config/interfaces";
+import { RuntimeCapabilities } from "./IPC";
 import { ILogEntry } from "./Log/interface";
 import { IAppCommandsMappingData } from "./mappings/interfaces";
 import { IAppPreferencesData } from "./preferences/interfaces";
@@ -90,6 +91,9 @@ export interface IMainWindowExternal {
 
     /** Whether VLC player is available for background music (Windows only). */
     vlcAvailable: boolean;
+
+    /** Runtime capabilities detected at startup (read-only). */
+    runtime: RuntimeCapabilities;
 
     /**
      * Wait for the preload to initialize.

@@ -289,7 +289,7 @@ export class ConfigPage extends React.Component<
     };
 
     isUpdateSupported = (): boolean => {
-        return window.External.config.data.onlineUpdateSupported ?? false;
+        return window.External.runtime.onlineUpdateSupported;
     };
 
     onCheckForUpdatesClick = (): void => {
