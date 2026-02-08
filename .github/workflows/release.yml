@@ -43,7 +43,7 @@ jobs:
             artifact-pattern: |
               dist/*.tar.gz
               dist/*.AppImage
-              dist/*.yml
+              dist/latest-linux.yml
 
           - name: Windows
             runner: windows-latest
@@ -51,21 +51,21 @@ jobs:
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
-              dist/*.yml
+              dist/latest.yml
 
           - name: macOS (Intel)
             runner: macos-15-intel
             script: release:darwin
             artifact-pattern: |
               dist/*.dmg
-              dist/*.yml
+              dist/latest-mac.yml
 
           - name: macOS (Apple Silicon)
             runner: macos-latest
             script: release:m1
             artifact-pattern: |
               dist/*.dmg
-              dist/*.yml
+              dist/latest-mac.yml
 
     steps:
       - uses: actions/checkout@v4
