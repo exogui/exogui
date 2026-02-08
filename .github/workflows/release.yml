@@ -39,7 +39,7 @@ jobs:
         include:
           - name: Linux
             runner: ubuntu-latest
-            script: publish:linux
+            script: release:linux
             artifact-pattern: |
               dist/*.tar.gz
               dist/*.AppImage
@@ -47,7 +47,7 @@ jobs:
 
           - name: Windows
             runner: windows-latest
-            script: publish:win32
+            script: release:win32
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
@@ -55,14 +55,14 @@ jobs:
 
           - name: macOS (Intel)
             runner: macos-15-intel
-            script: publish:darwin
+            script: release:darwin
             artifact-pattern: |
               dist/*.dmg
               dist/*.yml
 
           - name: macOS (Apple Silicon)
             runner: macos-latest
-            script: publish:m1
+            script: release:m1
             artifact-pattern: |
               dist/*.dmg
               dist/*.yml
@@ -83,6 +83,9 @@ jobs:
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
+        env:
+          PUBLISH: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List dist directory
         shell: bash
