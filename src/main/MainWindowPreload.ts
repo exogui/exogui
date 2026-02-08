@@ -112,7 +112,7 @@ const onInit = (async () => {
     const data: InitRendererData =
         electron.ipcRenderer.sendSync(InitRendererChannel);
     window.External.installed = data.installed;
-    window.External.version = parseFloat(data.version);
+    window.External.version = data.version;
     window.External.isBackRemote = data.isBackRemote;
     window.External.backUrl = new URL(data.host);
     // Connect to the backend

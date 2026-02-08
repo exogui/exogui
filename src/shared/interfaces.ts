@@ -23,7 +23,7 @@ export interface IMainWindowExternal {
     installed: boolean;
 
     /** Version of the current launcher build. */
-    version: number;
+    version: string;
 
     /** The type of OS this is running on. */
     platform: NodeJS.Platform;
