@@ -16,9 +16,9 @@ exogui is an Electron-based desktop application for browsing, managing, and laun
 
 Currently supported:
 
--   **eXoDOS** - DOS games collection
--   **eXoDREAMM** - Dreamcast games collection
--   **eXoDemoscene** - Demoscene collection
+-   **eXoDOS**
+-   **eXoDREAMM**
+-   **eXoDemoscene**
 
 More eXo projects coming in the future!
 
