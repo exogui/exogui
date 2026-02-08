@@ -63,9 +63,7 @@ jobs:
           - name: macOS (Apple Silicon)
             runner: macos-latest
             script: release:m1
-            artifact-pattern: |
-              dist/*.dmg
-              dist/latest-mac.yml
+            artifact-pattern: dist/*.dmg
 
     steps:
       - uses: actions/checkout@v4
