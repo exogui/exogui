@@ -70,7 +70,9 @@ export class OnlineUpdater {
         };
 
         console.log(`[OnlineUpdater] Initialized. Supported: ${this.state.available}, Enabled: ${this.state.enabled}`);
-        if (this.state.enabled) {
+        // Always initialize if platform is supported, regardless of enabled state
+        // This allows manual update checks even when automatic updates are disabled
+        if (this.state.available) {
             this.initializeUpdater();
         }
     }
@@ -333,8 +335,8 @@ export class OnlineUpdater {
      * Manually check for updates.
      */
     async checkForUpdates(): Promise<UpdateInfo | null> {
-        if (!this.state.enabled || !this._updater) {
-            console.log("[OnlineUpdater] Cannot check for updates: not supported or disabled.");
+        if (!this.state.available || !this._updater) {
+            console.log("[OnlineUpdater] Cannot check for updates: not supported.");
             return null;
         }
 
@@ -351,8 +353,8 @@ export class OnlineUpdater {
      * Manually download update (if auto-download is disabled).
      */
     async downloadUpdate(): Promise<void> {
-        if (!this.state.enabled || !this._updater) {
-            console.log("[OnlineUpdater] Cannot download update: not supported or disabled.");
+        if (!this.state.available || !this._updater) {
+            console.log("[OnlineUpdater] Cannot download update: not supported.");
             return;
         }
 
