@@ -749,13 +749,13 @@ body {
 }
 
 .about-page__logo {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin: 2em 0;
 }
 
 .about-page__logo img {
-  display: block;
-  margin: 0 auto;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
