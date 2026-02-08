@@ -426,6 +426,19 @@ export function main(init: Init): void {
                 isMaximized
             );
         });
+        // Send maximize/unmaximize events
+        window.on("maximize", () => {
+            if (!window) {
+                throw new Error();
+            }
+            window.webContents.send(WindowIPC.WINDOW_MAXIMIZE, true);
+        });
+        window.on("unmaximize", () => {
+            if (!window) {
+                throw new Error();
+            }
+            window.webContents.send(WindowIPC.WINDOW_MAXIMIZE, false);
+        });
         // Derefence window when closed
         window.on("closed", () => {
             if (state.window === window) {
