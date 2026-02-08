@@ -7,8 +7,6 @@ export type OnlineUpdaterConfig = {
     enabled: boolean;
     /** Check for updates on startup */
     checkOnStartup: boolean;
-    /** Delay before checking for updates on startup (ms) */
-    startupCheckDelay: number;
     /** Auto-download updates when available */
     autoDownload: boolean;
     /** Auto-install updates on quit */
@@ -52,14 +50,12 @@ export class OnlineUpdater {
     private callbacks: OnlineUpdaterCallbacks;
     private state: OnlineUpdaterState;
     private mainWindow?: BrowserWindow;
-    private updateCheckTimeout?: NodeJS.Timeout;
     private _updater?: AppUpdater;
 
     constructor(config: Partial<OnlineUpdaterConfig> = {}, callbacks: OnlineUpdaterCallbacks = {}) {
         this.config = {
             enabled: config.enabled ?? true,
             checkOnStartup: config.checkOnStartup ?? true,
-            startupCheckDelay: config.startupCheckDelay ?? 5000,
             autoDownload: config.autoDownload ?? false,
             autoInstallOnQuit: config.autoInstallOnQuit ?? false,
         };
@@ -308,7 +304,6 @@ export class OnlineUpdater {
 
     /**
      * Start checking for updates.
-     * Optionally schedules check after a delay.
      */
     start(): void {
         if (!this.state.enabled) {
@@ -317,10 +312,8 @@ export class OnlineUpdater {
         }
 
         if (this.config.checkOnStartup) {
-            console.log(`[OnlineUpdater] Scheduling update check in ${this.config.startupCheckDelay}ms...`);
-            this.updateCheckTimeout = setTimeout(() => {
-                this.checkForUpdates();
-            }, this.config.startupCheckDelay);
+            console.log("[OnlineUpdater] Checking for updates...");
+            this.checkForUpdates();
         }
     }
 
@@ -405,11 +398,6 @@ export class OnlineUpdater {
      * Cleanup resources.
      */
     cleanup(): void {
-        if (this.updateCheckTimeout) {
-            clearTimeout(this.updateCheckTimeout);
-            this.updateCheckTimeout = undefined;
-        }
-
         this._updater?.removeAllListeners();
     }
 }

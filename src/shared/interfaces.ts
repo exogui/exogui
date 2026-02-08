@@ -178,6 +178,8 @@ export enum UpdaterIPC {
     TEST_ERROR = "updater:test-error",
     /** Test-only: Renderer -> Main: Simulate cancelled */
     TEST_CANCELLED = "updater:test-cancelled",
+    /** Renderer -> Main: Renderer is ready to receive update notifications */
+    RENDERER_READY = "updater:renderer-ready",
 }
 
 /** IPC channels used to relay game manager events from  */

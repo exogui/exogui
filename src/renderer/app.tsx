@@ -324,6 +324,9 @@ class App extends React.Component<AppProps, AppState> {
             this.props.hideDialog();
         });
 
+        // Notify Main that renderer is ready for update notifications
+        ipcRenderer.send(UpdaterIPC.RENDERER_READY);
+
         window.External.back.request(BackIn.INIT_LISTEN).then((data) => {
             for (const key of data) {
                 const numKey = Number(key);

@@ -167,7 +167,6 @@ export function main(init: Init): void {
             state.onlineUpdater = new OnlineUpdater({
                 enabled: state.config.enableOnlineUpdate,
                 checkOnStartup: true,
-                startupCheckDelay: 5000,
                 autoDownload: false,
                 autoInstallOnQuit: false,
             });
@@ -226,7 +225,10 @@ export function main(init: Init): void {
                         window.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
                     });
 
-                    state.onlineUpdater.start();
+                    // Wait for renderer to signal it's ready before starting updater
+                    ipcMain.once(UpdaterIPC.RENDERER_READY, () => {
+                        state.onlineUpdater?.start();
+                    });
                 }
             });
         }
