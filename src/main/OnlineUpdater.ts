@@ -389,6 +389,10 @@ export class OnlineUpdater {
         this.config = { ...this.config, ...config };
         this.state.enabled = this.config.enabled && this.state.available;
 
+        if (this.config.enabled && !this.state.available) {
+            console.warn("[OnlineUpdater] Cannot enable updates: not supported on this platform");
+        }
+
         if (this.state.enabled) {
             this.configureUpdater();
         }

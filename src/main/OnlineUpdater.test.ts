@@ -163,6 +163,23 @@ describe("OnlineUpdater", () => {
             state = updater.getState();
             expect(state.enabled).toBe(true);
         });
+
+        test("warns when trying to enable updates on unsupported platform", () => {
+            Object.defineProperty(process, "platform", { value: "win32" }); // Not supported
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+
+            const updater = new OnlineUpdater({ enabled: false });
+            updater.updateConfig({ enabled: true });
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                "[OnlineUpdater] Cannot enable updates: not supported on this platform"
+            );
+
+            const state = updater.getState();
+            expect(state.enabled).toBe(false);
+
+            consoleWarnSpy.mockRestore();
+        });
     });
 
     describe("State Management", () => {
