@@ -2071,7 +2071,7 @@ body {
 
 .update-dialog__header {
   background: linear-gradient(135deg, var(--layout__game-item-background-selected), var(--layout__game-item-background-selected-hover));
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   border-bottom: 2px solid var(--layout__primary-outline-color);
   border-radius: 6px 6px 0 0;
 }
@@ -2086,7 +2086,7 @@ body {
 
 .update-dialog__title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--layout__highlighted-text-color);
   font-weight: 600;
 }
