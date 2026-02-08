@@ -1937,8 +1937,8 @@ body {
   pointer-events: none;
 }
 .splash-screen__logo {
-  width: 768px;
-  height: 512px;
+  width: 614px;
+  height: 410px;
   background-image: url("../images/exogui-logo.png");
   background-size: contain;
   background-repeat: no-repeat;
