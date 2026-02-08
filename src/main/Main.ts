@@ -75,6 +75,7 @@ export function main(init: Init): void {
         // Disable sandbox for Linux (required for AppImage and some distros)
         if (process.platform === "linux") {
             app.commandLine.appendSwitch("no-sandbox");
+            app.commandLine.appendSwitch("disable-dev-shm-usage");
             // Enable Wayland window decorations (helps with icon display)
             app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
             // Set WM_CLASS for proper Wayland icon matching

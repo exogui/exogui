@@ -442,7 +442,8 @@ class App extends React.Component<AppProps, AppState> {
                                     </noscript>
                                 </div>
                                 {/* Footer */}
-                                {libraryPath && (
+                                {(this.props.location.pathname === Paths.HOME ||
+                                  this.props.location.pathname.startsWith(Paths.BROWSE.replace('*', ''))) && (
                                     <ConnectedFooter
                                         totalCount={this.props.totalGames}
                                         currentLabel={
