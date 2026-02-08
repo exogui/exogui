@@ -196,8 +196,8 @@ function createPublishInfo() {
     return [
         {
             provider: "github",
-            owner: "margorski",
-            repo: "exodos-launcher",
+            owner: "exogui",
+            repo: "exogui",
         },
     ];
 }

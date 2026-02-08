@@ -5,7 +5,7 @@
     "main": "build/main/index.js",
     "repository": {
         "type": "git",
-        "url": "https://github.com/margorski/exodos-launcher.git"
+        "url": "https://github.com/exogui/exogui.git"
     },
     "config": {
         "installed": false
