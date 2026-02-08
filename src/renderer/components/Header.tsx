@@ -53,6 +53,27 @@ export function Header(props: HeaderProps) {
             type: "separator",
         },
         {
+            label: "Advanced",
+            type: "submenu",
+            submenu: [
+                {
+                    label: "Logs",
+                    click() {
+                        navigate(Paths.LOGS);
+                    },
+                },
+                {
+                    label: "Developer",
+                    click() {
+                        navigate(Paths.DEVELOPER);
+                    },
+                },
+            ],
+        },
+        {
+            type: "separator",
+        },
+        {
             label: "Config",
             click() {
                 navigate(Paths.CONFIG);
