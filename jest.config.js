@@ -1,4 +1,5 @@
 module.exports = {
+    silent: true,
     projects: [
         {
             displayName: 'backend',

@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import gamesReducer from "./gamesSlice";
 import loadingReducer from "./loadingSlice";
 import searchReducer from "./searchSlice";
+import updateDialogReducer from "./updateDialogSlice";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { addGamesMiddleware } from "./gamesMiddleware";
 import { addSearchMiddleware } from "./searchMiddleware";
@@ -16,6 +17,7 @@ export const store = configureStore({
         gamesState: gamesReducer,
         loadingState: loadingReducer,
         searchState: searchReducer,
+        updateDialogState: updateDialogReducer,
     },
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware().prepend(listenerMiddleware.middleware);

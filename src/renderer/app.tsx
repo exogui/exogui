@@ -5,7 +5,7 @@ import { Theme } from "@shared/ThemeFile";
 import { getFileServerURL } from "@shared/Util";
 import { BackIn, BackInit, BackOut } from "@shared/back/types";
 import { APP_TITLE } from "@shared/constants";
-import { ExodosBackendInfo, GamePlaylist, WindowIPC } from "@shared/interfaces";
+import { ExodosBackendInfo, GamePlaylist, WindowIPC, UpdaterIPC } from "@shared/interfaces";
 import { getLibraryItemTitle } from "@shared/library/util";
 import { memoizeOne } from "@shared/memoize";
 import { updatePreferencesData } from "@shared/preferences/util";
@@ -17,6 +17,7 @@ import { Paths } from "./Paths";
 import { GameOrderChangeEvent } from "./components/GameOrder";
 import { SplashScreen } from "./components/SplashScreen";
 import { TitleBar } from "./components/TitleBar";
+import { UpdateDialog } from "./components/UpdateDialog";
 import { ConnectedFooter } from "./containers/ConnectedFooter";
 import HeaderContainer from "./containers/HeaderContainer";
 import {
@@ -29,6 +30,13 @@ import {
     setPlaylistsLoaded,
     setExecLoaded,
 } from "./redux/loadingSlice";
+import {
+    showUpdateAvailable,
+    showDownloading,
+    showDownloaded,
+    showError,
+    hideDialog,
+} from "./redux/updateDialogSlice";
 import { RootState } from "./redux/store";
 import { AppRouter, AppRouterProps } from "./router";
 import { ExodosResources, loadExoResources } from "./util/exoResources";
@@ -40,12 +48,18 @@ const mapState = (state: RootState) => ({
     totalGames: state.gamesState.totalGames,
     libraries: state.gamesState.libraries,
     loadingState: state.loadingState,
+    updateDialogState: state.updateDialogState,
 });
 
 const mapDispatch = {
     initializeLoading,
     setPlaylistsLoaded,
     setExecLoaded,
+    showUpdateAvailable,
+    showDownloading,
+    showDownloaded,
+    showError,
+    hideDialog,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -144,7 +158,7 @@ class App extends React.Component<AppProps, AppState> {
         (() => {
             let askBeforeClosing = true;
             window.onbeforeunload = (event: BeforeUnloadEvent) => {
-                const stillDownloading = false;
+                const stillDownloading = this.props.updateDialogState.status === "downloading";
                 if (askBeforeClosing && stillDownloading) {
                     event.returnValue = 1; // (Prevent closing the window)
                     dialog
@@ -290,6 +304,29 @@ class App extends React.Component<AppProps, AppState> {
             }
         );
 
+        ipcRenderer.on(UpdaterIPC.UPDATE_AVAILABLE, (event, data) => {
+            this.props.showUpdateAvailable(data);
+        });
+
+        ipcRenderer.on(UpdaterIPC.UPDATE_DOWNLOAD_PROGRESS, (event, data) => {
+            this.props.showDownloading(data);
+        });
+
+        ipcRenderer.on(UpdaterIPC.UPDATE_DOWNLOADED, (event, data) => {
+            this.props.showDownloaded(data);
+        });
+
+        ipcRenderer.on(UpdaterIPC.UPDATE_ERROR, (event, data) => {
+            this.props.showError(data);
+        });
+
+        ipcRenderer.on(UpdaterIPC.UPDATE_CANCELLED, () => {
+            this.props.hideDialog();
+        });
+
+        // Notify Main that renderer is ready for update notifications
+        ipcRenderer.send(UpdaterIPC.RENDERER_READY);
+
         window.External.back.request(BackIn.INIT_LISTEN).then((data) => {
             for (const key of data) {
                 const numKey = Number(key);
@@ -360,6 +397,15 @@ class App extends React.Component<AppProps, AppState> {
             <>
                 {!this.state.stopRender ? (
                     <>
+                        {/* Update dialog */}
+                        <UpdateDialog
+                            status={this.props.updateDialogState.status}
+                            updateInfo={this.props.updateDialogState.updateInfo}
+                            downloadProgress={this.props.updateDialogState.downloadProgress}
+                            downloadedInfo={this.props.updateDialogState.downloadedInfo}
+                            error={this.props.updateDialogState.error}
+                            hideDialog={this.props.hideDialog}
+                        />
                         {/* Splash screen */}
                         <SplashScreen
                             loadingState={loadingState}

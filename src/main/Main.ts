@@ -7,7 +7,7 @@ import {
 } from "@shared/back/types";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { APP_TITLE } from "@shared/constants";
-import { WindowIPC } from "@shared/interfaces";
+import { WindowIPC, UpdaterIPC } from "@shared/interfaces";
 import { InitRendererChannel, InitRendererData } from "@shared/IPC";
 import {
     IAppPreferencesData,
@@ -28,6 +28,7 @@ import {
 } from "electron";
 import * as path from "path";
 import * as WebSocket from "ws";
+import { OnlineUpdater } from "./OnlineUpdater";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -47,6 +48,8 @@ type MainState = {
     isQuitting: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
+    /** Online updater instance */
+    onlineUpdater?: OnlineUpdater;
 };
 
 export function main(init: Init): void {
@@ -160,12 +163,73 @@ export function main(init: Init): void {
             state.preferences = mainData.preferences;
             state.config = mainData.config;
 
+            // Initialize online updater
+            state.onlineUpdater = new OnlineUpdater({
+                enabled: state.config.enableOnlineUpdate,
+                checkOnStartup: true,
+                autoDownload: false,
+                autoInstallOnQuit: false,
+            });
+
             app.whenReady().then(() => {
                 // Set app name for Wayland WM_CLASS matching with .desktop file
                 app.setName("exogui");
 
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
-                createMainWindow();
+                const window = createMainWindow();
+                state.window = window;
+
+                // Set window reference for online updater
+                if (state.onlineUpdater) {
+                    state.onlineUpdater.setMainWindow(window);
+
+                    // Register handlers for updater requests from renderer (direct IPC)
+                    ipcMain.on(UpdaterIPC.START_DOWNLOAD, async () => {
+                        await state.onlineUpdater?.downloadUpdate();
+                    });
+
+                    ipcMain.on(UpdaterIPC.SKIP_UPDATE, () => {
+                        state.onlineUpdater?.handleSkipRequest();
+                    });
+
+                    ipcMain.on(UpdaterIPC.INSTALL_NOW, () => {
+                        state.onlineUpdater?.quitAndInstall();
+                    });
+
+                    ipcMain.on(UpdaterIPC.DISMISS_ERROR, () => {
+                        state.onlineUpdater?.handleDismissError();
+                    });
+
+                    ipcMain.on(UpdaterIPC.CHECK_FOR_UPDATES, async () => {
+                        await state.onlineUpdater?.checkForUpdates();
+                    });
+
+                    // Test-only handlers for DeveloperPage
+                    ipcMain.on(UpdaterIPC.TEST_UPDATE_AVAILABLE, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_AVAILABLE, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_DOWNLOAD_PROGRESS, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_DOWNLOAD_PROGRESS, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_DOWNLOADED, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_DOWNLOADED, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_ERROR, (event, data) => {
+                        window.webContents.send(UpdaterIPC.UPDATE_ERROR, data);
+                    });
+
+                    ipcMain.on(UpdaterIPC.TEST_CANCELLED, () => {
+                        window.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
+                    });
+
+                    // Wait for renderer to signal it's ready before starting updater
+                    ipcMain.once(UpdaterIPC.RENDERER_READY, () => {
+                        state.onlineUpdater?.start();
+                    });
+                }
             });
         }
     }
@@ -195,6 +259,11 @@ export function main(init: Init): void {
     }
 
     function onAppWillQuit(event: Electron.Event): void {
+        // Cleanup online updater
+        if (state.onlineUpdater) {
+            state.onlineUpdater.cleanup();
+        }
+
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
             state.socket.send(BackIn.QUIT);
@@ -234,6 +303,7 @@ export function main(init: Init): void {
             installed: !!state._installed,
             host: state.backHost.href,
             secret: state._secret,
+            onlineUpdateSupported: state.onlineUpdater?.getState().available,
         };
         event.returnValue = data;
     }

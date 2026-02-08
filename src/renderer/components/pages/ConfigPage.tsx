@@ -1,5 +1,7 @@
 import { englishTranslation } from "@renderer/lang/en";
+import { ipcRenderer } from "electron";
 import { BackIn } from "@shared/back/types";
+import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
@@ -188,6 +190,42 @@ export class ConfigPage extends React.Component<
                         </div>
                     </div>
 
+                    {/* -- Updates -- */}
+                    <div className="setting">
+                        <p className="setting__title">
+                            {strings.updatesHeader}
+                        </p>
+                        <div className="setting__body">
+                            {this.isUpdateSupported() ? (
+                                <>
+                                    {/* Enable Online Updates */}
+                                    <ConfigBoxCheckbox
+                                        title={strings.enableOnlineUpdates}
+                                        description={strings.enableOnlineUpdatesDesc}
+                                        checked={this.state.enableOnlineUpdate}
+                                        onToggle={this.onEnableOnlineUpdateChange}
+                                    />
+                                    {/* Check for Updates */}
+                                    <ConfigBox
+                                        title={strings.checkForUpdates}
+                                        description={strings.checkForUpdatesDesc}
+                                    >
+                                        <input
+                                            type="button"
+                                            value={strings.checkNow}
+                                            className="simple-button"
+                                            onClick={this.onCheckForUpdatesClick}
+                                        />
+                                    </ConfigBox>
+                                </>
+                            ) : (
+                                <div className="config-page__note config-page__note--warning">
+                                    <strong>Note:</strong> {strings.updatesNotSupported}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* -- Save & Restart -- */}
                     <div className="setting">
                         <div className="setting__row">
@@ -246,6 +284,18 @@ export class ConfigPage extends React.Component<
         this.setState({ showDeveloperTab: isChecked });
     };
 
+    onEnableOnlineUpdateChange = (isChecked: boolean): void => {
+        this.setState({ enableOnlineUpdate: isChecked });
+    };
+
+    isUpdateSupported = (): boolean => {
+        return window.External.runtime.onlineUpdateSupported;
+    };
+
+    onCheckForUpdatesClick = (): void => {
+        ipcRenderer.send(UpdaterIPC.CHECK_FOR_UPDATES);
+    };
+
     onCurrentThemeChange = (value: string): void => {
         const selectedTheme = this.props.themeList.find(
             (t) => t.entryPath === value,
@@ -297,6 +347,7 @@ export class ConfigPage extends React.Component<
             currentTheme: this.state.currentTheme,
             showDeveloperTab: this.state.showDeveloperTab,
             vlcPort: this.state.vlcPort,
+            enableOnlineUpdate: this.state.enableOnlineUpdate,
         };
 
         window.External.back

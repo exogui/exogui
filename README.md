@@ -106,4 +106,5 @@ exogui uses several JSON configuration files to control its behavior:
 ## Documentation
 
 -   **[docs/architecture.md](docs/architecture.md)** - Detailed architecture overview and socket communication
+-   **[docs/online-updates.md](docs/online-updates.md)** - Online updates for Linux AppImage
 -   **[docs/troubleshooting.md](docs/troubleshooting.md)** - Troubleshooting guide for common issues

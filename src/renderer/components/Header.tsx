@@ -82,6 +82,9 @@ export function Header(props: HeaderProps) {
                     ))}
                     <MenuItem title={strings.logs} link={Paths.LOGS} />
                     <MenuItem title={strings.config} link={Paths.CONFIG} />
+                    {window.External.config.data.showDeveloperTab && (
+                        <MenuItem title={strings.developer} link={Paths.DEVELOPER} />
+                    )}
                 </ul>
             </div>
         </div>

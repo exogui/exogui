@@ -1,6 +1,7 @@
 import { OpenDialogOptions } from "electron";
 import { SocketClient } from "./back/SocketClient";
 import { IAppConfigData } from "./config/interfaces";
+import { RuntimeCapabilities } from "./IPC";
 import { ILogEntry } from "./Log/interface";
 import { IAppCommandsMappingData } from "./mappings/interfaces";
 import { IAppPreferencesData } from "./preferences/interfaces";
@@ -91,6 +92,9 @@ export interface IMainWindowExternal {
     /** Whether VLC player is available for background music (Windows only). */
     vlcAvailable: boolean;
 
+    /** Runtime capabilities detected at startup (read-only). */
+    runtime: RuntimeCapabilities;
+
     /**
      * Wait for the preload to initialize.
      * @returns A promise that resolves when initialization is complete, or nothing if already initialized.
@@ -145,6 +149,41 @@ export enum WindowIPC {
     WINDOW_MOVE = "window-move",
     /** Sent whenever the windows size changes. (main -> renderer). */
     WINDOW_RESIZE = "window-resize",
+}
+
+export enum UpdaterIPC {
+    /** Main -> Renderer: Update is available */
+    UPDATE_AVAILABLE = "updater:update-available",
+    /** Main -> Renderer: Download progress update */
+    UPDATE_DOWNLOAD_PROGRESS = "updater:download-progress",
+    /** Main -> Renderer: Update downloaded */
+    UPDATE_DOWNLOADED = "updater:downloaded",
+    /** Main -> Renderer: Update error */
+    UPDATE_ERROR = "updater:error",
+    /** Main -> Renderer: Update cancelled/dismissed */
+    UPDATE_CANCELLED = "updater:cancelled",
+    /** Renderer -> Main: Start download */
+    START_DOWNLOAD = "updater:start-download",
+    /** Renderer -> Main: Skip update */
+    SKIP_UPDATE = "updater:skip",
+    /** Renderer -> Main: Install now */
+    INSTALL_NOW = "updater:install-now",
+    /** Renderer -> Main: Dismiss error */
+    DISMISS_ERROR = "updater:dismiss-error",
+    /** Renderer -> Main: Check for updates */
+    CHECK_FOR_UPDATES = "updater:check",
+    /** Test-only: Renderer -> Main: Simulate update available */
+    TEST_UPDATE_AVAILABLE = "updater:test-available",
+    /** Test-only: Renderer -> Main: Simulate download progress */
+    TEST_DOWNLOAD_PROGRESS = "updater:test-progress",
+    /** Test-only: Renderer -> Main: Simulate update downloaded */
+    TEST_DOWNLOADED = "updater:test-downloaded",
+    /** Test-only: Renderer -> Main: Simulate update error */
+    TEST_ERROR = "updater:test-error",
+    /** Test-only: Renderer -> Main: Simulate cancelled */
+    TEST_CANCELLED = "updater:test-cancelled",
+    /** Renderer -> Main: Renderer is ready to receive update notifications */
+    RENDERER_READY = "updater:renderer-ready",
 }
 
 /** IPC channels used to relay game manager events from  */

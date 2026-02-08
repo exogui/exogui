@@ -319,3 +319,28 @@ export type PlaylistUpdateData = GamePlaylist;
 export type PlaylistRemoveData = string;
 
 export type GetPlaylistResponse = GamePlaylist[];
+
+export type UpdateAvailableData = {
+    version: string;
+    currentVersion: string;
+    releaseName: string;
+    releaseNotes: string;
+    size: number;
+};
+
+export type UpdateDownloadProgressData = {
+    percent: number;
+    transferred: number;
+    total: number;
+    bytesPerSecond: number;
+};
+
+export type UpdateDownloadedData = {
+    version: string;
+    releaseName: string;
+};
+
+export type UpdateErrorData = {
+    message: string;
+    details?: string;
+};

@@ -35,7 +35,7 @@ export const englishTranslation = {
         advancedHeader: "Advanced",
         showDeveloperTab: "Show Developer Tab",
         showDeveloperTabDesc:
-			"Show the 'Developer' tab. This is most likely only useful for developers and curators.",
+			"Show the 'Developer' tab. This is most likely only useful for developers.",
         pathsHeader: "Paths",
         imageFolderPath: "Image Folder Path",
         imageFolderPathDesc: "Path to the game images folder (relative to eXoDOS path).",
@@ -58,6 +58,13 @@ export const englishTranslation = {
         imagesPortMaxDesc: "Upper limit of the port range for the file server.",
         vlcPort: "VLC Port",
         vlcPortDesc: "Port number for VLC media player HTTP interface (Windows only).",
+        updatesHeader: "Updates",
+        enableOnlineUpdates: "Check for updates automatically",
+        enableOnlineUpdatesDesc: "Automatically check for application updates on startup (Linux AppImage only).",
+        updatesNotSupported: "Online updates are not supported on your system. Updates are only available for Linux AppImage builds.",
+        checkForUpdates: "Check for Updates",
+        checkForUpdatesDesc: "Manually check if a new version is available.",
+        checkNow: "Check Now",
         saveAndRestart: "Save and Restart",
     },
     home: {

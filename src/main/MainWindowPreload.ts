@@ -132,6 +132,9 @@ const onInit = (async () => {
         fullExodosPath: path.resolve(config.exodosPath),
         fullJsonFolderPath: path.resolve(config.exodosPath, config.jsonFolderPath)
     };
+    window.External.runtime = {
+        onlineUpdateSupported: data.onlineUpdateSupported ?? false,
+    };
     window.External.commandMappings = commandMappings;
     window.External.fileServerPort = fileServerPort;
     window.External.log.entries = log;
