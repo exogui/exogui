@@ -303,6 +303,7 @@ export function main(init: Init): void {
             installed: !!state._installed,
             host: state.backHost.href,
             secret: state._secret,
+            version: app.getVersion(),
             onlineUpdateSupported: state.onlineUpdater?.getState().available,
         };
         event.returnValue = data;
