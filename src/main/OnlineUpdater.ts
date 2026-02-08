@@ -194,6 +194,12 @@ export class OnlineUpdater {
             this.state.updateInfo = info;
             this.state.downloadProgress = 100;
 
+            // Apply pending config changes (if user disabled updates during download)
+            if (!this.config.enabled && this.state.enabled) {
+                console.log("[OnlineUpdater] Applying pending config change: disabling updates");
+                this.state.enabled = false;
+            }
+
             if (this.callbacks.onUpdateDownloaded) {
                 this.callbacks.onUpdateDownloaded(info);
             } else {
@@ -205,6 +211,12 @@ export class OnlineUpdater {
             console.error("[OnlineUpdater] Error:", error);
             this.state.status = "error";
             this.state.lastError = error;
+
+            // Apply pending config changes (if user disabled updates during download)
+            if (!this.config.enabled && this.state.enabled) {
+                console.log("[OnlineUpdater] Applying pending config change: disabling updates");
+                this.state.enabled = false;
+            }
 
             if (this.callbacks.onError) {
                 this.callbacks.onError(error);
@@ -387,6 +399,13 @@ export class OnlineUpdater {
      */
     updateConfig(config: Partial<OnlineUpdaterConfig>): void {
         this.config = { ...this.config, ...config };
+
+        // If download is in progress, don't disable updater until download completes
+        if (this.state.status === "downloading" && !this.config.enabled) {
+            console.warn("[OnlineUpdater] Download in progress. Updates will be disabled after download completes.");
+            return;
+        }
+
         this.state.enabled = this.config.enabled && this.state.available;
 
         if (this.config.enabled && !this.state.available) {

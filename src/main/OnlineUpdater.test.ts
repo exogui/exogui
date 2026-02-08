@@ -180,6 +180,101 @@ describe("OnlineUpdater", () => {
 
             consoleWarnSpy.mockRestore();
         });
+
+        test("prevents disabling updates during active download", async () => {
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+            const updater = new OnlineUpdater({ enabled: true });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // Simulate download in progress
+            const downloadProgressHandler = (autoUpdater.on as jest.Mock).mock.calls.find(
+                (call) => call[0] === "download-progress"
+            )?.[1];
+            downloadProgressHandler({ percent: 50, transferred: 1024000, total: 2048000 });
+
+            let state = updater.getState();
+            expect(state.status).toBe("downloading");
+            expect(state.enabled).toBe(true);
+
+            // Try to disable during download
+            updater.updateConfig({ enabled: false });
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                "[OnlineUpdater] Download in progress. Updates will be disabled after download completes."
+            );
+
+            // Should still be enabled during download
+            state = updater.getState();
+            expect(state.enabled).toBe(true);
+
+            consoleWarnSpy.mockRestore();
+        });
+
+        test("applies pending disable after download completes", async () => {
+            const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+            const updater = new OnlineUpdater({ enabled: true });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // Start download
+            const downloadProgressHandler = (autoUpdater.on as jest.Mock).mock.calls.find(
+                (call) => call[0] === "download-progress"
+            )?.[1];
+            downloadProgressHandler({ percent: 50, transferred: 1024000, total: 2048000 });
+
+            // Try to disable during download
+            updater.updateConfig({ enabled: false });
+
+            // Complete download
+            const updateDownloadedHandler = (autoUpdater.on as jest.Mock).mock.calls.find(
+                (call) => call[0] === "update-downloaded"
+            )?.[1];
+            updateDownloadedHandler({ version: "1.3.0" });
+
+            expect(consoleLogSpy).toHaveBeenCalledWith(
+                "[OnlineUpdater] Applying pending config change: disabling updates"
+            );
+
+            const state = updater.getState();
+            expect(state.enabled).toBe(false);
+
+            consoleLogSpy.mockRestore();
+            consoleWarnSpy.mockRestore();
+        });
+
+        test("applies pending disable after download error", async () => {
+            const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+            const updater = new OnlineUpdater({ enabled: true });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // Start download
+            const downloadProgressHandler = (autoUpdater.on as jest.Mock).mock.calls.find(
+                (call) => call[0] === "download-progress"
+            )?.[1];
+            downloadProgressHandler({ percent: 50, transferred: 1024000, total: 2048000 });
+
+            // Try to disable during download
+            updater.updateConfig({ enabled: false });
+
+            // Download encounters error
+            const errorHandler = (autoUpdater.on as jest.Mock).mock.calls.find(
+                (call) => call[0] === "error"
+            )?.[1];
+            errorHandler(new Error("Network error"));
+
+            expect(consoleLogSpy).toHaveBeenCalledWith(
+                "[OnlineUpdater] Applying pending config change: disabling updates"
+            );
+
+            const state = updater.getState();
+            expect(state.enabled).toBe(false);
+
+            consoleLogSpy.mockRestore();
+            consoleWarnSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
+        });
     });
 
     describe("State Management", () => {
