@@ -23,6 +23,9 @@ export function AboutPage(_props: AboutPageProps) {
             <div className="about-page__content">
                 <p className="about-page__header">exogui</p>
                 <p>{`Version ${version}`}</p>
+                <div className="about-page__logo">
+                    <img src="images/exogui-logo.png" alt="exogui logo" />
+                </div>
                 {link(exoguiRepoLink, exoguiRepoLink)}
                 <p>
                     exogui is the official Linux frontend for{" "}

@@ -748,6 +748,16 @@ body {
   list-style-type: none;
 }
 
+.about-page__logo {
+  text-align: center;
+  margin: 2em 0;
+}
+
+.about-page__logo img {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 /* ------ Page-Not-Found (404) ------ */
 .page-not-found {
   width: 100%;
