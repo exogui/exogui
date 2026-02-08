@@ -174,22 +174,6 @@ export class ConfigPage extends React.Component<
                         </div>
                     </div>
 
-                    {/* -- Advanced -- */}
-                    <div className="setting">
-                        <p className="setting__title">
-                            {strings.advancedHeader}
-                        </p>
-                        <div className="setting__body">
-                            {/* Show Developer Tab */}
-                            <ConfigBoxCheckbox
-                                title={strings.showDeveloperTab}
-                                description={strings.showDeveloperTabDesc}
-                                checked={this.state.showDeveloperTab}
-                                onToggle={this.onShowDeveloperTab}
-                            />
-                        </div>
-                    </div>
-
                     {/* -- Updates -- */}
                     <div className="setting">
                         <p className="setting__title">
@@ -280,10 +264,6 @@ export class ConfigPage extends React.Component<
         this.setState({ useCustomTitlebar: isChecked });
     };
 
-    onShowDeveloperTab = (isChecked: boolean): void => {
-        this.setState({ showDeveloperTab: isChecked });
-    };
-
     onEnableOnlineUpdateChange = (isChecked: boolean): void => {
         this.setState({ enableOnlineUpdate: isChecked });
     };
@@ -345,7 +325,6 @@ export class ConfigPage extends React.Component<
             imagesPortMin: this.state.imagesPortMin,
             imagesPortMax: this.state.imagesPortMax,
             currentTheme: this.state.currentTheme,
-            showDeveloperTab: this.state.showDeveloperTab,
             vlcPort: this.state.vlcPort,
             enableOnlineUpdate: this.state.enableOnlineUpdate,
         };
