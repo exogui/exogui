@@ -442,20 +442,22 @@ class App extends React.Component<AppProps, AppState> {
                                     </noscript>
                                 </div>
                                 {/* Footer */}
-                                <ConnectedFooter
-                                    totalCount={this.props.totalGames}
-                                    currentLabel={
-                                        libraryPath &&
-                                        getLibraryItemTitle(libraryPath)
-                                    }
-                                    currentCount={view ? view.games.length : 0}
-                                    onScaleSliderChange={
-                                        this.onScaleSliderChange
-                                    }
-                                    scaleSliderValue={this.state.gameScale}
-                                    onLayoutChange={this.onLayoutSelectorChange}
-                                    layout={this.state.gameLayout}
-                                />
+                                {libraryPath && (
+                                    <ConnectedFooter
+                                        totalCount={this.props.totalGames}
+                                        currentLabel={
+                                            libraryPath &&
+                                            getLibraryItemTitle(libraryPath)
+                                        }
+                                        currentCount={view ? view.games.length : 0}
+                                        onScaleSliderChange={
+                                            this.onScaleSliderChange
+                                        }
+                                        scaleSliderValue={this.state.gameScale}
+                                        onLayoutChange={this.onLayoutSelectorChange}
+                                        layout={this.state.gameLayout}
+                                    />
+                                )}
                             </>
                         ) : undefined}
                     </>
