@@ -1,4 +1,4 @@
-import { faBars } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faCog } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { englishTranslation } from "@renderer/lang/en";
 import { ExodosResources } from "@renderer/util/exoResources";
@@ -53,6 +53,12 @@ export function Header(props: HeaderProps) {
             type: "separator",
         },
         {
+            label: "Config",
+            click() {
+                navigate(Paths.CONFIG);
+            },
+        },
+        {
             label: "About",
             click() {
                 navigate(Paths.ABOUT);
@@ -81,10 +87,16 @@ export function Header(props: HeaderProps) {
                         />
                     ))}
                     <MenuItem title={strings.logs} link={Paths.LOGS} />
-                    <MenuItem title={strings.config} link={Paths.CONFIG} />
                     {window.External.config.data.showDeveloperTab && (
                         <MenuItem title={strings.developer} link={Paths.DEVELOPER} />
                     )}
+                </ul>
+                <ul className="header__menu header__menu--right">
+                    <li className="header__menu__item">
+                        <Link to={Paths.CONFIG} className="header__menu__item__link">
+                            <FontAwesomeIcon icon={faCog} />
+                        </Link>
+                    </li>
                 </ul>
             </div>
         </div>

@@ -437,9 +437,11 @@ body {
 }
 .header__wrap {
   min-height: 2rem;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 .header__wrap--width-restricted {
   max-width: calc(100vw - var(--header-padding));
