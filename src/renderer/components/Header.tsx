@@ -71,9 +71,6 @@ export function Header(props: HeaderProps) {
             ],
         },
         {
-            type: "separator",
-        },
-        {
             label: "Config",
             click() {
                 navigate(Paths.CONFIG);
@@ -107,8 +104,6 @@ export function Header(props: HeaderProps) {
                             link={joinLibraryRoute(library)}
                         />
                     ))}
-                    <MenuItem title={strings.logs} link={Paths.LOGS} />
-                    <MenuItem title={strings.developer} link={Paths.DEVELOPER} />
                 </ul>
                 <ul className="header__menu header__menu--right">
                     <li className="header__menu__item">
