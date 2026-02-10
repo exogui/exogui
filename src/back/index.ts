@@ -76,9 +76,9 @@ process.on("message", initialize);
 
 function getEmbeddedExodosPath(): string {
     if (process.env.APPIMAGE || process.platform === "darwin") {
-        return "../";
+        return "./";
     }
-    return "../../";
+    return "../";
 }
 process.on("disconnect", () => {
     exit();
