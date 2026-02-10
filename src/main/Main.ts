@@ -239,6 +239,7 @@ export function main(init: Init): void {
         if (!session.defaultSession) {
             throw new Error("Default session is missing!");
         }
+        remoteMain.initialize();
         // Reject all permission requests since we don't need any permissions.
         session.defaultSession.setPermissionRequestHandler((_, __, callback) =>
             callback(false)
@@ -371,7 +372,6 @@ export function main(init: Init): void {
         // Create the browser window.
         const mw = getInitialWindowSize();
 
-        remoteMain.initialize();
         const iconPath = path.join(__dirname, "../window/images/icon.png");
         const icon = nativeImage.createFromPath(iconPath);
 
