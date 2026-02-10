@@ -114,13 +114,15 @@ jobs:
         run: ls -R artifacts/
 
       - name: Generate changelog
+        id: git-cliff
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --unreleased --strip all --output RELEASE_NOTES.md
+          args: --unreleased --strip all
 
-      - name: Append artifacts info
+      - name: Create release notes
         run: |
+          echo "$CHANGELOG" > RELEASE_NOTES.md
           cat >> RELEASE_NOTES.md << 'EOF'
 
           ## Artifacts
@@ -136,6 +138,8 @@ jobs:
           - `.exe` - Full installer with shortcuts and uninstaller
           - `.zip` - Portable version, extract and run (no installation required)
           EOF
+        env:
+          CHANGELOG: ${{ steps.git-cliff.outputs.content }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
