@@ -75,10 +75,13 @@ const commandMappingsFilename = `mappings.${process.platform}.json`;
 process.on("message", initialize);
 
 function getEmbeddedExodosPath(): string {
-    if (process.env.APPIMAGE || process.platform === "darwin") {
-        return "./";
+    if (process.env.APPIMAGE) {
+        return path.dirname(process.env.APPIMAGE);
     }
-    return "../";
+    if (process.platform === "darwin") {
+        return path.resolve(process.execPath, "../../../..");
+    }
+    return path.resolve(process.execPath, "../..");
 }
 process.on("disconnect", () => {
     exit();
