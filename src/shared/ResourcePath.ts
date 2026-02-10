@@ -38,6 +38,6 @@ export function getResourcesPath(app: ElectronApp, isDev: boolean): string {
         return path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))));
     }
 
-    // Windows and Linux tar.gz: resources are in current working directory
-    return process.cwd();
+    // Windows and Linux tar.gz: resources are in the app directory
+    return path.dirname(app.getPath("exe"));
 }

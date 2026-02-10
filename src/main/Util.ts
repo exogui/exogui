@@ -46,5 +46,8 @@ export function getMainFolderPath(): string {
     if (process.platform === "darwin" && !isDev) {
         return path.resolve(app.getPath("exe"), "../../../..");
     }
+    if (!isDev) {
+        return path.dirname(app.getPath("exe"));
+    }
     return process.cwd();
 }

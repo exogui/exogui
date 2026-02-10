@@ -1,6 +1,5 @@
 import { faBars, faCog } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { englishTranslation } from "@renderer/lang/en";
 import { ExodosResources } from "@renderer/util/exoResources";
 import { BackIn } from "@shared/back/types";
 import { getLibraryItemTitle } from "@shared/library/util";
@@ -21,7 +20,6 @@ type OwnProps = {
 export type HeaderProps = OwnProps & WithPreferencesProps;
 
 export function Header(props: HeaderProps) {
-    const strings = englishTranslation.app;
     const { exodosResources, libraries } = props;
 
     const navigate = useNavigate();
