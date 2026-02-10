@@ -102,6 +102,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -110,6 +112,31 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R artifacts/
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --strip all
+          output: RELEASE_NOTES.md
+
+      - name: Append artifacts info
+        run: |
+          cat >> RELEASE_NOTES.md << 'EOF'
+
+          ## Artifacts
+          - Linux: AppImage and tar.gz archive
+          - Windows: NSIS installer (.exe) and portable zip archive
+          - macOS (Intel): DMG disk image
+          - macOS (Apple Silicon): DMG disk image
+
+          ### Linux Notes
+          Run AppImage with: `./exogui.AppImage --no-sandbox`
+
+          ### Windows Notes
+          - `.exe` - Full installer with shortcuts and uninstaller
+          - `.zip` - Portable version, extract and run (no installation required)
+          EOF
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -120,22 +147,6 @@ jobs:
           prerelease: false
           files: |
             artifacts/**/*
-          body: |
-            Automated release for commit ${{ github.sha }}
-
-            Version: ${{ needs.version.outputs.version }}
-
-            ## Artifacts
-            - Linux: AppImage and tar.gz archive
-            - Windows: NSIS installer (.exe) and portable zip archive
-            - macOS (Intel): DMG disk image
-            - macOS (Apple Silicon): DMG disk image
-
-            ### Linux Notes
-            Run AppImage with: `./exogui-*.AppImage --no-sandbox`
-
-            ### Windows Notes
-            - `.exe` - Full installer with shortcuts and uninstaller
-            - `.zip` - Portable version, extract and run (no installation required)
+          body_path: RELEASE_NOTES.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

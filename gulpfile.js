@@ -96,6 +96,7 @@ gulp.task("pack", (done) => {
                     category: "Game",
                     icon: "./static/icons/",
                     executableArgs: ["--no-sandbox"],
+                    artifactName: "${productName}.${ext}",
                 },
                 win: {
                     icon: "./icons/icon.ico",
