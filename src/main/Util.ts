@@ -1,4 +1,5 @@
 import * as child_process from "child_process";
+import * as path from "path";
 import { app } from "electron";
 import * as util from "util";
 
@@ -39,10 +40,11 @@ export const isDev: boolean = (function () {
  * @param installed If the application is installed (instead of portable).
  */
 export function getMainFolderPath(): string {
-    // For packaged apps (AppImage on Linux, .app on macOS), use userData directory
-    // For portable/dev mode, use current working directory
-    if (process.env.APPIMAGE || (process.platform === "darwin" && !isDev)) {
-        return app.getPath("userData");
+    if (process.env.APPIMAGE) {
+        return path.dirname(process.env.APPIMAGE);
+    }
+    if (process.platform === "darwin" && !isDev) {
+        return path.resolve(app.getPath("exe"), "../../../..");
     }
     return process.cwd();
 }

@@ -20,10 +20,10 @@ If you must edit manually (e.g., to reset corrupted settings), ensure exogui is 
 
 The `preferences.json` file is located in different directories depending on the build type:
 
-- **Linux AppImage**: `~/.config/exogui/`
+- **Linux AppImage**: Directory containing the `.AppImage` file
 - **Linux tar.gz**: Application directory (where you extracted the archive)
 - **Windows**: Application installation directory (e.g., `C:\Program Files\exogui\`)
-- **macOS**: `~/Library/Application Support/exogui/`
+- **macOS**: Directory containing the `.app` bundle (e.g., `/Applications`)
 - **Development mode**: Project root directory
 
 **Note:** This is the same location as `config.json`. See [docs/config.md](config.md) for more details about configuration file locations.

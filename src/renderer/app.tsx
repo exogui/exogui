@@ -443,7 +443,7 @@ class App extends React.Component<AppProps, AppState> {
                                 </div>
                                 {/* Footer */}
                                 {(this.props.location.pathname === Paths.HOME ||
-                                  this.props.location.pathname.startsWith(Paths.BROWSE.replace('*', ''))) && (
+                                  this.props.location.pathname.startsWith(Paths.BROWSE.replace("*", ""))) && (
                                     <ConnectedFooter
                                         totalCount={this.props.totalGames}
                                         currentLabel={
