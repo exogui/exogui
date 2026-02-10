@@ -1750,6 +1750,11 @@ body {
   vertical-align: middle;
   transform: scale(1.25);
 }
+/* Select dropdowns */
+.config-page select {
+  float: right;
+  font-size: 1em;
+}
 /* SaveAndRestart */
 .config-page input[type="button"].save-and-restart {
   font-size: 1.075em;

@@ -32,4 +32,6 @@ export type IAppConfigData = {
     vlcPort: number;
     /** Enable online updates (Linux AppImage only) */
     enableOnlineUpdate: boolean;
+    /** Use auto-detected embedded eXoDOS path based on build type instead of custom path */
+    useEmbeddedExodosPath: boolean;
 };

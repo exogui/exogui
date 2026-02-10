@@ -15,7 +15,6 @@ import {
     ConfigBoxMultiSelect,
     MultiSelectItem,
 } from "../ConfigBoxMultiSelect";
-import { ConfigBoxSelectInput } from "../ConfigBoxSelectInput";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
 
 type OwnProps = {
@@ -71,19 +70,35 @@ export class ConfigPage extends React.Component<
                     <div className="setting">
                         <p className="setting__title">{strings.exodosHeader}</p>
                         <div className="setting__body">
-                            {/* Exodos Path */}
+                            {/* eXoDOS Location Mode */}
                             <ConfigBox
-                                title={strings.exodosPath}
-                                description={strings.exodosPathDesc}
-                                contentClassName="setting__row__content--filepath-path"
+                                title={strings.exodosLocationMode}
+                                description={strings.exodosLocationModeDesc}
                             >
-                                <ConfigExodosPathInput
-                                    input={this.state.exodosPath}
-                                    buttonText={strings.browse}
-                                    onInputChange={this.onExodosPathChange}
-                                    isValid={this.state.isExodosPathValid}
-                                />
+                                <select
+                                    value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
+                                    onChange={this.onExodosLocationModeChange}
+                                    className="simple-input"
+                                >
+                                    <option value="embedded">{strings.exodosLocationEmbedded}</option>
+                                    <option value="custom">{strings.exodosLocationCustom}</option>
+                                </select>
                             </ConfigBox>
+                            {/* Exodos Path (only in custom mode) */}
+                            {!this.state.useEmbeddedExodosPath && (
+                                <ConfigBox
+                                    title={strings.exodosPath}
+                                    description={strings.exodosPathDesc}
+                                    contentClassName="setting__row__content--filepath-path"
+                                >
+                                    <ConfigExodosPathInput
+                                        input={this.state.exodosPath}
+                                        buttonText={strings.browse}
+                                        onInputChange={this.onExodosPathChange}
+                                        isValid={this.state.isExodosPathValid}
+                                    />
+                                </ConfigBox>
+                            )}
                             {/* Native Platforms */}
                             <ConfigBoxMultiSelect
                                 title={strings.nativePlatforms}
@@ -109,21 +124,22 @@ export class ConfigPage extends React.Component<
                                 onToggle={this.onUseCustomTitlebarChange}
                             />
                             {/* Theme */}
-                            <ConfigBoxSelectInput
+                            <ConfigBox
                                 title={strings.theme}
                                 description={strings.themeDesc}
-                                text={
-                                    this.getThemeName(
-                                        this.state.currentTheme || "",
-                                    ) || ""
-                                }
-                                editable={true}
-                                items={this.props.themeList.map(
-                                    formatThemeItemName,
-                                )}
-                                onChange={this.onCurrentThemeChange}
-                                onItemSelect={this.onCurrentThemeItemSelect}
-                            />
+                            >
+                                <select
+                                    value={this.state.currentTheme || ""}
+                                    onChange={(e) => this.applyTheme(e.target.value)}
+                                    className="simple-input"
+                                >
+                                    {this.props.themeList.map((theme) => (
+                                        <option key={theme.entryPath} value={theme.entryPath}>
+                                            {theme.meta.name || theme.entryPath}
+                                        </option>
+                                    ))}
+                                </select>
+                            </ConfigBox>
                         </div>
                     </div>
 
@@ -252,6 +268,10 @@ export class ConfigPage extends React.Component<
         this.setState({ nativePlatforms });
     };
 
+    onExodosLocationModeChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+        this.setState({ useEmbeddedExodosPath: event.target.value === "embedded" });
+    };
+
     /** When the "Exodos Folder Path" input text is changed. */
     onExodosPathChange = async (filePath: string): Promise<void> => {
         this.setState({ exodosPath: filePath });
@@ -276,38 +296,12 @@ export class ConfigPage extends React.Component<
         ipcRenderer.send(UpdaterIPC.CHECK_FOR_UPDATES);
     };
 
-    onCurrentThemeChange = (value: string): void => {
-        const selectedTheme = this.props.themeList.find(
-            (t) => t.entryPath === value,
-        );
-        if (selectedTheme) {
-            this.applyTheme(selectedTheme.entryPath);
-        }
-    };
-
-    onCurrentThemeItemSelect = (_: string, index: number): void => {
-        const theme = this.props.themeList[index]?.entryPath;
-        if (theme) {
-            this.applyTheme(theme);
-        }
-    };
-
     applyTheme = (theme: string | undefined): void => {
         this.setState({ currentTheme: theme });
         setTheme(theme);
         window.External.config.data.currentTheme = theme;
         window.External.back.request(BackIn.UPDATE_CONFIG, { currentTheme: theme });
     };
-
-    getThemeName(entryPath: string): string | undefined {
-        const theme = this.props.themeList.find(
-            (t) => t.entryPath === entryPath,
-        );
-        if (theme) {
-            return theme.meta.name || theme.entryPath;
-        }
-        return undefined;
-    }
 
     /** When the "Save & Restart" button is clicked. */
     onSaveAndRestartClick = () => {
@@ -327,6 +321,7 @@ export class ConfigPage extends React.Component<
             currentTheme: this.state.currentTheme,
             vlcPort: this.state.vlcPort,
             enableOnlineUpdate: this.state.enableOnlineUpdate,
+            useEmbeddedExodosPath: this.state.useEmbeddedExodosPath,
         };
 
         window.External.back
@@ -337,7 +332,3 @@ export class ConfigPage extends React.Component<
     };
 }
 
-/** Format a theme item into a displayable name for the themes drop-down. */
-function formatThemeItemName(item: Theme): string {
-    return `${item.meta.name} (${item.entryPath})`;
-}

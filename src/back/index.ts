@@ -73,6 +73,13 @@ export const configFilename = "config.json";
 const commandMappingsFilename = `mappings.${process.platform}.json`;
 
 process.on("message", initialize);
+
+function getEmbeddedExodosPath(): string {
+    if (process.env.APPIMAGE || process.platform === "darwin") {
+        return "../";
+    }
+    return "../../";
+}
 process.on("disconnect", () => {
     exit();
 });
@@ -111,11 +118,13 @@ async function initialize(message: any, _: any): Promise<void> {
     await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
-    if (!path.isAbsolute(state.config.exodosPath)) {
-        state.config.exodosPath = path.join(
-            state.basePath,
-            state.config.exodosPath
-        );
+    const exodosPath = state.config.useEmbeddedExodosPath
+        ? getEmbeddedExodosPath()
+        : state.config.exodosPath;
+    if (!path.isAbsolute(exodosPath)) {
+        state.config.exodosPath = path.join(state.basePath, exodosPath);
+    } else {
+        state.config.exodosPath = exodosPath;
     }
     console.log("Exodos path: " + state.config.exodosPath);
 
