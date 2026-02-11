@@ -56,7 +56,7 @@ export function main(init: Init): void {
     const state: MainState = {
         window: undefined,
         _installed: undefined,
-        backHost: new URL("ws://localhost"),
+        backHost: new URL("ws://127.0.0.1"),
         _secret: "",
         /** Version of the launcher (timestamp of when it was built). Negative value if not found or not yet loaded. */
         _version: -2,

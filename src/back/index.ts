@@ -201,7 +201,7 @@ async function initialize(message: any, _: any): Promise<void> {
 }
 
 async function startMainServer() {
-    await state.socketServer.listen(state.config.backPortMin, state.config.backPortMax, "localhost");
+    await state.socketServer.listen(state.config.backPortMin, state.config.backPortMax, "127.0.0.1");
 
     if (state.socketServer.port < 0) {
         console.log("Back - Failed to open Socket Server, Exiting...");
