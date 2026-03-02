@@ -134,6 +134,20 @@ export class OnlineUpdater {
         this._updater.logger = console;
     }
 
+    private isNetworkError(error: Error): boolean {
+        const msg = error.message || "";
+        return (
+            msg.includes("ENOTFOUND") ||
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("ETIMEDOUT") ||
+            msg.includes("ECONNRESET") ||
+            msg.includes("ENETUNREACH") ||
+            msg.includes("ERR_INTERNET_DISCONNECTED") ||
+            msg.includes("ERR_NAME_NOT_RESOLVED") ||
+            msg.includes("getaddrinfo")
+        );
+    }
+
     /**
      * Setup event handlers for electron-updater.
      */
@@ -210,6 +224,12 @@ export class OnlineUpdater {
         });
 
         this._updater.on("error", (error: Error) => {
+            if (this.isNetworkError(error)) {
+                console.log("[OnlineUpdater] Network unavailable, skipping update check.");
+                this.state.status = "idle";
+                return;
+            }
+
             console.error("[OnlineUpdater] Error:", error);
             this.state.status = "error";
             this.state.lastError = error;
