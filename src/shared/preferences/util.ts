@@ -55,6 +55,10 @@ export const defaultPreferencesData: Readonly<IAppPreferencesData> =
         gameMusicPlay: true,
         gameMusicLoop: true,
         gameMusicVolume: 0.5,
+        browsePageSearchOrderBy: "title",
+        browsePageSearchOrderReverse: "ascending",
+        browsePageSearchInstalled: null,
+        browsePageSearchRecommended: null,
     });
 
 /**
@@ -117,6 +121,10 @@ export function overwritePreferenceData(
     parser.prop("gameMusicVolume", (v) => (source.gameMusicVolume = num(v)), true);
     parser.prop("gameMusicPlay", (v) => (source.gameMusicPlay = !!v), true);
     parser.prop("gameMusicLoop", (v) => (source.gameMusicLoop = !!v), true);
+    parser.prop("browsePageSearchOrderBy", (v) => (source.browsePageSearchOrderBy = strOpt(v, gameOrderByOptions, "title")), true);
+    parser.prop("browsePageSearchOrderReverse", (v) => (source.browsePageSearchOrderReverse = strOpt(v, gameOrderReverseOptions, "ascending")), true);
+    parser.prop("browsePageSearchInstalled", (v) => (source.browsePageSearchInstalled = v === null || v === undefined ? null : !!v), true);
+    parser.prop("browsePageSearchRecommended", (v) => (source.browsePageSearchRecommended = v === null || v === undefined ? null : !!v), true);
     // Parse window object
     parseMainWindow(parser.prop("mainWindow"), source.mainWindow);
     parser

@@ -661,6 +661,11 @@ body {
 .playlist-list-item:nth-child(2n) {
   background-color: var(--layout__playlist-list-item-even-background);
 }
+.playlist-list-item--selected,
+.playlist-list-item--selected:nth-child(2n) {
+  background-color: var(--layout__game-item-background-selected);
+  color: var(--layout__game-item-color-selected);
+}
 .playlist-list-item:hover,
 .playlist-list-item.playlist-list-item--drag-over {
   background-color: var(--layout__playlist-list-item-drag-over-background);
@@ -896,6 +901,7 @@ body {
 .searchable-select-dropdown,
 .search-bar-order-dropdown,
 .search-bar-text-input,
+.search-bar .simple-button,
 .search-bar-simple-box {
   background-color: var(--layout__quaternary-background);
   border: 1px solid var(--layout__primary-outline-color);

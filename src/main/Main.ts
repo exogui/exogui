@@ -76,9 +76,17 @@ export function main(init: Init): void {
         if (process.platform === "linux") {
             app.commandLine.appendSwitch("no-sandbox");
             app.commandLine.appendSwitch("disable-dev-shm-usage");
-            // Enable Wayland window decorations (helps with icon display)
-            app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
-            // Set WM_CLASS for proper Wayland icon matching
+            if (process.env.XDG_CURRENT_DESKTOP === "gamescope") {
+                // In gamescope (Steam Deck Game Mode), force pure X11 mode.
+                // Without this, Electron operates in a hybrid X11+Wayland mode
+                // and the Steam OSK delivers each keypress twice (once via X11
+                // uinput, once via the Wayland text-input protocol).
+                app.commandLine.appendSwitch("ozone-platform", "x11");
+            } else {
+                // Enable Wayland window decorations (helps with icon display)
+                app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
+            }
+            // Set WM_CLASS for proper Wayland icon matching with .desktop file
             app.commandLine.appendSwitch("class", "exogui");
         }
         app.disableHardwareAcceleration();

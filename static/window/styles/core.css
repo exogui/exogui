@@ -526,7 +526,8 @@ body {
 .footer {
   display: inline-flex;
   flex-flow: wrap;
-  padding: 0.05rem 0.2rem;
+  align-items: center;
+  padding: 0.1em 0.5em;
   /* Pimp */
   user-select: none;
 }
@@ -549,6 +550,7 @@ body {
   width: 100%;
   max-width: 50vw;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 /* Game Count */
 .footer__game-count {
@@ -566,6 +568,12 @@ body {
   font-size: 0.8rem;
 }
 /* Layout Selector */
+.footer__layout-buttons {
+  margin-left: 1.6rem;
+  flex-direction: row;
+  gap: 0.25rem;
+}
+
 .footer__layout-selector {
   display: inline-block;
   margin: 0 0.3em;
@@ -575,6 +583,8 @@ body {
 .footer__scale-slider {
   flex: 1 1 auto;
   min-width: 6em;
+  max-width: 10em;
+  margin: 0 1em;
 }
 .footer__scale-slider__inner {
   --slider-size: 1em;
@@ -1304,6 +1314,8 @@ body {
 /* GameList Item */
 .game-list-item {
   display: flex;
+  align-items: center;
+  padding: 0 0.5em;
 }
 .game-list-item:hover {
   cursor: pointer;
@@ -1335,8 +1347,8 @@ body {
 .game-list-item__field {
   display: inline-block;
   width: 100%;
-  font-size: calc(0.85 * 1px * var(--height));
-  vertical-align: top;
+  font-size: calc(0.45 * 1px * var(--height));
+  vertical-align: middle;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -1376,7 +1388,8 @@ body {
   width: 100%;
 }
 .game-list-header-column__title {
-  font-size: calc(0.8 * 1px * var(--height));
+  font-size: calc(0.45 * 1px * var(--height));
+  font-weight: bold;
   flex: 1 1 auto;
   overflow: hidden;
   user-select: none;
@@ -1568,8 +1581,11 @@ body {
 .playlist-list-item__title {
   flex: 0 1 auto;
   min-width: 0;
-  font-weight: bold;
+  font-size: 0.9em;
   padding-left: 0.5rem;
+}
+.playlist-list-item--selected .playlist-list-item__title {
+  font-weight: bold;
 }
 .playlist-list-item__divider {
   flex: 0 0 auto;
@@ -1646,6 +1662,7 @@ body {
   min-height: 5rem;
   resize: vertical;
   white-space: pre-wrap;
+  font-size: 0.8em;
 }
 /* Playlist-List-Fake-Item */
 .playlist-list-fake-item {
@@ -1674,7 +1691,7 @@ body {
   height: var(--icon-size);
 }
 .playlist-list-fake-item__inner__title {
-  font-size: 1.1rem;
+  font-size: 1em;
   padding-left: 0.5rem;
   overflow: hidden;
   word-break: break-all;

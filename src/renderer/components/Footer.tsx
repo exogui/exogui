@@ -1,12 +1,8 @@
 import { englishTranslation } from "@renderer/lang/en";
-import { faForward, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
+import { faBorderAll, faForward, faList, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BackIn } from "@shared/back/types";
-import {
-    BrowsePageLayout,
-    parseBrowsePageLayout,
-    stringifyBrowsePageLayout,
-} from "@shared/BrowsePageLayout";
+import { BrowsePageLayout } from "@shared/BrowsePageLayout";
 import { updatePreferencesData } from "@shared/preferences/util";
 import { Coerce } from "@shared/utils/Coerce";
 import { throttle } from "@shared/utils/throttle";
@@ -161,23 +157,23 @@ export class Footer extends React.Component<FooterProps> {
                                 </>
                             )}
                             {/* Layout Selector */}
-                            <div className="footer__wrap">
-                                <div>
-                                    <select
-                                        className="footer__layout-selector simple-selector"
-                                        value={stringifyBrowsePageLayout(
-                                            layout
-                                        )}
-                                        onChange={this.onLayoutChange}
-                                    >
-                                        <option value="list">
-                                            {strings.list}
-                                        </option>
-                                        <option value="grid">
-                                            {strings.grid}
-                                        </option>
-                                    </select>
-                                </div>
+                            <div className="footer__wrap footer__layout-buttons">
+                                <button
+                                    className={`simple-button${layout === BrowsePageLayout.list ? " simple-button--active" : ""}`}
+                                    style={{ opacity: layout === BrowsePageLayout.list ? 1 : 0.5 }}
+                                    title="List view"
+                                    onClick={() => this.props.onLayoutChange?.(BrowsePageLayout.list)}
+                                >
+                                    <FontAwesomeIcon icon={faList} />
+                                </button>
+                                <button
+                                    className={`simple-button${layout === BrowsePageLayout.grid ? " simple-button--active" : ""}`}
+                                    style={{ opacity: layout === BrowsePageLayout.grid ? 1 : 0.5 }}
+                                    title="Grid view"
+                                    onClick={() => this.props.onLayoutChange?.(BrowsePageLayout.grid)}
+                                >
+                                    <FontAwesomeIcon icon={faBorderAll} />
+                                </button>
                             </div>
                             {/* Scale Slider */}
                             <div className="footer__wrap footer__scale-slider">
@@ -227,18 +223,6 @@ export class Footer extends React.Component<FooterProps> {
         event: React.ChangeEvent<HTMLInputElement>
     ): void => {
         this.scaleSliderChange(event.target);
-    };
-
-    onLayoutChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-        if (this.props.onLayoutChange) {
-            const value = parseBrowsePageLayout(event.target.value);
-            if (value === undefined) {
-                throw new Error(
-                    `Layout selector option has an invalid value (${event.target.value})`
-                );
-            }
-            this.props.onLayoutChange(value);
-        }
     };
 
     onGlobalKeydown = (event: KeyboardEvent): void => {

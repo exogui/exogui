@@ -6,12 +6,14 @@ import {
     setSearchText,
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
+import { updatePreferencesData } from "@shared/preferences/util";
+import { faFilter, faFilterCircleXmark } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { GameOrderBy, GameOrderReverse } from "@shared/order/interfaces";
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GameOrder } from "./GameOrder";
 import { OpenIcon } from "./OpenIcon";
-import { SimpleButton } from "./SimpleButton";
 import {
     ArrowKeyStepper,
     AutoSizer,
@@ -51,21 +53,13 @@ export function SearchBar(props: SearchBarProps) {
     };
 
     const onChangeOrderBy = (value: GameOrderBy) => {
-        dispatch(
-            setOrderBy({
-                view: props.view,
-                value,
-            })
-        );
+        dispatch(setOrderBy({ view: props.view, value }));
+        updatePreferencesData({ browsePageSearchOrderBy: value });
     };
 
     const onChangeOrderReverse = (value: GameOrderReverse) => {
-        dispatch(
-            setOrderReverse({
-                view: props.view,
-                value,
-            })
-        );
+        dispatch(setOrderReverse({ view: props.view, value }));
+        updatePreferencesData({ browsePageSearchOrderReverse: value });
     };
 
     React.useEffect(() => {
@@ -77,27 +71,39 @@ export function SearchBar(props: SearchBarProps) {
     }, []);
 
     const onInstalledChange = (value?: boolean) => {
-        dispatch(
-            setAdvancedFilter({
-                view: props.view,
-                filter: {
-                    ...view.advancedFilter,
-                    installed: value,
-                },
-            })
-        );
+        dispatch(setAdvancedFilter({ view: props.view, filter: { ...view.advancedFilter, installed: value } }));
+        updatePreferencesData({ browsePageSearchInstalled: value === undefined ? null : value });
     };
 
     const onRecommendedChange = (value?: boolean) => {
-        dispatch(
-            setAdvancedFilter({
-                view: props.view,
-                filter: {
-                    ...view.advancedFilter,
-                    recommended: value,
-                },
-            })
-        );
+        dispatch(setAdvancedFilter({ view: props.view, filter: { ...view.advancedFilter, recommended: value } }));
+        updatePreferencesData({ browsePageSearchRecommended: value === undefined ? null : value });
+    };
+
+    const hasActiveFilters =
+        view.text !== "" ||
+        view.advancedFilter.installed !== undefined ||
+        view.advancedFilter.recommended !== undefined ||
+        view.advancedFilter.developer.length > 0 ||
+        view.advancedFilter.publisher.length > 0 ||
+        view.advancedFilter.series.length > 0 ||
+        view.advancedFilter.genre.length > 0 ||
+        view.advancedFilter.playMode.length > 0 ||
+        view.advancedFilter.region.length > 0 ||
+        view.advancedFilter.rating.length > 0 ||
+        view.advancedFilter.releaseYear.length > 0;
+
+    const onClearAllFilters = () => {
+        dispatch(setSearchText({ view: props.view, text: "" }));
+        dispatch(setAdvancedFilter({
+            view: props.view,
+            filter: {
+                series: [], developer: [], publisher: [], genre: [],
+                playMode: [], region: [], releaseYear: [], rating: [],
+                installed: undefined, recommended: undefined,
+            },
+        }));
+        updatePreferencesData({ browsePageSearchInstalled: null, browsePageSearchRecommended: null });
     };
 
     const onToggleFactory = (key: keyof AdvancedFilter) => {
@@ -256,23 +262,34 @@ export function SearchBar(props: SearchBarProps) {
                     onChangeOrderBy={onChangeOrderBy}
                     onChangeOrderReverse={onChangeOrderReverse}
                 />
-                <SimpleButton
-                    value={expanded ? "Hide Filters" : "Show Filters"}
-                    onClick={() => setExpanded(!expanded)}
+                <TriStateButton
+                    label="Installed"
+                    value={view.advancedFilter.installed}
+                    onChange={onInstalledChange}
                 />
+                <TriStateButton
+                    label="Recommended"
+                    value={view.advancedFilter.recommended}
+                    onChange={onRecommendedChange}
+                />
+                <button
+                    className="simple-button"
+                    onClick={onClearAllFilters}
+                    disabled={!hasActiveFilters}
+                    title="Clear all filters"
+                >
+                    <FontAwesomeIcon icon={faFilterCircleXmark} />
+                </button>
+                <button
+                    className={`simple-button${expanded ? " simple-button--active" : ""}`}
+                    onClick={() => setExpanded(prev => !prev)}
+                    title={expanded ? "Hide filters" : "Show filters"}
+                >
+                    <FontAwesomeIcon icon={faFilter} />
+                </button>
             </div>
             {expanded && (
                 <div className="search-bar-expansion search-bar-expansion-simple">
-                    <ThreeStateCheckbox
-                        title="Installed"
-                        value={view.advancedFilter.installed}
-                        onChange={onInstalledChange}
-                    />
-                    <ThreeStateCheckbox
-                        title="Recommended"
-                        value={view.advancedFilter.recommended}
-                        onChange={onRecommendedChange}
-                    />
                     <SearchableSelect
                         title="Developer"
                         onToggle={onToggleDeveloper}
@@ -335,15 +352,14 @@ export function SearchBar(props: SearchBarProps) {
     );
 }
 
-type ThreeStateCheckboxProps = {
+
+type TriStateButtonProps = {
+    label: string;
     value?: boolean;
-    title: string;
     onChange: (value?: boolean) => void;
 };
 
-function ThreeStateCheckbox(props: ThreeStateCheckboxProps) {
-    const { value, onChange, title } = props;
-
+function TriStateButton({ label, value, onChange }: TriStateButtonProps) {
     const handleClick = () => {
         if (value === true) {
             onChange(false);
@@ -354,19 +370,17 @@ function ThreeStateCheckbox(props: ThreeStateCheckboxProps) {
         }
     };
 
-    // Cycles on left click, clears on right click
+    const suffix = value === true ? ": ✓" : value === false ? ": ✗" : "";
+    const isActive = value !== undefined;
+
     return (
-        <div className="search-bar-simple-box" onClick={handleClick}>
-            <b>{title}</b>
-            <div
-                className="three-state-checkbox"
-                onContextMenu={() => onChange(undefined)}
-            >
-                {value === true && <OpenIcon icon="check" />}
-                {value === false && <OpenIcon icon="x" />}
-                {value === undefined && <div></div>}
-            </div>
-        </div>
+        <input
+            type="button"
+            className={`simple-button${isActive ? " simple-button--active" : ""}`}
+            value={`${label}${suffix}`}
+            onClick={handleClick}
+            onContextMenu={(e) => { e.preventDefault(); onChange(undefined); }}
+        />
     );
 }
 
@@ -497,11 +511,6 @@ function SearchableSelectDropdown(props: SearchableSelectDropdownProps) {
         );
     };
 
-    React.useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, []);
 
     return (
         <div

@@ -102,14 +102,19 @@ const searchSlice = createSlice({
             { payload }: PayloadAction<string[]>
         ) {
             console.debug(`Creating views for: ${payload}`);
+            const prefs = window.External.preferences.data;
             for (const view of payload) {
                 if (!state.views[view]) {
-                    state.views[view] = {
+                    const installedPref = prefs.browsePageSearchInstalled;
+                    const recommendedPref = prefs.browsePageSearchRecommended;
+                    const newView: ResultsView = {
                         games: [],
                         text: "",
-                        orderBy: "title",
-                        orderReverse: "ascending",
+                        orderBy: prefs.browsePageSearchOrderBy ?? "title",
+                        orderReverse: prefs.browsePageSearchOrderReverse ?? "ascending",
                         advancedFilter: {
+                            installed: installedPref === null ? undefined : installedPref,
+                            recommended: recommendedPref === null ? undefined : recommendedPref,
                             series: [],
                             developer: [],
                             publisher: [],
@@ -133,6 +138,8 @@ const searchSlice = createSlice({
                             matchAny: false,
                         },
                     };
+                    newView.filter = createFilter(newView);
+                    state.views[view] = newView;
                 }
             }
         },

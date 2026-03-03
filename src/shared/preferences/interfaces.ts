@@ -36,6 +36,14 @@ export type IAppPreferencesData = {
     gameMusicLoop: boolean;
     /** Game music volume */
     gameMusicVolume: number;
+    /** Persisted search order-by field. */
+    browsePageSearchOrderBy: GameOrderBy;
+    /** Persisted search order direction. */
+    browsePageSearchOrderReverse: GameOrderReverse;
+    /** Persisted installed filter (null = no filter). */
+    browsePageSearchInstalled: boolean | null;
+    /** Persisted recommended filter (null = no filter). */
+    browsePageSearchRecommended: boolean | null;
 };
 
 export type IAppPreferencesDataMainWindow = {
