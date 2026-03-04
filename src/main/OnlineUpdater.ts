@@ -157,6 +157,7 @@ export class OnlineUpdater {
         this._updater.on("checking-for-update", () => {
             console.log("[OnlineUpdater] Checking for updates...");
             this.state.status = "checking";
+            this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CHECKING);
         });
 
         this._updater.on("update-available", (info: UpdateInfo) => {
@@ -175,6 +176,7 @@ export class OnlineUpdater {
             console.log("[OnlineUpdater] Update not available. Current version is latest.");
             this.state.status = "idle";
             this.state.updateInfo = info;
+            this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
 
             if (this.callbacks.onUpdateNotAvailable) {
                 this.callbacks.onUpdateNotAvailable(info);
@@ -227,6 +229,7 @@ export class OnlineUpdater {
             if (this.isNetworkError(error)) {
                 console.log("[OnlineUpdater] Network unavailable, skipping update check.");
                 this.state.status = "idle";
+                this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_NETWORK_ERROR);
                 return;
             }
 
@@ -266,8 +269,8 @@ export class OnlineUpdater {
         }
 
         return releaseNotes
-        .map(note => `Version ${note.version}:\n${note.note || "No description"}`)
-        .join("\n\n");
+        .map(note => `<h4>Version ${note.version}</h4>${note.note || "<p>No description</p>"}`)
+        .join("");
     }
 
     /**

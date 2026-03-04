@@ -24,27 +24,7 @@ function logFactory(socketServer: SocketClient<WebSocket>): LogFunc {
     };
 }
 
-// HACK: Steam Deck OSK delivers each keypress twice (once via X11 uinput, once via
-// the Wayland text-input protocol). Intercept in capture phase and drop the duplicate
-// if the same key fires again within 35ms.
-function deduplicateSteamDeckOskInput() {
-    const recentKeyTimes = new Map<string, number>();
-    window.addEventListener("keydown", (event) => {
-        if (event.repeat) { return; }
-        const now = Date.now();
-        const last = recentKeyTimes.get(event.code) ?? 0;
-        if (now - last < 35) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-        }
-        recentKeyTimes.set(event.code, now);
-    }, true);
-}
-
 (async () => {
-    deduplicateSteamDeckOskInput();
-
     // Toggle DevTools when CTRL+SHIFT+I is pressed
     window.addEventListener("keypress", (event) => {
         if (event.ctrlKey && event.shiftKey && event.code === "KeyI") {

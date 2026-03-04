@@ -1,4 +1,4 @@
-import { faBars, faCog } from "@fortawesome/free-solid-svg-icons";
+import { faArrowsRotate, faBars, faCog } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ExodosResources } from "@renderer/util/exoResources";
 import { BackIn } from "@shared/back/types";
@@ -7,6 +7,8 @@ import { throttle } from "@shared/utils/throttle";
 import { MenuItemConstructorOptions } from "electron";
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "../redux/store";
 import { Paths } from "../Paths";
 import { joinLibraryRoute, openContextMenu } from "../Util";
 import { WithPreferencesProps } from "../containers/withPreferences";
@@ -113,6 +115,7 @@ export function Header(props: HeaderProps) {
                     ))}
                 </ul>
                 <ul className="header__menu header__menu--right">
+                    <UpdateIndicator />
                     <li className="header__menu__item">
                         <Link to={Paths.CONFIG} className="header__menu__item__link">
                             <FontAwesomeIcon icon={faCog} />
@@ -122,6 +125,32 @@ export function Header(props: HeaderProps) {
             </div>
         </div>
     );
+}
+
+function UpdateIndicator() {
+    const status = useSelector((state: RootState) => state.updateDialogState.status);
+
+    if (status === "checking") {
+        return (
+            <li className="header__menu__item">
+                <span className="header__menu__item__link header__update-checking" title="Checking for updates...">
+                    <FontAwesomeIcon icon={faArrowsRotate} className="header__update-spin" />
+                </span>
+            </li>
+        );
+    }
+
+    if (status === "available" || status === "downloaded") {
+        return (
+            <li className="header__menu__item">
+                <span className="header__menu__item__link header__update-dot-wrapper" title="Update available">
+                    <span className="header__update-dot" />
+                </span>
+            </li>
+        );
+    }
+
+    return null;
 }
 
 /** An item in the header menu. Used as buttons to switch between tabs/pages. */

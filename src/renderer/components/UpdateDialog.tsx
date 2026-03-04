@@ -68,7 +68,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
         ipcRenderer.send(UpdaterIPC.DISMISS_ERROR);
     };
 
-    if (status === "hidden") {
+    if (status === "hidden" || status === "checking" || status === "network-error") {
         return null;
     }
 
@@ -129,11 +129,6 @@ type AvailableStateProps = {
 function AvailableState(props: AvailableStateProps) {
     const { data, onDownload, onSkip, firstFocusableRef } = props;
 
-    const formatReleaseNotes = (notes: string): string => {
-        if (!notes) return "No release notes available.";
-        return notes;
-    };
-
     const formatBytes = (bytes: number): string => {
         if (bytes === 0) return "0 B";
         const k = 1024;
@@ -166,9 +161,10 @@ function AvailableState(props: AvailableStateProps) {
                 </div>
                 <div className="update-dialog__release-notes">
                     <h3 className="update-dialog__release-notes-title">What's New</h3>
-                    <div className="update-dialog__release-notes-content">
-                        {formatReleaseNotes(data.releaseNotes)}
-                    </div>
+                    <div
+                        className="update-dialog__release-notes-content"
+                        dangerouslySetInnerHTML={{ __html: data.releaseNotes || "No release notes available." }}
+                    />
                 </div>
             </div>
             <div className="update-dialog__actions">
