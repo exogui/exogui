@@ -34,6 +34,7 @@ import {
 import { stopMusic, playMusic } from "./redux/searchSlice";
 import {
     showChecking,
+    showNetworkError,
     showUpdateAvailable,
     showDownloading,
     showDownloaded,
@@ -59,6 +60,7 @@ const mapDispatch = {
     setPlaylistsLoaded,
     setExecLoaded,
     showChecking,
+    showNetworkError,
     showUpdateAvailable,
     showDownloading,
     showDownloaded,
@@ -312,6 +314,15 @@ class App extends React.Component<AppProps, AppState> {
 
         ipcRenderer.on(UpdaterIPC.UPDATE_CHECKING, () => {
             this.props.showChecking();
+        });
+
+        ipcRenderer.on(UpdaterIPC.UPDATE_NETWORK_ERROR, () => {
+            this.props.showNetworkError();
+            setTimeout(() => {
+                if (this.props.updateDialogState.status === "network-error") {
+                    this.props.hideDialog();
+                }
+            }, 6000);
         });
 
         ipcRenderer.on(UpdaterIPC.UPDATE_AVAILABLE, (event, data) => {

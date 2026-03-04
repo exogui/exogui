@@ -6,7 +6,7 @@ import {
     UpdateErrorData,
 } from "@shared/back/types";
 
-export type UpdateDialogStatus = "hidden" | "checking" | "available" | "downloading" | "downloaded" | "error";
+export type UpdateDialogStatus = "hidden" | "checking" | "network-error" | "available" | "downloading" | "downloaded" | "error";
 
 type UpdateDialogState = {
     status: UpdateDialogStatus;
@@ -30,6 +30,9 @@ const updateDialogSlice = createSlice({
             state.downloadProgress = undefined;
             state.downloadedInfo = undefined;
             state.error = undefined;
+        },
+        showNetworkError(state: UpdateDialogState) {
+            state.status = "network-error";
         },
         showUpdateAvailable(
             state: UpdateDialogState,
@@ -78,6 +81,7 @@ const updateDialogSlice = createSlice({
 
 export const {
     showChecking,
+    showNetworkError,
     showUpdateAvailable,
     showDownloading,
     showDownloaded,

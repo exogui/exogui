@@ -229,6 +229,7 @@ export class OnlineUpdater {
             if (this.isNetworkError(error)) {
                 console.log("[OnlineUpdater] Network unavailable, skipping update check.");
                 this.state.status = "idle";
+                this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_NETWORK_ERROR);
                 return;
             }
 

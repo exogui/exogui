@@ -1,4 +1,5 @@
-import { englishTranslation } from "@renderer/lang/en";
+import { faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ipcRenderer } from "electron";
 import { BackIn } from "@shared/back/types";
 import { UpdaterIPC } from "@shared/interfaces";
@@ -7,38 +8,25 @@ import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
+import { useSelector } from "react-redux";
 import { isExodosValidCheck } from "../../Util";
-import { ConfigBox } from "../ConfigBox";
-import { ConfigBoxCheckbox } from "../ConfigBoxCheckbox";
-import { ConfigBoxNumberInput } from "../ConfigBoxInput";
-import {
-    ConfigBoxMultiSelect,
-    MultiSelectItem,
-} from "../ConfigBoxMultiSelect";
+import { Dropdown } from "../Dropdown";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
+import { RootState } from "../../redux/store";
 
 type OwnProps = {
-    /** List of all platforms */
     platforms: string[];
-    /** Filenames of all files in the themes folder. */
     themeList: Theme[];
 };
 
 export type ConfigPageProps = OwnProps;
 
 type ConfigPageState = IAppConfigData & {
-    /** If the currently entered Exodos path points to a "valid" Exodos folder. */
     isExodosPathValid?: boolean;
+    networkExpanded: boolean;
 };
 
-/**
- * A page displaying all settings from config.json.
- * All changes require you to "Save & Restart" to take effect.
- */
-export class ConfigPage extends React.Component<
-    ConfigPageProps,
-    ConfigPageState
-> {
+export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState> {
     constructor(props: ConfigPageProps) {
         super(props);
         const configData = window.External.config.data;
@@ -46,11 +34,11 @@ export class ConfigPage extends React.Component<
             ...configData,
             nativePlatforms: [...configData.nativePlatforms],
             isExodosPathValid: undefined,
+            networkExpanded: false,
         };
     }
 
     render() {
-        const strings = englishTranslation.config;
         const platformOptions = this.itemizePlatformOptionsMemo(
             this.props.platforms,
             this.state.nativePlatforms,
@@ -58,80 +46,102 @@ export class ConfigPage extends React.Component<
 
         return (
             <div className="config-page simple-scroll">
-                <div className="config-page__inner">
-                    <h1 className="config-page__title">
-                        {strings.configHeader}
-                    </h1>
-                    <p className="config-page__description">
-                        {strings.configDesc}
+                <div className="config-page__content">
+                    <h1 className="config-page__title">Config</h1>
+                    <p className="config-page__subtitle">
+                        You must press &apos;Save &amp; Restart&apos; for some changes to take effect.
                     </p>
 
-                    {/* -- eXoDOS -- */}
-                    <div className="setting">
-                        <p className="setting__title">{strings.exodosHeader}</p>
-                        <div className="setting__body">
-                            {/* eXoDOS Location Mode */}
-                            <ConfigBox
-                                title={strings.exodosLocationMode}
-                                description={strings.exodosLocationModeDesc}
-                            >
+                    {/* eXoDOS */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">eXoDOS</h2>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">eXoDOS Location</span>
+                                <span className="cfg-row__desc">How to locate the eXoDOS folder.</span>
+                            </div>
+                            <div className="cfg-row__control">
                                 <select
                                     value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
                                     onChange={this.onExodosLocationModeChange}
-                                    className="simple-input"
+                                    className="simple-selector"
                                 >
-                                    <option value="embedded">{strings.exodosLocationEmbedded}</option>
-                                    <option value="custom">{strings.exodosLocationCustom}</option>
+                                    <option value="embedded">Auto (embedded)</option>
+                                    <option value="custom">Custom path</option>
                                 </select>
-                            </ConfigBox>
-                            {/* Exodos Path (only in custom mode) */}
-                            {!this.state.useEmbeddedExodosPath && (
-                                <ConfigBox
-                                    title={strings.exodosPath}
-                                    description={strings.exodosPathDesc}
-                                    contentClassName="setting__row__content--filepath-path"
-                                >
+                            </div>
+                        </div>
+                        {!this.state.useEmbeddedExodosPath && (
+                            <div className="cfg-row cfg-row--filepath">
+                                <div className="cfg-row__label">
+                                    <span className="cfg-row__name">eXoDOS Path</span>
+                                    <span className="cfg-row__desc">Path to the eXoDOS folder (can be relative).</span>
+                                </div>
+                                <div className="cfg-row__control cfg-row__control--wide">
                                     <ConfigExodosPathInput
                                         input={this.state.exodosPath}
-                                        buttonText={strings.browse}
+                                        buttonText="Browse"
                                         onInputChange={this.onExodosPathChange}
                                         isValid={this.state.isExodosPathValid}
                                     />
-                                </ConfigBox>
-                            )}
-                            {/* Native Platforms */}
-                            <ConfigBoxMultiSelect
-                                title={strings.nativePlatforms}
-                                description={strings.nativePlatformsDesc}
-                                text={strings.platforms}
-                                onChange={this.onNativeCheckboxChange}
-                                items={platformOptions}
-                            />
+                                </div>
+                            </div>
+                        )}
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Native Platforms</span>
+                                <span className="cfg-row__desc">Use native versions of these platforms. If not available, Wine is used.</span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <Dropdown text="Platforms">
+                                    {platformOptions.map((item) => (
+                                        <label key={item.value} className="log-page__dropdown-item">
+                                            <div className="simple-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={item.checked}
+                                                    onChange={() => this.onNativeCheckboxChange(item.value)}
+                                                    className="simple-center__vertical-inner"
+                                                />
+                                            </div>
+                                            <div className="simple-center">
+                                                <p className="simple-center__vertical-inner log-page__dropdown-item-text">
+                                                    {item.value}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </Dropdown>
+                            </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* -- Visuals -- */}
-                    <div className="setting">
-                        <p className="setting__title">
-                            {strings.visualsHeader}
-                        </p>
-                        <div className="setting__body">
-                            {/* Custom Title Bar */}
-                            <ConfigBoxCheckbox
-                                title={strings.useCustomTitleBar}
-                                description={strings.useCustomTitleBarDesc}
-                                checked={this.state.useCustomTitlebar}
-                                onToggle={this.onUseCustomTitlebarChange}
-                            />
-                            {/* Theme */}
-                            <ConfigBox
-                                title={strings.theme}
-                                description={strings.themeDesc}
-                            >
+                    {/* Visuals */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Visuals</h2>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Use Custom Title Bar</span>
+                                <span className="cfg-row__desc">Use a custom title bar at the top of this window.</span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useCustomTitlebar}
+                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                />
+                            </div>
+                        </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Theme</span>
+                                <span className="cfg-row__desc">Select the visual theme for the application.</span>
+                            </div>
+                            <div className="cfg-row__control">
                                 <select
                                     value={this.state.currentTheme || ""}
                                     onChange={(e) => this.applyTheme(e.target.value)}
-                                    className="simple-input"
+                                    className="simple-selector"
                                 >
                                     {this.props.themeList.map((theme) => (
                                         <option key={theme.entryPath} value={theme.entryPath}>
@@ -139,103 +149,102 @@ export class ConfigPage extends React.Component<
                                         </option>
                                     ))}
                                 </select>
-                            </ConfigBox>
+                            </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* -- Network -- */}
-                    <div className="setting">
-                        <p className="setting__title">{strings.networkHeader}</p>
-                        <div className="setting__body">
-                            <ConfigBoxNumberInput
-                                title={strings.backPortMin}
-                                description={strings.backPortMinDesc}
-                                value={this.state.backPortMin}
-                                onChange={(v) => this.setState({ backPortMin: v })}
-                                min={1024}
-                                max={65535}
-                            />
-                            <ConfigBoxNumberInput
-                                title={strings.backPortMax}
-                                description={strings.backPortMaxDesc}
-                                value={this.state.backPortMax}
-                                onChange={(v) => this.setState({ backPortMax: v })}
-                                min={1024}
-                                max={65535}
-                            />
-                            <ConfigBoxNumberInput
-                                title={strings.imagesPortMin}
-                                description={strings.imagesPortMinDesc}
-                                value={this.state.imagesPortMin}
-                                onChange={(v) => this.setState({ imagesPortMin: v })}
-                                min={1024}
-                                max={65535}
-                            />
-                            <ConfigBoxNumberInput
-                                title={strings.imagesPortMax}
-                                description={strings.imagesPortMaxDesc}
-                                value={this.state.imagesPortMax}
-                                onChange={(v) => this.setState({ imagesPortMax: v })}
-                                min={1024}
-                                max={65535}
-                            />
-                            <ConfigBoxNumberInput
-                                title={strings.vlcPort}
-                                description={strings.vlcPortDesc}
-                                value={this.state.vlcPort}
-                                onChange={(v) => this.setState({ vlcPort: v })}
-                                min={1024}
-                                max={65535}
-                            />
-                        </div>
-                    </div>
-
-                    {/* -- Updates -- */}
-                    <div className="setting">
-                        <p className="setting__title">
-                            {strings.updatesHeader}
-                        </p>
-                        <div className="setting__body">
-                            {this.isUpdateSupported() ? (
-                                <>
-                                    {/* Enable Online Updates */}
-                                    <ConfigBoxCheckbox
-                                        title={strings.enableOnlineUpdates}
-                                        description={strings.enableOnlineUpdatesDesc}
-                                        checked={this.state.enableOnlineUpdate}
-                                        onToggle={this.onEnableOnlineUpdateChange}
-                                    />
-                                    {/* Check for Updates */}
-                                    <ConfigBox
-                                        title={strings.checkForUpdates}
-                                        description={strings.checkForUpdatesDesc}
-                                    >
+                    {/* Updates */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Updates</h2>
+                        {this.isUpdateSupported() ? (
+                            <>
+                                <UpdateVersionRow onCheckNow={this.onCheckForUpdatesClick} />
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Auto-check on Startup</span>
+                                        <span className="cfg-row__desc">Automatically check for updates on startup (Linux AppImage only).</span>
+                                    </div>
+                                    <div className="cfg-row__control">
                                         <input
-                                            type="button"
-                                            value={strings.checkNow}
-                                            className="simple-button"
-                                            onClick={this.onCheckForUpdatesClick}
+                                            type="checkbox"
+                                            checked={this.state.enableOnlineUpdate}
+                                            onChange={(e) => this.onEnableOnlineUpdateChange(e.target.checked)}
                                         />
-                                    </ConfigBox>
-                                </>
-                            ) : (
-                                <div className="config-page__note config-page__note--warning">
-                                    <strong>Note:</strong> {strings.updatesNotSupported}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </>
+                        ) : (
+                            <div className="cfg-note cfg-note--warning">
+                                Online updates are not supported on your system. Updates are only available for Linux AppImage builds.
+                            </div>
+                        )}
+                    </section>
 
-                    {/* -- Save & Restart -- */}
-                    <div className="setting">
-                        <div className="setting__row">
-                            <input
-                                type="button"
-                                value={strings.saveAndRestart}
-                                className="simple-button save-and-restart"
-                                onClick={this.onSaveAndRestartClick}
-                            />
-                        </div>
+                    {/* Network (collapsible) */}
+                    <section className="cfg-section">
+                        <button
+                            className={`cfg-section__toggle${this.state.networkExpanded ? "" : " cfg-section__toggle--collapsed"}`}
+                            onClick={() => this.setState({ networkExpanded: !this.state.networkExpanded })}
+                        >
+                            <span>Network</span>
+                            <span>{this.state.networkExpanded ? "▲" : "▼"}</span>
+                        </button>
+                        {this.state.networkExpanded && (
+                            <>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Backend Port Min</span>
+                                        <span className="cfg-row__desc">Lower limit of the port range for the backend WebSocket server.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <input type="number" className="cfg-number-input" value={this.state.backPortMin} onChange={this.onBackPortMinChange} min={1024} max={65535} />
+                                    </div>
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Backend Port Max</span>
+                                        <span className="cfg-row__desc">Upper limit of the port range for the backend WebSocket server.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <input type="number" className="cfg-number-input" value={this.state.backPortMax} onChange={this.onBackPortMaxChange} min={1024} max={65535} />
+                                    </div>
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Images Port Min</span>
+                                        <span className="cfg-row__desc">Lower limit of the port range for the file server.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <input type="number" className="cfg-number-input" value={this.state.imagesPortMin} onChange={this.onImagesPortMinChange} min={1024} max={65535} />
+                                    </div>
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Images Port Max</span>
+                                        <span className="cfg-row__desc">Upper limit of the port range for the file server.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <input type="number" className="cfg-number-input" value={this.state.imagesPortMax} onChange={this.onImagesPortMaxChange} min={1024} max={65535} />
+                                    </div>
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">VLC Port</span>
+                                        <span className="cfg-row__desc">Port number for VLC media player HTTP interface.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <input type="number" className="cfg-number-input" value={this.state.vlcPort} onChange={this.onVlcPortChange} min={1024} max={65535} />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </section>
+
+                    {/* Footer */}
+                    <div className="cfg-footer">
+                        <button className="simple-button cfg-save-btn" onClick={this.onSaveAndRestartClick}>
+                            Save and Restart
+                        </button>
                     </div>
                 </div>
             </div>
@@ -243,23 +252,16 @@ export class ConfigPage extends React.Component<
     }
 
     itemizePlatformOptionsMemo = memoizeOne(
-        (
-            platforms: string[],
-            nativePlatforms: string[],
-        ): MultiSelectItem<string>[] => {
-            return platforms.map((platform) => {
-                return {
-                    value: platform,
-                    checked: nativePlatforms.includes(platform),
-                };
-            });
-        },
+        (platforms: string[], nativePlatforms: string[]) =>
+            platforms.map((platform) => ({
+                value: platform,
+                checked: nativePlatforms.includes(platform),
+            })),
     );
 
     onNativeCheckboxChange = (platform: string): void => {
         const nativePlatforms = [...this.state.nativePlatforms];
         const index = nativePlatforms.findIndex((item) => item === platform);
-
         if (index !== -1) {
             nativePlatforms.splice(index, 1);
         } else {
@@ -272,10 +274,8 @@ export class ConfigPage extends React.Component<
         this.setState({ useEmbeddedExodosPath: event.target.value === "embedded" });
     };
 
-    /** When the "Exodos Folder Path" input text is changed. */
     onExodosPathChange = async (filePath: string): Promise<void> => {
         this.setState({ exodosPath: filePath });
-        // Check if the file-path points at a valid Exodos folder
         const isValid = await isExodosValidCheck(filePath);
         this.setState({ isExodosPathValid: isValid });
     };
@@ -286,6 +286,31 @@ export class ConfigPage extends React.Component<
 
     onEnableOnlineUpdateChange = (isChecked: boolean): void => {
         this.setState({ enableOnlineUpdate: isChecked });
+    };
+
+    onBackPortMinChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) this.setState({ backPortMin: v });
+    };
+
+    onBackPortMaxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) this.setState({ backPortMax: v });
+    };
+
+    onImagesPortMinChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) this.setState({ imagesPortMin: v });
+    };
+
+    onImagesPortMaxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) this.setState({ imagesPortMax: v });
+    };
+
+    onVlcPortChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) this.setState({ vlcPort: v });
     };
 
     isUpdateSupported = (): boolean => {
@@ -303,8 +328,7 @@ export class ConfigPage extends React.Component<
         window.External.back.request(BackIn.UPDATE_CONFIG, { currentTheme: theme });
     };
 
-    /** When the "Save & Restart" button is clicked. */
-    onSaveAndRestartClick = () => {
+    onSaveAndRestartClick = (): void => {
         const configData: IAppConfigData = {
             exodosPath: this.state.exodosPath,
             imageFolderPath: this.state.imageFolderPath,
@@ -332,3 +356,52 @@ export class ConfigPage extends React.Component<
     };
 }
 
+function UpdateVersionRow({ onCheckNow }: { onCheckNow: () => void }) {
+    const status = useSelector((state: RootState) => state.updateDialogState.status);
+    const version = window.External.version;
+
+    return (
+        <div className="cfg-row">
+            <div className="cfg-row__label">
+                <span className="cfg-row__name">Version</span>
+            </div>
+            <div className="cfg-row__control">
+                <span className="cfg-version-text">v{version}</span>
+                {status === "hidden" && (
+                    <button className="simple-button" onClick={onCheckNow}>Check Now</button>
+                )}
+                {status === "checking" && (
+                    <span className="cfg-update-status cfg-update-status--checking">
+                        <FontAwesomeIcon icon={faArrowsRotate} className="header__update-spin" />
+                        Checking...
+                    </span>
+                )}
+                {status === "available" && (
+                    <span className="cfg-update-status cfg-update-status--available">
+                        Update available
+                    </span>
+                )}
+                {status === "downloading" && (
+                    <span className="cfg-update-status cfg-update-status--checking">
+                        Downloading...
+                    </span>
+                )}
+                {status === "downloaded" && (
+                    <span className="cfg-update-status cfg-update-status--downloaded">
+                        Ready to install
+                    </span>
+                )}
+                {status === "network-error" && (
+                    <span className="cfg-update-status cfg-update-status--error">
+                        ⚠ Check failed
+                    </span>
+                )}
+                {status === "error" && (
+                    <span className="cfg-update-status cfg-update-status--error">
+                        ⚠ Error
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}

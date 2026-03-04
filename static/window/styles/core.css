@@ -1820,138 +1820,177 @@ body {
   height: 100%;
   overflow: auto;
 }
-.config-page__inner {
-  padding: 0.1rem 0.5rem;
-  min-width: 30em;
-  text-align: center;
-  overflow: visible;
+.config-page__content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
 }
 .config-page__title {
-  font-size: 2.5em;
+  font-size: 1.6em;
+  font-weight: bold;
+  margin: 0 0 0.3em;
 }
-/* ... */
-.config-page p {
-  display: inline-block;
+.config-page__subtitle {
+  font-size: 0.85em;
+  opacity: 0.6;
+  margin: 0 0 1.5em;
+  display: block;
 }
-.config-page input[type="checkbox"] {
-  vertical-align: middle;
-  transform: scale(1.25);
-}
-/* Select dropdowns */
-.config-page select {
-  float: right;
-  font-size: 1em;
-}
-/* SaveAndRestart */
-.config-page input[type="button"].save-and-restart {
-  font-size: 1.075em;
-  margin: 0 auto;
-}
-/* Note */
-.config-page__note {
-  margin: 0.75rem 0;
-  padding: 0.75rem;
-  border-radius: 0.25rem;
-  font-size: 0.9rem;
-  text-align: left;
+/* Config Section */
+.cfg-section {
   background-color: var(--theme-primary);
   border: 1px solid var(--theme-primary-border);
+  border-radius: 0.3em;
+  margin-bottom: 1rem;
+  overflow: visible;
 }
-.config-page__note--warning {
-  background-color: rgba(255, 193, 7, 0.15);
-  border-color: rgba(255, 193, 7, 0.4);
-  color: var(--theme-text);
-}
-/* Setting */
-.setting {
-  margin: 0 auto;
-  margin-top: 1em;
-  max-width: 40em;
-}
-.setting > :first-child {
-  border-top: 0;
-}
-.setting__title {
-  margin: 0.2em 0;
-  font-size: 1.2em;
+.cfg-section__header {
+  font-size: 0.75em;
   font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  padding: 0.65em 1em 0.5em;
+  margin: 0;
+  border-bottom: 1px solid var(--theme-primary-border);
 }
-.setting__body {
-  /* Pimp */
-  border-radius: 0.2em;
-  border: 1px solid;
-}
-/* Setting Row */
-.setting__row {
-  padding: 0.75em;
-}
-.setting__row:not(:first-child) {
-  border-top: 1px solid;
-}
-.setting__row__top {
+/* Config Row */
+.cfg-row {
   display: flex;
+  align-items: center;
+  padding: 0.75em 1em;
+  gap: 1.5em;
 }
-.setting__row__bottom {
-  padding: 0;
-  border-top: 0;
-  font-size: 0.8em;
-  font-style: italic;
-  text-align: left;
+.cfg-row + .cfg-row {
+  border-top: 1px solid var(--theme-primary-border);
 }
-.setting__row__title {
-  flex: 0 1 auto;
-  font-size: 1.15em;
-  font-weight: bold;
-}
-.setting__row__content {
+.cfg-row__label {
   flex: 1 1 auto;
+  min-width: 0;
 }
-/* Setting Row Content - FilePoint Path */
-.setting__row__content--filepath-path {
+.cfg-row__name {
+  display: block;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+.cfg-row__desc {
+  display: block;
+  font-size: 0.78em;
+  opacity: 0.55;
+  margin-top: 0.15em;
+}
+.cfg-row__control {
+  flex: 0 0 auto;
   display: flex;
-  height: fit-content;
-  margin-left: 0.5rem;
+  align-items: center;
+  gap: 0.5em;
 }
-.setting__row__content--filepath-path .exodos-path__input {
+.cfg-row__control--wide {
+  flex: 0 0 55%;
+}
+/* Filepath row */
+.cfg-row--filepath .exodos-path__input {
   flex: 1;
-  border: 1px solid;
+  border: 1px solid var(--theme-primary-border);
 }
-.setting__row__content--filepath-path .exodos-path__input input[type="text"] {
+.cfg-row--filepath .exodos-path__input input[type="text"] {
   width: 100%;
-  font-size: 1em;
+  font-size: 0.9em;
   background: none;
   border: none;
   outline: none;
+  padding: 0.2em 0.4em;
+  color: inherit;
 }
-/* Setting Row Content - Toggle */
-.setting__row__content--toggle > div {
-  float: right;
+.cfg-row--filepath .exodos-path__input--valid {
+  border-color: #4caf50;
 }
-/* Setting Row Content - Redirector */
-.setting__row__content--redirector {
+.cfg-row--filepath .exodos-path__input--invalid {
+  border-color: #e57373;
+}
+/* Checkbox */
+.cfg-row input[type="checkbox"] {
+  transform: scale(1.3);
+  cursor: pointer;
+}
+/* Number input */
+.cfg-number-input {
+  width: 6em;
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  border: 1px solid var(--theme-primary-border);
+  background: transparent;
+  color: inherit;
   text-align: right;
 }
-.setting__row__content--redirector > div {
-  display: inline;
-}
-.setting__row__content--redirector > div:not(:last-child) {
-  margin-right: 1rem;
-}
-.setting__row__content--redirector input {
-  margin-right: 0.2rem;
-}
-/* Setting Row Content - Input Field */
-.setting__row__content--input-field {
+/* Collapsible section toggle */
+.cfg-section__toggle {
   display: flex;
-  height: fit-content;
-  margin-left: 0.5rem;
-}
-.setting__row__content--input-field > :first-child {
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--theme-primary-border);
+  cursor: pointer;
+  font-size: 0.75em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  padding: 0.65em 1em 0.5em;
+  color: inherit;
+  text-align: left;
 }
-.setting__row__content--input-field .input-dropdown__input-field,
-.setting__row__content--input-field .input-dropdown__content {
-  border: 1px solid;
+.cfg-section__toggle:hover {
+  opacity: 0.85;
+}
+.cfg-section__toggle--collapsed {
+  border-bottom: none;
+}
+/* Config note */
+.cfg-note {
+  padding: 0.75em 1em;
+  font-size: 0.85em;
+}
+.cfg-note--warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-top: 1px solid rgba(255, 193, 7, 0.3);
+  color: var(--theme-text);
+}
+/* Version text */
+.cfg-version-text {
+  font-size: 0.9em;
+  opacity: 0.75;
+}
+/* Update status badge */
+.cfg-update-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 0.8em;
+}
+.cfg-update-status--checking {
+  opacity: 0.6;
+}
+.cfg-update-status--available {
+  color: #f4a836;
+}
+.cfg-update-status--downloaded {
+  color: #4caf50;
+}
+.cfg-update-status--error {
+  color: #e57373;
+}
+/* Config footer */
+.cfg-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+.cfg-save-btn {
+  padding: 0.4em 1.4em;
+  font-size: 1em;
 }
 
 /** ----- Progress Components ------ **/

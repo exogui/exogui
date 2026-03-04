@@ -186,6 +186,8 @@ export enum UpdaterIPC {
     RENDERER_READY = "updater:renderer-ready",
     /** Main -> Renderer: Update check is in progress */
     UPDATE_CHECKING = "updater:checking",
+    /** Main -> Renderer: Update check failed due to network error */
+    UPDATE_NETWORK_ERROR = "updater:network-error",
 }
 
 /** IPC channels used to relay game manager events from  */

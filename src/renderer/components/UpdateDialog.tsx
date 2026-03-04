@@ -68,7 +68,7 @@ export function UpdateDialog(props: UpdateDialogProps) {
         ipcRenderer.send(UpdaterIPC.DISMISS_ERROR);
     };
 
-    if (status === "hidden" || status === "checking") {
+    if (status === "hidden" || status === "checking" || status === "network-error") {
         return null;
     }
 
