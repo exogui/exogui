@@ -1916,8 +1916,6 @@ body {
 /* Number input */
 .cfg-number-input {
   width: 6em;
-  font-size: 0.9em;
-  padding: 0.2em 0.4em;
   border: 1px solid var(--theme-primary-border);
   background: transparent;
   color: inherit;
@@ -1982,6 +1980,16 @@ body {
 .cfg-update-status--error {
   color: #e57373;
 }
+/* Consistent control sizing — normalize buttons, selects, number inputs in cfg rows */
+.cfg-row__control .simple-button,
+.cfg-row__control select,
+.cfg-row__control .cfg-number-input {
+  font-size: 0.875em;
+  padding: 0.28em 0.55em;
+  line-height: 1.4;
+  margin: 0;
+  box-sizing: border-box;
+}
 /* Config footer */
 .cfg-footer {
   display: flex;
@@ -1989,8 +1997,8 @@ body {
   margin-top: 0.5rem;
 }
 .cfg-save-btn {
-  padding: 0.4em 1.4em;
-  font-size: 1em;
+  padding: 0.35em 1.4em;
+  font-size: 0.875em;
 }
 
 /** ----- Progress Components ------ **/
