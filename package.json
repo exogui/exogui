@@ -1,6 +1,6 @@
 {
     "name": "exogui",
-    "version": "1.2.19",
+    "version": "1.2.20",
     "description": "A desktop application used to browse, manage and play games from eXoDOS collection. Based on BlueMaxima's Flashpoint launcher.",
     "main": "build/main/index.js",
     "repository": {
@@ -35,7 +35,8 @@
         "publish:win32": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:win32\"",
         "publish:darwin": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:darwin\"",
         "publish:m1": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:m1\"",
-        "publish:all": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:all\""
+        "publish:all": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:all\"",
+        "download-fonts": "node scripts/download-fonts.js"
     },
     "author": "mgo",
     "license": "MIT",

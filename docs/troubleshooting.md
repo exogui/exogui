@@ -142,6 +142,40 @@ For more details on configuration, see [config.md](config.md).
 
 ---
 
+## Linux-Specific Issues
+
+### Text Not Rendering / Blank or Missing Characters
+
+**Problem:** Text in the application appears as blank rectangles, invisible, or is not rendered at all.
+
+**Cause:** exogui is an Electron application that relies on system fonts for text rendering. Some minimal Linux installations or distributions may not include the required fonts by default.
+
+**Solution:** Install one of the following font packages using your distribution's package manager:
+
+-   **Debian/Ubuntu:**
+
+    ```bash
+    sudo apt install fonts-liberation
+    ```
+
+-   **Fedora:**
+
+    ```bash
+    sudo dnf install liberation-fonts
+    ```
+
+-   **Arch Linux:**
+
+    ```bash
+    sudo pacman -S ttf-liberation
+    ```
+
+Alternative font packages that also work: `fonts-noto` (or `noto-fonts`), `fonts-dejavu` (or `ttf-dejavu`).
+
+After installing fonts, restart exogui for the changes to take effect.
+
+---
+
 ## macOS-Specific Issues
 
 **Note:** macOS support is currently under development and may not work correctly.
