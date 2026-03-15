@@ -447,6 +447,9 @@ export function main(init: Init): void {
             }
             window.webContents.send(WindowIPC.WINDOW_MAXIMIZE, false);
         });
+        window.on("blur", () => {
+            state.socket.send(BackIn.STOP_MUSIC);
+        });
         // Derefence window when closed
         window.on("closed", () => {
             if (state.window === window) {
