@@ -35,7 +35,8 @@
         "publish:win32": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:win32\"",
         "publish:darwin": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:darwin\"",
         "publish:m1": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:m1\"",
-        "publish:all": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:all\""
+        "publish:all": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:all\"",
+        "download-fonts": "node scripts/download-fonts.js"
     },
     "author": "mgo",
     "license": "MIT",

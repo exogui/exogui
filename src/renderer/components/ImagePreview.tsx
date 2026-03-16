@@ -26,18 +26,10 @@ export function MediaPreview(props: MediaPreviewProps) {
     };
 
     React.useEffect(() => {
-        if (props.media.category === "30 Second Demo") {
-            // Pause any running audio
-            window.External.back.send(BackIn.TOGGLE_MUSIC, false);
+        if (props.media.type === FormattedGameMediaType.VIDEO) {
+            window.External.back.send(BackIn.STOP_MUSIC);
         }
-
-        return () => {
-            if (window.External.preferences.data.gameMusicPlay) {
-                // Resume any running audio
-                window.External.back.send(BackIn.TOGGLE_MUSIC, true);
-            }
-        };
-    }, [props.media.category]);
+    }, [props.media.type]);
 
     const { onCancel } = props;
     React.useEffect(() => {

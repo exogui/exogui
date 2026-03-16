@@ -178,7 +178,7 @@ function createBuildTargets(os, arch) {
 }
 
 function getCopyFiles() {
-    return [
+    const files = [
         {
             // Only copy 7zip execs for packed platform
             from: "./extern/7zip-bin",
@@ -196,6 +196,10 @@ function getCopyFiles() {
             to: "./licenses/LICENSE",
         },
     ];
+    if (process.env.PACK_PLATFORM === "linux" && fs.existsSync("./fonts")) {
+        files.push({ from: "./fonts", to: "./fonts" });
+    }
+    return files;
 }
 
 function createPublishInfo() {

@@ -211,5 +211,8 @@ export class VlcPlayer {
             this.socket.write("shutdown\n");
         }
         await this.close();
+        if (this.ownsProcess && this.server && !this.server.killed) {
+            this.server.kill();
+        }
     }
 }

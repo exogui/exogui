@@ -1,3 +1,7 @@
+// Must run before any Electron/Chromium initialization so renderer processes inherit it
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+(require("./FontManager") as typeof import("./FontManager")).setupBundledFonts();
+
 import { Coerce } from "@shared/utils/Coerce";
 import { main } from "./Main";
 import { Init } from "./types";

@@ -1,5 +1,7 @@
 # exogui
 
+**Important: This application requires eXo projects to be pre-patched with the Linux patch. For download and installation instructions, please visit the [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) and the [Linux Patch Wiki](https://wiki.retro-exo.com/index.php/Linux_Patch).**
+
 The launcher for the eXoDOS project.
 
 ## Links
