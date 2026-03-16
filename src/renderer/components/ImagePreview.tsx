@@ -1,6 +1,7 @@
 import { BackIn } from "@shared/back/types";
 import { getFileServerURL } from "@shared/Util";
 import * as React from "react";
+import { BoxViewer3D } from "./BoxViewer3D";
 import { BareFloatingContainer } from "./FloatingContainer";
 import {
     FormattedGameMedia,
@@ -29,6 +30,17 @@ export function MediaPreview(props: MediaPreviewProps) {
             window.External.back.send(BackIn.STOP_MUSIC);
         }
     }, [props.media.type]);
+
+    const { onCancel } = props;
+    React.useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && onCancel) {
+                onCancel();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onCancel]);
 
     const renderedMedia = () => {
         switch (props.media.type) {
@@ -61,6 +73,33 @@ export function MediaPreview(props: MediaPreviewProps) {
                     />
                 );
             }
+            case FormattedGameMediaType.BOX_3D: {
+                if (props.media.interactive && props.media.backPath) {
+                    return (
+                        <div style={{ width: "100%", height: "100%" }}>
+                            <BoxViewer3D
+                                frontImageUrl={`${getFileServerURL()}/${props.media.path}`}
+                                backImageUrl={`${getFileServerURL()}/${props.media.backPath}`}
+                                spinePath={props.media.spinePath ? `${getFileServerURL()}/${props.media.spinePath}` : undefined}
+                                isFullscreen={true}
+                                interactive={true}
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <img
+                        className={
+                            "image-preview__image" +
+                            (scaleUp
+                                ? " image-preview__image--fill"
+                                : " image-preview__image--fit")
+                        }
+                        src={`${getFileServerURL()}/${props.media.path}`}
+                        onClick={onClickImage}
+                    />
+                );
+            }
         }
     };
 
@@ -72,6 +111,14 @@ export function MediaPreview(props: MediaPreviewProps) {
 
     return (
         <BareFloatingContainer>
+            {props.onCancel && (
+                <button
+                    className="image-preview-close"
+                    onClick={props.onCancel}
+                >
+                    ✕
+                </button>
+            )}
             <div
                 className="image-preview-container"
                 style={{ overflowY: scaleUp ? "auto" : "unset" }}

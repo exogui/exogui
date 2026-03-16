@@ -1,7 +1,9 @@
 import { fixSlashes, getFileServerURL } from "@shared/Util";
 import { GameMedia } from "@shared/game/interfaces";
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { PreferencesContext } from "../context/PreferencesContext";
+import { BoxViewer3D } from "./BoxViewer3D";
 import { OpenIcon } from "./OpenIcon";
 
 export type GameImageCarouselProps = {
@@ -17,6 +19,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
     const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
     const [wheelPosition, setWheelPosition] = useState(0);
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(0);
+    const preferences = useContext(PreferencesContext);
 
     // When the image changes, reset the selected elements
     useEffect(() => {
@@ -26,7 +29,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
         setSelectedMediaIdx(0);
     }, [props.media]);
 
-    const sortedMedia = prepareGameMedias(props.media, props.platform).sort(sortByMediaCategory);
+    const sortedMedia = prepareGameMedias(props.media, props.platform, preferences.enableBoxViewer).sort(sortByMediaCategory);
 
     // Hover functions to trigger the label to show
     const handleMouseEnter = (index: number) => {
@@ -88,6 +91,18 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                     </>
                 );
                 break;
+            case FormattedGameMediaType.BOX_3D:
+                innerElem = (
+                    <BoxViewer3D
+                        key={props.imgKey}
+                        frontImageUrl={`${getFileServerURL()}/${media.path}`}
+                        backImageUrl={media.backPath ? `${getFileServerURL()}/${media.backPath}` : undefined}
+                        spinePath={media.spinePath ? `${getFileServerURL()}/${media.spinePath}` : undefined}
+                        interactive={false}
+                        thumbMode={true}
+                    />
+                );
+                break;
         }
 
         return (
@@ -144,6 +159,22 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         onClick={() => props.onPreviewMedia(selectedMedia)}
                     />
                 );
+            case FormattedGameMediaType.BOX_3D:
+                return (
+                    <div
+                        key={props.imgKey}
+                        className={selectedMedia.interactive ? "cursor" : undefined}
+                        style={{ width: "100%", height: "100%" }}
+                        onClick={selectedMedia.interactive ? () => props.onPreviewMedia(selectedMedia) : undefined}
+                    >
+                        <BoxViewer3D
+                            frontImageUrl={`${getFileServerURL()}/${selectedMedia.path}`}
+                            backImageUrl={selectedMedia.backPath ? `${getFileServerURL()}/${selectedMedia.backPath}` : undefined}
+                            spinePath={selectedMedia.spinePath ? `${getFileServerURL()}/${selectedMedia.spinePath}` : undefined}
+                            interactive={false}
+                        />
+                    </div>
+                );
         }
     };
 
@@ -190,15 +221,18 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
 export enum FormattedGameMediaType {
     IMAGE,
     VIDEO,
+    BOX_3D,
 }
 
 export type GameMediaCategory =
     | "30 Second Demo"
     | "Screenshot - Gameplay"
     | "Screenshot - Game Title"
+    | "Box Viewer"
     | "Box - 3D"
     | "Box - Front"
     | "Box - Back"
+    | "Box - Spine"
     | "Clear Logo"
     | "Disc"
     | "Banner"
@@ -208,15 +242,18 @@ export type FormattedGameMedia = {
     category: GameMediaCategory;
     type: FormattedGameMediaType;
     path: string;
+    backPath?: string;
+    spinePath?: string;
+    interactive?: boolean;
 };
 
 function prepareGameMedias(
     media: GameMedia,
-    platform: string
+    platform: string,
+    enableBoxViewer: boolean
 ): FormattedGameMedia[] {
     const list: FormattedGameMedia[] = [];
 
-    // Add videos first
     if (media.video) {
         list.push({
             category: "30 Second Demo",
@@ -225,7 +262,29 @@ function prepareGameMedias(
         });
     }
 
-    // Add images next
+    if (enableBoxViewer) {
+        const frontFiles = media.images["Box - Front"];
+        const backFiles = media.images["Box - Back"];
+        const spineFiles = media.images["Box - Spine"];
+
+        const hasFront = frontFiles && frontFiles.length > 0;
+        const hasBack = backFiles && backFiles.length > 0;
+        const hasSpine = spineFiles && spineFiles.length > 0;
+
+        if (hasFront && hasBack) {
+            list.push({
+                category: "Box Viewer",
+                type: FormattedGameMediaType.BOX_3D,
+                path: fixSlashes(`Images/${platform}/${frontFiles[0]}`),
+                backPath: fixSlashes(`Images/${platform}/${backFiles[0]}`),
+                spinePath: hasSpine
+                    ? fixSlashes(`Images/${platform}/${spineFiles[0]}`)
+                    : undefined,
+                interactive: true,
+            });
+        }
+    }
+
     for (const category of Object.keys(media.images)) {
         for (const filename of media.images[category]) {
             list.push({
@@ -238,27 +297,25 @@ function prepareGameMedias(
     return list;
 }
 
+function mediaSortKey(m: FormattedGameMedia): number {
+    if (m.type === FormattedGameMediaType.VIDEO) { return 0; }
+    if (m.type === FormattedGameMediaType.BOX_3D) { return 2; }
+    const categoryOrder: Partial<Record<GameMediaCategory, number>> = {
+        "Screenshot - Gameplay": 1,
+        "Screenshot - Game Title": 3,
+        "Clear Logo": 4,
+        "Disc": 5,
+        "Banner": 6,
+        "Fanart - Background": 7,
+        "Box - 3D": 8,
+        "Box - Front": 9,
+        "Box - Back": 10,
+        "Box - Spine": 11,
+        "Box Viewer": 12,
+    };
+    return categoryOrder[m.category] ?? 12;
+}
+
 const sortByMediaCategory = (a: FormattedGameMedia, b: FormattedGameMedia) => {
-    const sortOrder: GameMediaCategory[] = [
-        "30 Second Demo",
-        "Screenshot - Gameplay",
-        "Screenshot - Game Title",
-        "Clear Logo",
-        "Box - Front",
-        "Box - Back",
-        "Box - 3D",
-        "Disc",
-        "Banner",
-        "Fanart - Background",
-    ];
-
-    const aGameOrder = sortOrder.includes(a.category)
-        ? sortOrder.findIndex((c) => c === a.category)
-        : sortOrder.length;
-
-    const bGameOrder = sortOrder.includes(b.category)
-        ? sortOrder.findIndex((c) => c === b.category)
-        : sortOrder.length;
-    const result = aGameOrder - bGameOrder;
-    return result;
+    return mediaSortKey(a) - mediaSortKey(b);
 };

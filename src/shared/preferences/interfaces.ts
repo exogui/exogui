@@ -46,6 +46,8 @@ export type IAppPreferencesData = {
     browsePageSearchRecommended: boolean | null;
     /** Whether the filter panel is expanded in the browse page */
     browsePageFiltersExpanded: boolean;
+    /** Enable the experimental 3D Box Viewer in the media carousel */
+    enableBoxViewer: boolean;
 };
 
 export type IAppPreferencesDataMainWindow = {

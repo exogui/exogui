@@ -181,6 +181,7 @@ export class FileServer {
                             "Accept-Ranges": "bytes",
                             "Content-Length": chunkSize,
                             "Content-Type": contentType,
+                            "Access-Control-Allow-Origin": "*",
                         });
 
                         if (req.method === "GET") {
@@ -205,6 +206,7 @@ export class FileServer {
                         res.writeHead(200, {
                             "Content-Type": contentType,
                             "Content-Length": total,
+                            "Access-Control-Allow-Origin": "*",
                         });
                         if (req.method === "GET") {
                             const stream = fs.createReadStream(filePath);

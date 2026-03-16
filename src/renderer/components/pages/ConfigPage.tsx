@@ -7,6 +7,7 @@ import { IAppConfigData } from "@shared/config/interfaces";
 import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
+import { updatePreferencesData } from "@shared/preferences/util";
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { isExodosValidCheck } from "../../Util";
@@ -24,6 +25,7 @@ export type ConfigPageProps = OwnProps;
 type ConfigPageState = IAppConfigData & {
     isExodosPathValid?: boolean;
     networkExpanded: boolean;
+    enableBoxViewer: boolean;
 };
 
 export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState> {
@@ -35,6 +37,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             nativePlatforms: [...configData.nativePlatforms],
             isExodosPathValid: undefined,
             networkExpanded: false,
+            enableBoxViewer: window.External.preferences.data.enableBoxViewer,
         };
     }
 
@@ -240,6 +243,31 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         )}
                     </section>
 
+                    {/* Experimental */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Experimental Features</h2>
+                        <div className="cfg-note cfg-note--warning">
+                            Experimental features are works in progress and may not behave as expected. Use them at your own risk.
+                        </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">3D Box Viewer</span>
+                                <span className="cfg-row__desc">
+                                    Shows an interactive 3D box in the media carousel when both front and back cover scans are available.
+                                    The quality of the 3D render depends entirely on the source scans — misaligned borders, color fringing, or missing side faces are expected and are not bugs.
+                                    Many games in the collection have scans of varying quality, so results will differ from title to title.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.enableBoxViewer}
+                                    onChange={(e) => this.onEnableBoxViewerChange(e.target.checked)}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
                     {/* Footer */}
                     <div className="cfg-footer">
                         <button className="simple-button cfg-save-btn" onClick={this.onSaveAndRestartClick}>
@@ -286,6 +314,11 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
 
     onEnableOnlineUpdateChange = (isChecked: boolean): void => {
         this.setState({ enableOnlineUpdate: isChecked });
+    };
+
+    onEnableBoxViewerChange = (isChecked: boolean): void => {
+        this.setState({ enableBoxViewer: isChecked });
+        updatePreferencesData({ enableBoxViewer: isChecked });
     };
 
     onBackPortMinChange = (e: React.ChangeEvent<HTMLInputElement>): void => {

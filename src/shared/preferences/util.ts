@@ -60,6 +60,7 @@ export const defaultPreferencesData: Readonly<IAppPreferencesData> =
         browsePageSearchInstalled: null,
         browsePageSearchRecommended: null,
         browsePageFiltersExpanded: true,
+        enableBoxViewer: false,
     });
 
 /**
@@ -127,6 +128,7 @@ export function overwritePreferenceData(
     parser.prop("browsePageSearchInstalled", (v) => (source.browsePageSearchInstalled = v === null || v === undefined ? null : !!v), true);
     parser.prop("browsePageSearchRecommended", (v) => (source.browsePageSearchRecommended = v === null || v === undefined ? null : !!v), true);
     parser.prop("browsePageFiltersExpanded", (v) => (source.browsePageFiltersExpanded = !!v), true);
+    parser.prop("enableBoxViewer", (v) => (source.enableBoxViewer = !!v), true);
     // Parse window object
     parseMainWindow(parser.prop("mainWindow"), source.mainWindow);
     parser
