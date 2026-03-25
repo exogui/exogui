@@ -53,17 +53,12 @@ jobs:
               dist/*.zip
               dist/latest.yml
 
-          - name: macOS (Intel)
-            runner: macos-15-intel
-            script: release:darwin
+          - name: macOS (Universal)
+            runner: macos-latest
+            script: release:mac-universal
             artifact-pattern: |
               dist/*.dmg
               dist/latest-mac.yml
-
-          - name: macOS (Apple Silicon)
-            runner: macos-latest
-            script: release:m1
-            artifact-pattern: dist/*.dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -128,8 +123,7 @@ jobs:
           ## Artifacts
           - Linux: AppImage and tar.gz archive
           - Windows: NSIS installer (.exe) and portable zip archive
-          - macOS (Intel): DMG disk image
-          - macOS (Apple Silicon): DMG disk image
+          - macOS: Universal (Intel and Apple Silicon) DMG disk image
 
           ### Linux Notes
           Run AppImage with: `./exogui.AppImage --no-sandbox`
