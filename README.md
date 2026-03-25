@@ -42,7 +42,7 @@ This project is currently intended for developers. To set up your development en
 1. **Clone the repository** with submodules:
 
     ```bash
-    git clone --recurse-submodules https://github.com/margorski/exodos-launcher launcher
+    git clone --recurse-submodules https://github.com/exogui/exogui launcher
     cd launcher
     ```
 
