@@ -37,9 +37,6 @@ export function BoxViewer3D(props: BoxViewer3DProps) {
 
     const maxW = thumbMode ? 60 : (isFullscreen ? 500 : 170);
     const maxH = thumbMode ? 75 : (isFullscreen ? 580 : 210);
-    const bgPadX = thumbMode ? 0 : (isFullscreen ? 80 : 60);
-    const bgPadY = thumbMode ? 0 : (isFullscreen ? 60 : 40);
-
     const [dims, setDims] = useState<BoxDims | null>(null);
     const [rotX, setRotX] = useState(INITIAL_ROT_X);
     const [rotY, setRotY] = useState(INITIAL_ROT_Y);
@@ -133,11 +130,8 @@ export function BoxViewer3D(props: BoxViewer3DProps) {
         }
         : {};
 
-    const bgW = maxW + bgPadX;
-    const bgH = maxH + bgPadY;
-
     const bgStyle = thumbMode
-        ? { width: bgW, height: bgH }
+        ? { width: "100%", height: "100%", overflow: "hidden" as const }
         : { width: "100%", height: "100%", padding: "1.5rem" };
 
     if (!dims) {
