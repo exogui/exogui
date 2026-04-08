@@ -258,6 +258,7 @@ export class OnlineUpdater {
 
     /**
      * Format release notes for display.
+     * Strips everything after the <!-- changelog-end --> marker if present.
      */
     private formatReleaseNotes(releaseNotes: string | Array<{version: string; note: string | null}> | null | undefined): string {
         if (!releaseNotes) {
@@ -265,11 +266,17 @@ export class OnlineUpdater {
         }
 
         if (typeof releaseNotes === "string") {
-            return releaseNotes;
+            const markerIdx = releaseNotes.indexOf("<!-- changelog-end -->");
+            return markerIdx !== -1 ? releaseNotes.slice(0, markerIdx) : releaseNotes;
         }
 
         return releaseNotes
-        .map(note => `<h4>Version ${note.version}</h4>${note.note || "<p>No description</p>"}`)
+        .map(note => {
+            const notes = note.note ?? "<p>No description</p>";
+            const markerIdx = notes.indexOf("<!-- changelog-end -->");
+            const trimmed = markerIdx !== -1 ? notes.slice(0, markerIdx) : notes;
+            return `<h4>Version ${note.version}</h4>${trimmed}`;
+        })
         .join("");
     }
 
