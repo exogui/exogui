@@ -149,6 +149,8 @@ export enum WindowIPC {
     WINDOW_MOVE = "window-move",
     /** Sent whenever the windows size changes. (main -> renderer). */
     WINDOW_RESIZE = "window-resize",
+    /** Sent when the window loses focus. (main -> renderer). */
+    WINDOW_BLUR = "window-blur",
 }
 
 export enum UpdaterIPC {
