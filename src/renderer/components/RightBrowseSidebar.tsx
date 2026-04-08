@@ -59,30 +59,29 @@ export class RightBrowseSidebar extends React.Component<
     }
 
     checkAddAppsExistence = async () => {
+        const addAppsToCheck = this.props.currentAddApps ?? [];
         const existingAddApps: IAdditionalApplicationInfo[] = [];
-        if (this.props.currentAddApps) {
-            for (const addApp of this.props.currentAddApps) {
-                try {
-                    const absolutePath = path.join(
-                        window.External.config.fullExodosPath,
-                        fixSlashes(addApp.applicationPath)
-                    );
-                    await fs.access(absolutePath);
-                    existingAddApps.push(addApp);
-                } catch {
-                    // Do nothing
-                }
+        for (const addApp of addAppsToCheck) {
+            try {
+                const absolutePath = path.join(
+                    window.External.config.fullExodosPath,
+                    fixSlashes(addApp.applicationPath)
+                );
+                await fs.access(absolutePath);
+                existingAddApps.push(addApp);
+            } catch {
+                // Do nothing
             }
         }
 
-        this.setState({
-            ...this.state,
-            existingAddApps: existingAddApps,
-        });
+        this.setState({ existingAddApps });
     };
 
-    getDynamicAddApps = async () => {
-        if (!this.props.currentGame) return;
+    getDynamicAddApps = () => {
+        if (!this.props.currentGame) {
+            this.setState({ dynamicAddApps: [] });
+            return;
+        }
 
         const dynamicAddApps = loadDynamicAddAppsForGame(
             this.props.currentGame
@@ -92,10 +91,7 @@ export class RightBrowseSidebar extends React.Component<
             `Found ${dynamicAddApps.length} for ${this.props.currentGame.title} game.`
         );
 
-        this.setState({
-            ...this.state,
-            dynamicAddApps,
-        });
+        this.setState({ dynamicAddApps });
     };
 
     componentDidMount(): void {
@@ -104,9 +100,12 @@ export class RightBrowseSidebar extends React.Component<
     }
 
     componentDidUpdate(prevProps: Readonly<RightBrowseSidebarProps>): void {
-        if (prevProps.currentAddApps != this.props.currentAddApps)
+        if (prevProps.currentAddApps !== this.props.currentAddApps) {
+            this.setState({ existingAddApps: [] });
             this.checkAddAppsExistence();
-        if (prevProps.currentGame != this.props.currentGame) {
+        }
+        if (prevProps.currentGame !== this.props.currentGame) {
+            this.setState({ dynamicAddApps: [] });
             this.getDynamicAddApps();
         }
     }

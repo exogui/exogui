@@ -226,6 +226,9 @@ class App extends React.Component<AppProps, AppState> {
                 mainWindow: { maximized: isMaximized },
             });
         });
+        ipcRenderer.on(WindowIPC.WINDOW_BLUR, () => {
+            this.props.stopMusic();
+        });
 
         this.props.initializeLoading();
 

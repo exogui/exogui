@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
@@ -9,29 +10,39 @@ permissions:
   contents: write
 
 jobs:
-  version:
-    name: Generate Version
+  prepare:
+    name: Bump Version
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.generate.outputs.version }}
+      version: ${{ steps.bump.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate version string
-        id: generate
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bump patch version
+        id: bump
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
           VERSION=$(node -p "require('./package.json').version")
-          DATE=$(date +%Y%m%d)
-          SHA=$(git rev-parse --short HEAD)
-          FULL_VERSION="${VERSION}-${DATE}-${SHA}"
-          echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
-          echo "Generated version: ${FULL_VERSION}"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${VERSION}"
+          git push origin master
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
   build:
     name: Build ${{ matrix.name }}
-    needs: version
+    needs: prepare
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -63,6 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: master
           submodules: recursive
 
       - name: Setup Node.js
@@ -76,9 +88,6 @@ jobs:
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
-        env:
-          PUBLISH: true
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List dist directory
         shell: bash
@@ -93,11 +102,12 @@ jobs:
 
   release:
     name: Create Release
-    needs: [version, build]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
 
       - name: Download all artifacts
@@ -120,6 +130,8 @@ jobs:
           echo "$CHANGELOG" > RELEASE_NOTES.md
           cat >> RELEASE_NOTES.md << 'EOF'
 
+          <!-- changelog-end -->
+
           ## Artifacts
           - Linux: AppImage and tar.gz archive
           - Windows: NSIS installer (.exe) and portable zip archive
@@ -138,8 +150,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.version.outputs.version }}
-          name: Release ${{ needs.version.outputs.version }}
+          tag_name: v${{ needs.prepare.outputs.version }}
+          name: v${{ needs.prepare.outputs.version }}
           draft: false
           prerelease: false
           files: |
