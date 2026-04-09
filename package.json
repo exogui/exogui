@@ -90,5 +90,11 @@
         "ts-jest": "^29.4.6",
         "typescript": "^5.9.3",
         "typescript-eslint": "8.48.1"
+    },
+    "build": {
+        "mac": {
+            "target": "universal",
+            "x64ArchFiles": "**/7za"
+        }
     }
 }
