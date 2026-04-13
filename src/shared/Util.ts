@@ -527,6 +527,30 @@ export function preparePathForShell(filePath: string, options?: { quote?: boolea
     }
 }
 
+export function resolvePathSegmentCaseInsensitive(
+    parentAbsPath: string,
+    segment: string
+): string | undefined {
+    try {
+        const entries = fs.readdirSync(parentAbsPath);
+        return entries.find((e) => e.toLowerCase() === segment.toLowerCase());
+    } catch {
+        return undefined;
+    }
+}
+
+export async function resolvePathSegmentCaseInsensitiveAsync(
+    parentAbsPath: string,
+    segment: string
+): Promise<string | undefined> {
+    try {
+        const entries = await fs.promises.readdir(parentAbsPath);
+        return entries.find((e) => e.toLowerCase() === segment.toLowerCase());
+    } catch {
+        return undefined;
+    }
+}
+
 export function removeLowestDirectory(filePath: string, popCount = 1): string {
     const normalizedPath = path.normalize(filePath).replace(/\\/g, "/");
     const pathSegments = normalizedPath.split("/");
