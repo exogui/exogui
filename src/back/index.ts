@@ -79,7 +79,7 @@ function getEmbeddedExodosPath(): string {
         return path.dirname(path.dirname(process.env.APPIMAGE));
     }
     if (process.platform === "darwin") {
-        return path.resolve(process.execPath, "../../../..");
+        return path.resolve(state.exePath, "../../../..");
     }
     return path.resolve(process.execPath, "../..");
 }

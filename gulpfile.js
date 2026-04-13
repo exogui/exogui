@@ -109,6 +109,7 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
+                    x64ArchFiles: "**/7za"
                 },
             },
             targets: targets,
