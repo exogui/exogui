@@ -40,6 +40,24 @@ jobs:
           git push origin master
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+  sync-develop:
+    name: Sync develop with master
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - name: Merge master into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout develop
+          git merge origin/master --ff-only
+          git push origin develop
+
   build:
     name: Build ${{ matrix.name }}
     needs: prepare
