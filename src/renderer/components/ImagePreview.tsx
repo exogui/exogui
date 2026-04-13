@@ -1,6 +1,7 @@
-import { BackIn } from "@shared/back/types";
+import { stopMusic } from "@renderer/redux/searchSlice";
 import { getFileServerURL } from "@shared/Util";
 import * as React from "react";
+import { useDispatch } from "react-redux";
 import { BoxViewer3D } from "./BoxViewer3D";
 import { BareFloatingContainer } from "./FloatingContainer";
 import {
@@ -17,6 +18,7 @@ export type MediaPreviewProps = {
 
 export function MediaPreview(props: MediaPreviewProps) {
     const [scaleUp, setScaleUp] = React.useState(false);
+    const dispatch = useDispatch();
 
     const onClickImage = (event: React.MouseEvent<any>) => {
         setScaleUp(!scaleUp);
@@ -27,9 +29,9 @@ export function MediaPreview(props: MediaPreviewProps) {
 
     React.useEffect(() => {
         if (props.media.type === FormattedGameMediaType.VIDEO) {
-            window.External.back.send(BackIn.STOP_MUSIC);
+            dispatch(stopMusic());
         }
-    }, [props.media.type]);
+    }, [props.media.type, dispatch]);
 
     const { onCancel } = props;
     React.useEffect(() => {
