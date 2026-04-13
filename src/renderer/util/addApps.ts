@@ -1,7 +1,7 @@
 import * as chokidar from "chokidar";
 import store from "@renderer/redux/store";
 import { updateGame } from "@renderer/redux/gamesSlice";
-import { deepCopy, fixSlashes } from "@shared/Util";
+import { deepCopy, fixSlashes, resolvePathSegmentCaseInsensitive } from "@shared/Util";
 import { IAdditionalApplicationInfo, IGameInfo } from "@shared/game/interfaces";
 import * as fs from "fs";
 import * as path from "path";
@@ -37,9 +37,18 @@ function loadAddAppsDirectory(game: IGameInfo, addAppsDir: string) {
         const addApps: IAdditionalApplicationInfo[] = [];
         const { rootFolder } = game;
 
+        const absoluteRootFolder = path.join(
+            window.External.config.fullExodosPath,
+            fixSlashes(rootFolder)
+        );
+        const resolvedDirName = resolvePathSegmentCaseInsensitive(absoluteRootFolder, addAppsDir);
+        if (!resolvedDirName) {
+            return [];
+        }
+
         const relativePathForAddApps = path.join(
             fixSlashes(rootFolder),
-            addAppsDir
+            resolvedDirName
         );
         const absolutePathForAddApps = path.join(
             window.External.config.fullExodosPath,

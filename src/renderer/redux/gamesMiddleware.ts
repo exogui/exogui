@@ -2,8 +2,8 @@ import { isAnyOf } from "@reduxjs/toolkit";
 import { readPlatformsFile } from "@renderer/file/PlatformFile";
 import { formatPlatformFileData } from "@renderer/util/LaunchBoxHelper";
 import { GameParser } from "@shared/game/GameParser";
+import { resolvePathSegmentCaseInsensitiveAsync } from "@shared/Util";
 import * as fs from "fs";
-import * as fsasync from "fs/promises";
 import * as path from "path";
 import { setGames, setLibraries } from "./gamesSlice";
 import {
@@ -102,15 +102,11 @@ async function loadPlatform(platform: string, platformsPath: string) {
 
     try {
         const findFileStart = Date.now();
-        const platformFileCaseInsensitive =
-            await findPlatformFileCaseInsensitive(
-                `${platform}.xml`,
-                platformsPath
-            );
-        const platformFile = path.join(
-            platformsPath,
-            platformFileCaseInsensitive
-        );
+        const resolvedFilename = await resolvePathSegmentCaseInsensitiveAsync(platformsPath, `${platform}.xml`);
+        if (!resolvedFilename) {
+            throw new Error(`Platform file ${platform}.xml doesn't exist in ${platformsPath} directory.`);
+        }
+        const platformFile = path.join(platformsPath, resolvedFilename);
         console.log(`[PERF] ${platform} - Find file: ${Date.now() - findFileStart}ms`);
 
         if ((await fs.promises.stat(platformFile)).isFile()) {
@@ -184,26 +180,6 @@ async function loadPlatform(platform: string, platformsPath: string) {
     return { games: [], addApps: [] } as IGameCollection;
 }
 
-// Of course there is a problem with casing in some platform files.
-// We need to list all of the files directory and search for the hits
-// manually.
-const findPlatformFileCaseInsensitive = async (
-    filename: string,
-    path: string
-): Promise<string> => {
-    console.debug(`Checking existence of platform ${filename} xml file..`);
-
-    const lowerCasedFilename = filename.toLowerCase();
-    const directoryContent = await fsasync.readdir(path);
-    const platformXmlFile = directoryContent.find(
-        (f) => f.toLowerCase() === lowerCasedFilename
-    );
-    if (!platformXmlFile)
-        throw new Error(
-            `Platform file ${filename} doesn't exist in ${path} directory.`
-        );
-    return platformXmlFile;
-};
 
 export type ErrorCopy = {
     columnNumber?: number;

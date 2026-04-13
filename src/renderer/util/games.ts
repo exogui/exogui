@@ -41,7 +41,7 @@ export function getGameByDirectory(gamePath: string) {
 
     // Find matching game, if exists
     return state.games.find((game) => {
-        return fixSlashes(game.rootFolder).endsWith(`/${dirname}`);
+        return fixSlashes(game.rootFolder).toLowerCase().endsWith(`/${dirname.toLowerCase()}`);
     });
 }
 
@@ -52,8 +52,10 @@ function createWatcher(folder: string): chokidar.FSWatcher {
         depth: 0,
         persistent: true,
         followSymlinks: false,
-        ignored: /DOWNLOAD$/,
+        ignored: /DOWNLOAD$/i,
         ignoreInitial: true,
+        usePolling: process.platform === "darwin",
+        interval: 1000,
     });
 
     watcher
