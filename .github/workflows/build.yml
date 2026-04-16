@@ -1,4 +1,4 @@
-name: Build
+name: Build on demand
 
 on:
   workflow_dispatch:
@@ -18,65 +18,87 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: macOS
-            runner: macos-latest
-            script: release:mac-universal
-            artifact-pattern: |
-              dist/*.dmg
-              dist/latest-mac.yml
-            enabled: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
-
-          - name: Linux
-            runner: ubuntu-latest
-            script: release:linux
-            artifact-pattern: |
-              dist/*.tar.gz
-              dist/*.AppImage
-              dist/latest-linux.yml
-            enabled: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
-
-          - name: Windows
-            runner: windows-latest
-            script: release:win32
-            artifact-pattern: |
-              dist/*.exe
-              dist/*.zip
-              dist/latest.yml
-            enabled: ${{ github.event.inputs.platform == 'Windows' || github.event.inputs.platform == 'All' }}
-
+  build-macos:
+    name: Build macOS
+    if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-        if: ${{ matrix.enabled == 'true' }}
         with:
           submodules: recursive
 
-      - name: Setup Node.js
-        if: ${{ matrix.enabled == 'true' }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        if: ${{ matrix.enabled == 'true' }}
-        run: npm ci
+      - run: npm ci
 
-      - name: Build ${{ matrix.name }}
-        if: ${{ matrix.enabled == 'true' }}
-        run: npm run ${{ matrix.script }}
+      - run: npm run release:mac-universal
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload artifacts
-        if: ${{ matrix.enabled == 'true' }}
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}-artifacts
-          path: ${{ matrix.artifact-pattern }}
+          name: macOS-artifacts
+          path: |
+            dist/*.dmg
+            dist/latest-mac.yml
+          if-no-files-found: warn
+          retention-days: 7
+
+  build-linux:
+    name: Build Linux
+    if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run release:linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux-artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.AppImage
+            dist/latest-linux.yml
+          if-no-files-found: warn
+          retention-days: 7
+
+  build-windows:
+    name: Build Windows
+    if: ${{ github.event.inputs.platform == 'Windows' || github.event.inputs.platform == 'All' }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run release:win32
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-artifacts
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/latest.yml
           if-no-files-found: warn
           retention-days: 7
