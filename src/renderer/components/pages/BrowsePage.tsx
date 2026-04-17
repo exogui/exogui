@@ -25,6 +25,7 @@ import {
     withPreferences,
 } from "../../containers/withPreferences";
 import { gameScaleSpan, openContextMenu } from "../../Util";
+import { binarySearchGame, linearSearchGame } from "../../util/quickSearch";
 import { GameGridWithWrapping } from "../GameGridWithWrapping";
 import { GameList } from "../GameList";
 import { GameOrderChangeEvent } from "../GameOrder";
@@ -94,7 +95,7 @@ class BrowsePage extends React.Component<
     boundSetState = this.setState.bind(this);
 
     /** Time it takes before the current "quick search" string to reset after a change was made (in milliseconds). */
-    static readonly quickSearchTimeout: number = 1500;
+    static readonly quickSearchTimeout: number = 1000;
 
     constructor(props: ConnectedBrowsePageProps) {
         super(props);
@@ -122,7 +123,7 @@ class BrowsePage extends React.Component<
         });
     }
 
-    componentDidUpdate(prevProps: ConnectedBrowsePageProps) {
+    componentDidUpdate(prevProps: ConnectedBrowsePageProps, prevState: BrowsePageState) {
         const prevView = prevProps.searchState.views[prevProps.gameLibrary];
         const currentView = this.props.searchState.views[this.props.gameLibrary];
 
@@ -152,6 +153,19 @@ class BrowsePage extends React.Component<
             updatePreferencesData({
                 browsePageShowLeftSidebar: !!this.props.playlists.length,
             });
+        }
+
+        if (this.state.quickSearch !== prevState.quickSearch && this.state.quickSearch) {
+            const view = this.props.searchState.views[this.props.gameLibrary];
+            if (view && view.games.length > 0) {
+                const isTitleAscending = view.orderBy === "title" && view.orderReverse === "ascending";
+                const game = isTitleAscending
+                    ? binarySearchGame(view.games, this.state.quickSearch)
+                    : linearSearchGame(view.games, this.state.quickSearch);
+                if (game) {
+                    this.onGameSelect(game);
+                }
+            }
         }
     }
 
@@ -432,9 +446,12 @@ class BrowsePage extends React.Component<
             } else if (key.length === 1) {
                 // (Single character - add it to the search string)
                 const timedOut = updateTime.call(this);
-                const newString: string =
-                    (timedOut ? "" : this.state.quickSearch) + key;
-                this.setState({ quickSearch: newString });
+                const currentSearch = timedOut ? "" : this.state.quickSearch;
+                if (key === " " && !currentSearch) {
+                    return;
+                }
+                event.preventDefault();
+                this.setState({ quickSearch: currentSearch + key });
             }
         }
 
@@ -555,6 +572,7 @@ class BrowsePage extends React.Component<
 }
 
 export default withPreferences(connector(BrowsePage));
+
 
 function calcScale(defHeight: number, scale: number): number {
     return (defHeight + (scale - 0.5) * 2 * defHeight * gameScaleSpan) | 0;
