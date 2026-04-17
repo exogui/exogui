@@ -75,6 +75,7 @@ export type IRawGameInfo = {
     MaxPlayers?: number;
     Region?: string;
     Rating?: string;
+    SortTitle?: string; // (String)
 };
 
 /**

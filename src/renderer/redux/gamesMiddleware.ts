@@ -157,7 +157,8 @@ async function loadPlatform(platform: string, platformsPath: string) {
             const platformCollection = GameParser.parse(
                 data,
                 platform,
-                window.External.config.fullExodosPath
+                window.External.config.fullExodosPath,
+                window.External.config.data.useSortTitleForOrdering
             );
             console.log(`[PERF] ${platform} - Parse games (${platformCollection.games.length} games): ${Date.now() - parseGamesStart}ms`);
 
