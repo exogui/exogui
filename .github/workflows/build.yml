@@ -50,6 +50,45 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  build-macos-legacy:
+    name: Build macOS (Legacy)
+    if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Disable code signing
+        run: |
+          printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
+          chmod +x /usr/local/bin/codesign
+
+      - name: Install Electron v37
+        run: npm install electron@37 --save-dev
+
+      - run: npm run release:mac-universal
+
+      - name: Rename artifacts to legacy
+        run: |
+          for f in dist/exogui-*.dmg; do
+            mv "$f" "${f/exogui-/exogui-legacy-}"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Legacy-artifacts
+          path: dist/*-legacy-*.dmg
+          if-no-files-found: warn
+          retention-days: 7
+
   build-linux:
     name: Build Linux
     if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
