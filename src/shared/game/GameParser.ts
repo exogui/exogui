@@ -17,7 +17,8 @@ export class GameParser {
     public static parse(
         data: IRawPlatformFile,
         filename: string,
-        exodosPath: string
+        exodosPath: string,
+        useSortTitle: boolean = true
     ): IGameCollection {
         const collection: IGameCollection = {
             games: [],
@@ -43,7 +44,8 @@ export class GameParser {
                 collection.games[i] = GameParser.parseRawGame(
                     games[i],
                     filename,
-                    exodosPath
+                    exodosPath,
+                    useSortTitle
                 );
                 if (games[i].ManualPath) {
                     collection.addApps.push({
@@ -71,7 +73,8 @@ export class GameParser {
     public static parseRawGame(
         data: Partial<IRawGameInfo>,
         library: string,
-        exodosPath: string
+        exodosPath: string,
+        useSortTitle: boolean = true
     ): IGameInfo {
         const title = data.Title
             ? this.convertTheInTitle(data.Title.toString())
@@ -99,7 +102,7 @@ export class GameParser {
             originalDescription: unescapeHTML(data.OriginalDescription),
             language: unescapeHTML(data.Language),
             library: library,
-            orderTitle: generateGameOrderTitle(data.SortTitle ? unescapeHTML(data.SortTitle) : title),
+            orderTitle: generateGameOrderTitle(useSortTitle && data.SortTitle ? unescapeHTML(data.SortTitle) : title),
             placeholder: false, // (No loaded game is a placeholder),
             manualPath: unescapeHTML(data.ManualPath),
             musicPath: unescapeHTML(data.MusicPath),

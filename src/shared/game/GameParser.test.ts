@@ -59,4 +59,23 @@ describe("GameParser.parseRawGame - orderTitle", () => {
         );
         expect(game.orderTitle).toBe("dig, the");
     });
+
+    it("ignores SortTitle when useSortTitle is false", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, SortTitle: "King's Quest 1" },
+            "MS-DOS",
+            "/exo",
+            false
+        );
+        expect(game.orderTitle).toBe("test game");
+    });
+
+    it("useSortTitle defaults to true", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, SortTitle: "King's Quest 1" },
+            "MS-DOS",
+            "/exo"
+        );
+        expect(game.orderTitle).toBe("king's quest 1");
+    });
 });
