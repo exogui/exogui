@@ -34,4 +34,6 @@ export type IAppConfigData = {
     enableOnlineUpdate: boolean;
     /** Use auto-detected embedded eXoDOS path based on build type instead of custom path */
     useEmbeddedExodosPath: boolean;
+    /** Use the SortTitle field from game XML data to determine sort order in the game list */
+    useSortTitleForOrdering: boolean;
 };

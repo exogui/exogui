@@ -117,6 +117,23 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 </Dropdown>
                             </div>
                         </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Sort Games by Sort Title</span>
+                                <span className="cfg-row__desc">
+                                    When enabled, games are sorted using the &quot;Sort Title&quot; field from the game data instead of the display title.
+                                    This ensures that series like &quot;King&apos;s Quest&quot; or &quot;Ultima&quot; appear in the correct numbered order,
+                                    and that titles beginning with punctuation (like &quot;...A Personal Nightmare&quot;) sort in a sensible place.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useSortTitleForOrdering}
+                                    onChange={(e) => this.onUseSortTitleForOrderingChange(e.target.checked)}
+                                />
+                            </div>
+                        </div>
                     </section>
 
                     {/* Visuals */}
@@ -316,6 +333,10 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         this.setState({ enableOnlineUpdate: isChecked });
     };
 
+    onUseSortTitleForOrderingChange = (isChecked: boolean): void => {
+        this.setState({ useSortTitleForOrdering: isChecked });
+    };
+
     onEnableBoxViewerChange = (isChecked: boolean): void => {
         this.setState({ enableBoxViewer: isChecked });
         updatePreferencesData({ enableBoxViewer: isChecked });
@@ -379,6 +400,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             vlcPort: this.state.vlcPort,
             enableOnlineUpdate: this.state.enableOnlineUpdate,
             useEmbeddedExodosPath: this.state.useEmbeddedExodosPath,
+            useSortTitleForOrdering: this.state.useSortTitleForOrdering,
         };
 
         window.External.back
