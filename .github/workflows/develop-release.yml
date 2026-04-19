@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   prepare:
-    name: Set Beta Version
+    name: Bump Beta Version
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
@@ -19,21 +19,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: develop
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.RELEASE_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Set beta version
+      - name: Bump beta version
         id: version
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
-          COUNT=$(git tag -l "v${BASE}-beta.*" | wc -l | tr -d ' ')
-          VERSION="${BASE}-beta.${COUNT}"
+          BUMPED=$(node -p "const v='${BASE}'.split('.'); v[2]=parseInt(v[2])+1; v.join('.')")
+          VERSION="${BUMPED}-beta"
           npm version "${VERSION}" --no-git-tag-version
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${VERSION}"
+          git push origin develop
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
   build:
@@ -82,13 +89,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set beta version
-        shell: bash
-        run: |
-          BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
-          COUNT=$(git tag -l "v${BASE}-beta.*" | wc -l | tr -d ' ')
-          npm version "${BASE}-beta.${COUNT}" --no-git-tag-version
-
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
 
@@ -103,9 +103,51 @@ jobs:
           path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
 
+  build-legacy-mac:
+    name: Build macOS (Legacy)
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Electron v37
+        run: npm install electron@37 --save-dev
+
+      - name: Build macOS (Legacy)
+        run: npm run release:mac-universal
+
+      - name: Rename artifacts to legacy
+        shell: bash
+        run: |
+          for f in dist/exogui-*.dmg; do
+            mv "$f" "${f/exogui-/exogui-legacy-}"
+          done
+
+      - name: List dist directory
+        run: ls -la dist/ || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Legacy-artifacts
+          path: dist/*-legacy-*.dmg
+          if-no-files-found: warn
+
   release:
     name: Create Beta Release
-    needs: [prepare, build]
+    needs: [prepare, build, build-legacy-mac]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -136,11 +178,6 @@ jobs:
           <!-- changelog-end -->
 
           > **Beta release** — may be unstable. Switch to the Stable channel in Config for production use.
-
-          ## Artifacts
-          - Linux: AppImage (supports auto-updates) and tar.gz archive
-          - Windows: NSIS installer (.exe) and portable zip archive
-          - macOS: Universal (Intel and Apple Silicon) DMG disk image
           EOF
         env:
           CHANGELOG: ${{ steps.git-cliff.outputs.content }}

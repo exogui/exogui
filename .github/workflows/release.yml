@@ -29,13 +29,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Bump patch version
+      - name: Strip beta suffix for stable release
         id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
+          npm version "${VERSION}" --no-git-tag-version
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${VERSION}"
           git push origin master
@@ -192,19 +192,6 @@ jobs:
           cat >> RELEASE_NOTES.md << 'EOF'
 
           <!-- changelog-end -->
-
-          ## Artifacts
-          - Linux: AppImage and tar.gz archive
-          - Windows: NSIS installer (.exe) and portable zip archive
-          - macOS: Universal (Intel and Apple Silicon) DMG disk image
-          - macOS Legacy: Universal DMG built with Electron v37 (for older macOS versions)
-
-          ### Linux Notes
-          Run AppImage with: `./exogui.AppImage --no-sandbox`
-
-          ### Windows Notes
-          - `.exe` - Full installer with shortcuts and uninstaller
-          - `.zip` - Portable version, extract and run (no installation required)
           EOF
         env:
           CHANGELOG: ${{ steps.git-cliff.outputs.content }}

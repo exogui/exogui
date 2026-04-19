@@ -94,6 +94,7 @@ gulp.task("pack", (done) => {
                 extraFiles: copyFiles, // Files to copy to the build folder
                 compression: "store", // Only used if a compressed target (like 7z, nsis, dmg etc)
                 asar: true,
+                generateUpdatesFilesForAllChannels: true,
                 publish: publish,
                 linux: {
                     publish: "github",
