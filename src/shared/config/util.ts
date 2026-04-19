@@ -27,6 +27,7 @@ const configDataDefaultBase: Readonly<IAppConfigData> = Object.freeze({
     showDeveloperTab: false,
     vlcPort: 39421,
     enableOnlineUpdate: true,
+    updateChannel: "stable",
     useEmbeddedExodosPath: true,
     useSortTitleForOrdering: true,
 });
@@ -112,6 +113,7 @@ export function overwriteConfigData(
     parser.prop("showDeveloperTab", (v) => (source.showDeveloperTab = !!v));
     parser.prop("vlcPort", (v) => (source.vlcPort = num(v)));
     parser.prop("enableOnlineUpdate", (v) => (source.enableOnlineUpdate = !!v), true);
+    parser.prop("updateChannel", (v) => (source.updateChannel = str(v) === "beta" ? "beta" : "stable"), true);
     parser.prop("useEmbeddedExodosPath", (v) => (source.useEmbeddedExodosPath = !!v), true);
     parser.prop("useSortTitleForOrdering", (v) => (source.useSortTitleForOrdering = !!v), true);
     // Do some alterations

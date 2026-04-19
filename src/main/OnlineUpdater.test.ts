@@ -17,6 +17,7 @@ jest.mock("electron-updater", () => ({
         autoDownload: true,
         autoInstallOnAppQuit: false,
         allowDowngrade: false,
+        channel: "latest",
         logger: null,
         on: jest.fn(),
         removeAllListeners: jest.fn(),
@@ -274,6 +275,51 @@ describe("OnlineUpdater", () => {
             consoleLogSpy.mockRestore();
             consoleWarnSpy.mockRestore();
             consoleErrorSpy.mockRestore();
+        });
+    });
+
+    describe("Channel Configuration", () => {
+        beforeEach(() => {
+            Object.defineProperty(process, "platform", { value: "linux" });
+            process.env.APPIMAGE = "/path/to/app.AppImage";
+            process.env.NODE_ENV = "production";
+        });
+
+        test("defaults to stable channel when not provided", async () => {
+            new OnlineUpdater();
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect((autoUpdater as any).channel).toBe("stable");
+        });
+
+        test("sets beta channel when configured", async () => {
+            new OnlineUpdater({ channel: "beta" });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect((autoUpdater as any).channel).toBe("beta");
+        });
+
+        test("sets stable channel when configured", async () => {
+            new OnlineUpdater({ channel: "stable" });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect((autoUpdater as any).channel).toBe("stable");
+        });
+
+        test("allowDowngrade is always true", async () => {
+            new OnlineUpdater({ channel: "stable" });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect((autoUpdater as any).allowDowngrade).toBe(true);
+        });
+
+        test("updateConfig reconfigures channel", async () => {
+            const updater = new OnlineUpdater({ channel: "stable" });
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            updater.updateConfig({ channel: "beta" });
+
+            expect((autoUpdater as any).channel).toBe("beta");
         });
     });
 

@@ -1,59 +1,39 @@
-name: Release
+name: Develop Release
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
 
 permissions:
   contents: write
 
 jobs:
   prepare:
-    name: Bump Version
+    name: Set Beta Version
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.bump.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
           fetch-depth: 0
           submodules: recursive
-          token: ${{ secrets.RELEASE_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Bump patch version
-        id: bump
+      - name: Set beta version
+        id: version
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${VERSION}"
-          git push origin master
+          BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
+          VERSION="${BASE}-beta.${{ github.run_number }}"
+          npm version "${VERSION}" --no-git-tag-version
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-  sync-develop:
-    name: Sync develop with master
-    needs: prepare
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.RELEASE_PAT }}
-
-      - name: Merge master into develop
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout develop
-          git merge origin/master --ff-only
-          git push origin develop
 
   build:
     name: Build ${{ matrix.name }}
@@ -69,7 +49,7 @@ jobs:
             artifact-pattern: |
               dist/*.tar.gz
               dist/*.AppImage
-              dist/latest-linux.yml
+              dist/beta-linux.yml
 
           - name: Windows
             runner: windows-latest
@@ -77,19 +57,19 @@ jobs:
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
-              dist/latest.yml
+              dist/beta.yml
 
           - name: macOS (Universal)
             runner: macos-latest
             script: release:mac-universal
             artifact-pattern: |
               dist/*.dmg
-              dist/latest-mac.yml
+              dist/beta-mac.yml
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: develop
           submodules: recursive
 
       - name: Setup Node.js
@@ -100,6 +80,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Set beta version
+        shell: bash
+        run: |
+          BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
+          npm version "${BASE}-beta.${{ github.run_number }}" --no-git-tag-version
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
@@ -115,56 +101,14 @@ jobs:
           path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
 
-  build-legacy-mac:
-    name: Build macOS (Legacy)
-    needs: prepare
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: master
-          submodules: recursive
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - name: Build macOS (Legacy)
-        run: npm run release:mac-universal
-
-      - name: Rename artifacts to legacy
-        shell: bash
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
-          done
-
-      - name: List dist directory
-        run: ls -la dist/ || true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS-Legacy-artifacts
-          path: dist/*-legacy-*.dmg
-          if-no-files-found: warn
-
   release:
-    name: Create Release
-    needs: [prepare, build, build-legacy-mac]
+    name: Create Beta Release
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: develop
           fetch-depth: 0
 
       - name: Download all artifacts
@@ -189,29 +133,23 @@ jobs:
 
           <!-- changelog-end -->
 
+          > **Beta release** — may be unstable. Switch to the Stable channel in Config for production use.
+
           ## Artifacts
-          - Linux: AppImage and tar.gz archive
+          - Linux: AppImage (supports auto-updates) and tar.gz archive
           - Windows: NSIS installer (.exe) and portable zip archive
           - macOS: Universal (Intel and Apple Silicon) DMG disk image
-          - macOS Legacy: Universal DMG built with Electron v37 (for older macOS versions)
-
-          ### Linux Notes
-          Run AppImage with: `./exogui.AppImage --no-sandbox`
-
-          ### Windows Notes
-          - `.exe` - Full installer with shortcuts and uninstaller
-          - `.zip` - Portable version, extract and run (no installation required)
           EOF
         env:
           CHANGELOG: ${{ steps.git-cliff.outputs.content }}
 
-      - name: Create Release
+      - name: Create Beta Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: v${{ needs.prepare.outputs.version }}
           draft: false
-          prerelease: false
+          prerelease: true
           files: |
             artifacts/**/*
           body_path: RELEASE_NOTES.md

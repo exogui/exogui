@@ -11,6 +11,8 @@ export type OnlineUpdaterConfig = {
     autoDownload: boolean;
     /** Auto-install updates on quit */
     autoInstallOnQuit: boolean;
+    /** Update channel: 'stable' or 'beta' */
+    channel: "stable" | "beta";
 };
 
 export type OnlineUpdaterCallbacks = {
@@ -58,6 +60,7 @@ export class OnlineUpdater {
             checkOnStartup: config.checkOnStartup ?? true,
             autoDownload: config.autoDownload ?? false,
             autoInstallOnQuit: config.autoInstallOnQuit ?? false,
+            channel: config.channel ?? "stable",
         };
 
         this.callbacks = callbacks;
@@ -130,7 +133,8 @@ export class OnlineUpdater {
         if (!this._updater) return;
         this._updater.autoDownload = this.config.autoDownload;
         this._updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
-        this._updater.allowDowngrade = false;
+        this._updater.allowDowngrade = true;
+        this._updater.channel = this.config.channel;
         this._updater.logger = console;
     }
 
