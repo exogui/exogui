@@ -134,7 +134,7 @@ export class OnlineUpdater {
         this._updater.autoDownload = this.config.autoDownload;
         this._updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
         this._updater.allowDowngrade = true;
-        this._updater.channel = this.config.channel;
+        this._updater.channel = this.config.channel === "stable" ? "latest" : this.config.channel;
         this._updater.logger = console;
     }
 

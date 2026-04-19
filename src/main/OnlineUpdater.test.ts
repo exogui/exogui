@@ -285,11 +285,11 @@ describe("OnlineUpdater", () => {
             process.env.NODE_ENV = "production";
         });
 
-        test("defaults to stable channel when not provided", async () => {
+        test("defaults to stable channel when not provided, maps to latest", async () => {
             new OnlineUpdater();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            expect((autoUpdater as any).channel).toBe("stable");
+            expect((autoUpdater as any).channel).toBe("latest");
         });
 
         test("sets beta channel when configured", async () => {
@@ -299,11 +299,11 @@ describe("OnlineUpdater", () => {
             expect((autoUpdater as any).channel).toBe("beta");
         });
 
-        test("sets stable channel when configured", async () => {
+        test("stable channel maps to latest for electron-updater", async () => {
             new OnlineUpdater({ channel: "stable" });
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            expect((autoUpdater as any).channel).toBe("stable");
+            expect((autoUpdater as any).channel).toBe("latest");
         });
 
         test("allowDowngrade is always true", async () => {
