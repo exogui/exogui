@@ -181,6 +181,22 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 <UpdateVersionRow onCheckNow={this.onCheckForUpdatesClick} />
                                 <div className="cfg-row">
                                     <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Update Channel</span>
+                                        <span className="cfg-row__desc">Stable receives tested releases. Beta receives pre-releases with newer features.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <select
+                                            value={this.state.updateChannel}
+                                            onChange={(e) => this.onUpdateChannelChange(e.target.value as "stable" | "beta")}
+                                            className="simple-selector"
+                                        >
+                                            <option value="stable">Stable</option>
+                                            <option value="beta">Beta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
                                         <span className="cfg-row__name">Auto-check on Startup</span>
                                         <span className="cfg-row__desc">Automatically check for updates on startup (Linux AppImage only).</span>
                                     </div>
@@ -333,6 +349,10 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         this.setState({ enableOnlineUpdate: isChecked });
     };
 
+    onUpdateChannelChange = (channel: "stable" | "beta"): void => {
+        this.setState({ updateChannel: channel });
+    };
+
     onUseSortTitleForOrderingChange = (isChecked: boolean): void => {
         this.setState({ useSortTitleForOrdering: isChecked });
     };
@@ -399,6 +419,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             currentTheme: this.state.currentTheme,
             vlcPort: this.state.vlcPort,
             enableOnlineUpdate: this.state.enableOnlineUpdate,
+            updateChannel: this.state.updateChannel,
             useEmbeddedExodosPath: this.state.useEmbeddedExodosPath,
             useSortTitleForOrdering: this.state.useSortTitleForOrdering,
         };
