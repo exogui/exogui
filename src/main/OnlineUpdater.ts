@@ -238,6 +238,13 @@ export class OnlineUpdater {
                 return;
             }
 
+            if ((error as any).code === "ERR_UPDATER_CHANNEL_FILE_NOT_FOUND") {
+                console.log("[OnlineUpdater] Channel update file not found, no update available.");
+                this.state.status = "idle";
+                this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
+                return;
+            }
+
             console.error("[OnlineUpdater] Error:", error);
             this.state.status = "error";
             this.state.lastError = error;

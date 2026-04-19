@@ -79,10 +79,10 @@ gulp.task("pack", (done) => {
         process.env.PACK_PLATFORM,
         process.env.PACK_ARCH,
     );
-    const publish = process.env.PUBLISH ? createPublishInfo() : []; // Uses Git repo for unpublished builds
     const copyFiles = getCopyFiles();
     builder
         .build({
+            publish: process.env.PUBLISH ? "always" : "never",
             config: {
                 appId: "com.exo.exogui",
                 productName: "exogui",
@@ -95,7 +95,7 @@ gulp.task("pack", (done) => {
                 compression: "store", // Only used if a compressed target (like 7z, nsis, dmg etc)
                 asar: true,
                 generateUpdatesFilesForAllChannels: true,
-                publish: publish,
+                publish: createPublishInfo(),
                 linux: {
                     publish: "github",
                     target: ["AppImage", "tar.gz", "dir"],
