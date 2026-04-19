@@ -136,11 +136,6 @@ jobs:
           <!-- changelog-end -->
 
           > **Beta release** — may be unstable. Switch to the Stable channel in Config for production use.
-
-          ## Artifacts
-          - Linux: AppImage (supports auto-updates) and tar.gz archive
-          - Windows: NSIS installer (.exe) and portable zip archive
-          - macOS: Universal (Intel and Apple Silicon) DMG disk image
           EOF
         env:
           CHANGELOG: ${{ steps.git-cliff.outputs.content }}
