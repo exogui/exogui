@@ -1,7 +1,10 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -9,6 +12,7 @@ permissions:
 jobs:
   prepare:
     name: Bump Version
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump.outputs.version }}
