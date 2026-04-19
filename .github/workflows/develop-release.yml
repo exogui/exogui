@@ -5,6 +5,10 @@ on:
     types: [closed]
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/**'
+      - 'docs/**'
 
 permissions:
   contents: write
@@ -12,7 +16,7 @@ permissions:
 jobs:
   prepare:
     name: Bump Beta Version
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'skip-release')
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
