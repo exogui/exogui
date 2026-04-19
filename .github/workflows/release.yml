@@ -29,13 +29,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Bump patch version
+      - name: Strip beta suffix for stable release
         id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
+          npm version "${VERSION}" --no-git-tag-version
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${VERSION}"
           git push origin master
