@@ -45,11 +45,17 @@ User preferences store all non-configuration settings that control the appearanc
     "lastSelectedLibrary": "",
     "gamesOrderBy": "title",
     "gamesOrder": "ascending",
+    "browsePageSearchOrderBy": "title",
+    "browsePageSearchOrderReverse": "ascending",
+    "browsePageSearchInstalled": null,
+    "browsePageSearchRecommended": null,
+    "browsePageFiltersExpanded": true,
     "mainWindow": {
         "maximized": false
     },
     "showLogSource": {},
     "gameMusicPlay": true,
+    "gameMusicLoop": true,
     "gameMusicVolume": 0.5
 }
 ```
@@ -142,6 +148,51 @@ User preferences store all non-configuration settings that control the appearanc
     -   `"descending"` - Z to A, latest to earliest
 -   **UI Control:** Sort order toggle button
 
+#### `browsePageSearchOrderBy`
+
+-   **Type:** `string`
+-   **Default:** `"title"`
+-   **Description:** Property to sort games by in the search/filter view
+-   **Values:** same as `gamesOrderBy`
+-   **UI Control:** Sort dropdown in the search panel
+
+#### `browsePageSearchOrderReverse`
+
+-   **Type:** `string`
+-   **Default:** `"ascending"`
+-   **Description:** Sort direction in the search/filter view
+-   **Values:** same as `gamesOrder`
+-   **UI Control:** Sort order toggle in the search panel
+
+#### `browsePageSearchInstalled`
+
+-   **Type:** `boolean | null`
+-   **Default:** `null`
+-   **Description:** Filter games by installation status in the search panel
+-   **Values:**
+    -   `null` — no filter (show all)
+    -   `true` — show only installed games
+    -   `false` — show only uninstalled games
+-   **UI Control:** Installed filter in the search panel
+
+#### `browsePageSearchRecommended`
+
+-   **Type:** `boolean | null`
+-   **Default:** `null`
+-   **Description:** Filter games by recommended status in the search panel
+-   **Values:**
+    -   `null` — no filter (show all)
+    -   `true` — show only recommended games
+    -   `false` — show only non-recommended games
+-   **UI Control:** Recommended filter in the search panel
+
+#### `browsePageFiltersExpanded`
+
+-   **Type:** `boolean`
+-   **Default:** `true`
+-   **Description:** Whether the filter panel is expanded on the browse page
+-   **UI Control:** Filter panel expand/collapse toggle
+
 ### Window Settings
 
 #### `mainWindow`
@@ -195,6 +246,13 @@ User preferences store all non-configuration settings that control the appearanc
 -   **Default:** `true`
 -   **Description:** Whether to play game background music/soundtracks
 -   **UI Control:** Music toggle button
+
+#### `gameMusicLoop`
+
+-   **Type:** `boolean`
+-   **Default:** `true`
+-   **Description:** Whether to loop game music continuously
+-   **UI Control:** Music loop toggle button
 
 #### `gameMusicVolume`
 
