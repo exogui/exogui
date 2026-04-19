@@ -11,6 +11,8 @@ export type OnlineUpdaterConfig = {
     autoDownload: boolean;
     /** Auto-install updates on quit */
     autoInstallOnQuit: boolean;
+    /** Update channel: 'stable' or 'beta' */
+    channel: "stable" | "beta";
 };
 
 export type OnlineUpdaterCallbacks = {
@@ -58,6 +60,7 @@ export class OnlineUpdater {
             checkOnStartup: config.checkOnStartup ?? true,
             autoDownload: config.autoDownload ?? false,
             autoInstallOnQuit: config.autoInstallOnQuit ?? false,
+            channel: config.channel ?? "stable",
         };
 
         this.callbacks = callbacks;
@@ -130,7 +133,9 @@ export class OnlineUpdater {
         if (!this._updater) return;
         this._updater.autoDownload = this.config.autoDownload;
         this._updater.autoInstallOnAppQuit = this.config.autoInstallOnQuit;
-        this._updater.allowDowngrade = false;
+        this._updater.allowDowngrade = true;
+        this._updater.allowPrerelease = this.config.channel === "beta";
+        this._updater.channel = this.config.channel === "stable" ? "latest" : this.config.channel;
         this._updater.logger = console;
     }
 
@@ -230,6 +235,13 @@ export class OnlineUpdater {
                 console.log("[OnlineUpdater] Network unavailable, skipping update check.");
                 this.state.status = "idle";
                 this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_NETWORK_ERROR);
+                return;
+            }
+
+            if ((error as any).code === "ERR_UPDATER_CHANNEL_FILE_NOT_FOUND") {
+                console.log("[OnlineUpdater] Channel update file not found, no update available.");
+                this.state.status = "idle";
+                this.mainWindow?.webContents.send(UpdaterIPC.UPDATE_CANCELLED);
                 return;
             }
 

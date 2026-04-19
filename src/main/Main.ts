@@ -178,6 +178,7 @@ export function main(init: Init): void {
                 checkOnStartup: true,
                 autoDownload: false,
                 autoInstallOnQuit: false,
+                channel: state.config.updateChannel,
             });
 
             app.whenReady().then(() => {

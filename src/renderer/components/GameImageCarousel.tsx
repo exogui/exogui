@@ -1,8 +1,7 @@
 import { fixSlashes, getFileServerURL } from "@shared/Util";
 import { GameMedia } from "@shared/game/interfaces";
 import * as React from "react";
-import { useContext, useEffect, useState } from "react";
-import { PreferencesContext } from "../context/PreferencesContext";
+import { useEffect, useState } from "react";
 import { BoxViewer3D } from "./BoxViewer3D";
 import { OpenIcon } from "./OpenIcon";
 
@@ -19,8 +18,6 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
     const [selectedMediaIdx, setSelectedMediaIdx] = useState(0);
     const [wheelPosition, setWheelPosition] = useState(0);
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(0);
-    const preferences = useContext(PreferencesContext);
-
     // When the image changes, reset the selected elements
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset when media changes
@@ -29,7 +26,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
         setSelectedMediaIdx(0);
     }, [props.media]);
 
-    const sortedMedia = prepareGameMedias(props.media, props.platform, preferences.enableBoxViewer).sort(sortByMediaCategory);
+    const sortedMedia = prepareGameMedias(props.media, props.platform).sort(sortByMediaCategory);
 
     // Hover functions to trigger the label to show
     const handleMouseEnter = (index: number) => {
@@ -250,7 +247,6 @@ export type FormattedGameMedia = {
 function prepareGameMedias(
     media: GameMedia,
     platform: string,
-    enableBoxViewer: boolean
 ): FormattedGameMedia[] {
     const list: FormattedGameMedia[] = [];
 
@@ -262,27 +258,25 @@ function prepareGameMedias(
         });
     }
 
-    if (enableBoxViewer) {
-        const frontFiles = media.images["Box - Front"];
-        const backFiles = media.images["Box - Back"];
-        const spineFiles = media.images["Box - Spine"];
+    const frontFiles = media.images["Box - Front"];
+    const backFiles = media.images["Box - Back"];
+    const spineFiles = media.images["Box - Spine"];
 
-        const hasFront = frontFiles && frontFiles.length > 0;
-        const hasBack = backFiles && backFiles.length > 0;
-        const hasSpine = spineFiles && spineFiles.length > 0;
+    const hasFront = frontFiles && frontFiles.length > 0;
+    const hasBack = backFiles && backFiles.length > 0;
+    const hasSpine = spineFiles && spineFiles.length > 0;
 
-        if (hasFront && hasBack) {
-            list.push({
-                category: "Box Viewer",
-                type: FormattedGameMediaType.BOX_3D,
-                path: fixSlashes(`Images/${platform}/${frontFiles[0]}`),
-                backPath: fixSlashes(`Images/${platform}/${backFiles[0]}`),
-                spinePath: hasSpine
-                    ? fixSlashes(`Images/${platform}/${spineFiles[0]}`)
-                    : undefined,
-                interactive: true,
-            });
-        }
+    if (hasFront && hasBack) {
+        list.push({
+            category: "Box Viewer",
+            type: FormattedGameMediaType.BOX_3D,
+            path: fixSlashes(`Images/${platform}/${frontFiles[0]}`),
+            backPath: fixSlashes(`Images/${platform}/${backFiles[0]}`),
+            spinePath: hasSpine
+                ? fixSlashes(`Images/${platform}/${spineFiles[0]}`)
+                : undefined,
+            interactive: true,
+        });
     }
 
     for (const category of Object.keys(media.images)) {
