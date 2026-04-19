@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Bump beta version
         id: version
@@ -83,7 +83,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -91,6 +91,13 @@ jobs:
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
+
+      - name: Generate beta channel yml files
+        shell: bash
+        run: |
+          [ -f dist/latest-linux.yml ] && cp dist/latest-linux.yml dist/beta-linux.yml || true
+          [ -f dist/latest-mac.yml ]   && cp dist/latest-mac.yml   dist/beta-mac.yml   || true
+          [ -f dist/latest.yml ]       && cp dist/latest.yml       dist/beta.yml       || true
 
       - name: List dist directory
         shell: bash
@@ -116,7 +123,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
