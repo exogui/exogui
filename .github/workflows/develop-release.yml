@@ -92,6 +92,13 @@ jobs:
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
 
+      - name: Generate beta channel yml files
+        shell: bash
+        run: |
+          [ -f dist/latest-linux.yml ] && cp dist/latest-linux.yml dist/beta-linux.yml || true
+          [ -f dist/latest-mac.yml ]   && cp dist/latest-mac.yml   dist/beta-mac.yml   || true
+          [ -f dist/latest.yml ]       && cp dist/latest.yml       dist/beta.yml       || true
+
       - name: List dist directory
         shell: bash
         run: ls -la dist/ || true
