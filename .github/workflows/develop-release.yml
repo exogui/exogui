@@ -31,7 +31,8 @@ jobs:
         id: version
         run: |
           BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
-          VERSION="${BASE}-beta.${{ github.run_number }}"
+          COUNT=$(git tag -l "v${BASE}-beta.*" | wc -l | tr -d ' ')
+          VERSION="${BASE}-beta.${COUNT}"
           npm version "${VERSION}" --no-git-tag-version
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
@@ -85,7 +86,8 @@ jobs:
         shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
-          npm version "${BASE}-beta.${{ github.run_number }}" --no-git-tag-version
+          COUNT=$(git tag -l "v${BASE}-beta.*" | wc -l | tr -d ' ')
+          npm version "${BASE}-beta.${COUNT}" --no-git-tag-version
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
