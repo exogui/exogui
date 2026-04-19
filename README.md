@@ -29,9 +29,18 @@ More eXo projects coming in the future!
 -   Browse and search through the entire eXo game collections
 -   Launch DOS and Windows games with platform-specific configurations
 -   Manage playlists and favorites
--   Cross-platform support (Windows, Linux)
--   macOS support is currently under development
--   Integration with game metadata, screenshots, and videos
+-   Cross-platform support (Windows, Linux, macOS)
+-   Integration with game metadata, screenshots, videos, and interactive 3D box viewer
+-   Online auto-updates with stable and beta channels (Linux AppImage)
+
+### macOS Builds
+
+Two macOS builds are produced automatically by the CI workflow:
+
+-   **Universal build** — for macOS 12 (Monterey) and later, supports both Intel and Apple Silicon
+-   **Legacy build** — for macOS 11 (Big Sur), built with an older Electron version to maintain compatibility
+
+> ⚠️ **Security notice:** The legacy build uses an older version of Electron (v37) to support macOS 11. Older Electron versions may contain unpatched security vulnerabilities. Use the legacy build only if you cannot upgrade to macOS 12 or later, and avoid using it to browse untrusted content.
 
 If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/srHzx9HS) server. For general eXoDOS support and Linux setup, visit the [eXoDOS Discord](https://www.retro-exo.com/community.html) server.
 
@@ -88,8 +97,7 @@ npm run start
 
 -   `npm run pack:linux` - Package for Linux (x64)
 -   `npm run pack:win32` - Package for Windows (ia32)
--   `npm run pack:darwin` - Package for macOS (Intel) - _under development_
--   `npm run pack:m1` - Package for macOS (Apple Silicon) - _under development_
+-   `npm run pack:mac-universal` - Package for macOS (Universal — Intel + Apple Silicon)
 -   `npm run pack:all` - Package for all platforms
 
 Use `release:*` variants (e.g., `npm run release:linux`) to build and package in production mode.

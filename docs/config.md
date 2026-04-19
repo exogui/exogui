@@ -25,6 +25,7 @@ The `config.json` and `preferences.json` files are located in different director
 ```json
 {
     "exodosPath": "/path/to/eXoDOS/",
+    "useEmbeddedExodosPath": false,
     "imageFolderPath": "Images",
     "logoFolderPath": "Data/Logos",
     "playlistFolderPath": "Data/Playlists",
@@ -39,13 +40,25 @@ The `config.json` and `preferences.json` files are located in different director
     "currentTheme": "fancy.css",
     "showDeveloperTab": false,
     "vlcPort": 39421,
-    "enableOnlineUpdate": true
+    "enableOnlineUpdate": true,
+    "updateChannel": "stable"
 }
 ```
 
 ## Configuration Fields
 
 ### Path Configuration
+
+#### `useEmbeddedExodosPath`
+
+-   **Type:** `boolean`
+-   **Required:** Yes
+-   **Default:** `true`
+-   **Description:** When `true`, exogui automatically determines the eXoDOS path based on the build type and the location of the executable. When `false`, the `exodosPath` field is used instead.
+-   **Notes:**
+    -   Recommended for standard installations where exogui is placed inside the eXoDOS directory
+    -   Set to `false` and configure `exodosPath` manually when running exogui from outside the eXoDOS directory structure
+    -   Controllable from the Config page under **eXoDOS → eXoDOS Location**
 
 #### `exodosPath`
 
@@ -243,5 +256,19 @@ exogui uses dynamic port allocation within specified ranges. The backend tries p
 -   **Notes:**
     -   To disable online updates, change this value to `false` and restart exogui
     -   See [docs/online-updates.md](online-updates.md) for complete details
+
+#### `updateChannel`
+
+-   **Type:** `"stable"` | `"beta"`
+-   **Required:** No
+-   **Default:** `"stable"`
+-   **Description:** Which update channel to follow (Linux AppImage only)
+-   **Values:**
+    -   `"stable"` — receive only tested stable releases
+    -   `"beta"` — receive pre-releases as well as stable releases
+-   **Notes:**
+    -   Controllable from the Config page under **Updates → Update Channel**
+    -   Has no effect on platforms where online updates are not supported
+    -   See [docs/online-updates.md](online-updates.md) for details
 
 **Note:** All configuration changes require an application restart to take effect.
