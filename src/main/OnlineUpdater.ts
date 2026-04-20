@@ -111,7 +111,11 @@ export class OnlineUpdater {
      * Currently only Linux AppImage is supported.
      */
     private isPlatformSupported(): boolean {
-        if (process.platform === "linux" && !process.env.APPIMAGE) {
+        if (process.platform !== "linux") {
+            return false;
+        }
+
+        if (!process.env.APPIMAGE) {
             return false;
         }
 
