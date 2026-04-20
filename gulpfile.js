@@ -60,7 +60,7 @@ gulp.task("build-back", (done) => {
 gulp.task("build-renderer", async (done) => {
     const config = await loadConfig();
     const rsbuild = await createRsbuild({
-      rsbuildConfig: config.content
+        rsbuildConfig: config.content
     });
     await rsbuild.build();
     done();
@@ -170,7 +170,7 @@ function createBuildTargets(os, arch) {
                 archFromString(arch),
             );
         case "darwin":
-            return Platform.MAC.createTarget("dmg", archFromString(arch));
+            return Platform.MAC.createTarget(["dmg", "zip"], archFromString(arch));
         case "linux":
             return Platform.LINUX.createTarget(
                 ["AppImage", "tar.gz", "dir"],
