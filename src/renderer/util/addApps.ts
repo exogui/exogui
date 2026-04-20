@@ -43,6 +43,7 @@ function loadAddAppsDirectory(game: IGameInfo, addAppsDir: string) {
         );
         const resolvedDirName = resolvePathSegmentCaseInsensitive(absoluteRootFolder, addAppsDir);
         if (!resolvedDirName) {
+            console.debug(`[addApps] ${game.title} - ${addAppsDir}: directory not found in "${absoluteRootFolder}"`);
             return [];
         }
 
@@ -59,12 +60,13 @@ function loadAddAppsDirectory(game: IGameInfo, addAppsDir: string) {
             withFileTypes: true,
         });
 
-        for (const file of files.filter((f) => {
+        const filteredFiles = files.filter((f) => {
             const extension = f.name.split(".")?.[1]?.toLowerCase() ?? "";
             return extension && f.isFile() && (process.platform === "win32" || allowedExtensions.has(extension));
-        })) {
-            console.log(relativePathForAddApps);
-            console.log(file.name);
+        });
+        console.debug(`[addApps] ${game.title} - ${addAppsDir}: found ${filteredFiles.length} file(s) in "${absolutePathForAddApps}" (allowed extensions: ${[...allowedExtensions].join(", ")})`);
+        for (const file of filteredFiles) {
+            console.debug(`[addApps] Adding "${file.name}" from "${relativePathForAddApps}"`);
             const filepath = path.join(relativePathForAddApps, file.name);
             const addApp = createAddApp(game, filepath);
             addApps.push(addApp);
