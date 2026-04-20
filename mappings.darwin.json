@@ -8,25 +8,25 @@
     "commandsMapping": [
         {
             "extensions": ["avi", "flac", "mp3", "mp4", "wav"],
-            "command": "open -a mpv --args --force-window",
+            "command": "mpv --force-window",
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["bmp", "gif", "jfif", "pdf", "png"],
-            "command": "open",
+            "command": "okular",
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["cbr", "jpeg", "jpg"],
-            "command": "open",
+            "command": "YACReader",
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["doc", "docx", "rtf", "txt"],
-            "command": "open",
+            "command": "qlmanage -p",
             "includeFilename": true,
             "includeArgs": false
         },
@@ -50,7 +50,7 @@
         },
         {
             "extensions": ["xls", "xlsx", "ods"],
-            "command": "open",
+            "command": "gnumeric",
             "includeFilename": true,
             "includeArgs": false
         }
