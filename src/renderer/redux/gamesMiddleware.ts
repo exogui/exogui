@@ -121,7 +121,7 @@ async function loadPlatform(platform: string, platformsPath: string) {
             const parseXmlStart = Date.now();
             const parser = new XMLParser({
                 numberParseOptions: {
-                    leadingZeros: true,
+                    leadingZeros: false,
                     eNotation: true,
                     hex: false,
                 },
