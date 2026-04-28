@@ -67,4 +67,19 @@ describe("mapGamesMusic", () => {
         mapGamesMusic(game, {});
         expect(game.musicPath).toBe("Music/MS-DOS/Some Game (1994).ogg");
     });
+
+    it("overrides XML musicPath when filesystem match exists", () => {
+        const game = makeGame("eXo\\eXoDOS\\!dos\\quake\\Quake (1996).bat");
+        game.musicPath = "Music\\MS-DOS\\Quake (1996).mp3";
+        const music: GameMusicCollection = { "Quake (1996)": "Music/MS-DOS/Quake (1996).ogg" };
+        mapGamesMusic(game, music);
+        expect(game.musicPath).toBe("Music/MS-DOS/Quake (1996).ogg");
+    });
+
+    it("keeps XML musicPath as fallback when filesystem has no match", () => {
+        const game = makeGame("eXo\\eXoDOS\\!dos\\storm\\Storm (1987).bat");
+        game.musicPath = "Music\\MS-DOS\\S.T.O.R.M. (1996).mp3";
+        mapGamesMusic(game, {});
+        expect(game.musicPath).toBe("Music\\MS-DOS\\S.T.O.R.M. (1996).mp3");
+    });
 });
