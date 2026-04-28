@@ -1,7 +1,7 @@
 import * as chokidar from "chokidar";
 import store from "@renderer/redux/store";
 import { updateGame } from "@renderer/redux/gamesSlice";
-import { deepCopy, fixSlashes, resolvePathSegmentCaseInsensitive } from "@shared/Util";
+import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath, removeFileExtension, resolvePathSegmentCaseInsensitive } from "@shared/Util";
 import { IAdditionalApplicationInfo, IGameInfo } from "@shared/game/interfaces";
 import * as fs from "fs";
 import * as path from "path";
@@ -90,16 +90,11 @@ function createAddApp(
     game: IGameInfo,
     filepath: string
 ): IAdditionalApplicationInfo {
-    const relativePath = filepath.replace(
-        window.External.config.fullExodosPath,
-        ""
-    );
-    const filename = filepath.split(process.platform === "win32" ? "\\" : "/").pop() ?? "Unknown";
-    const name = filename.split(".")[0];
+    const name = removeFileExtension(path.basename(filepath));
     const id = getExtrasId(game.id, filepath);
     return {
         id,
-        applicationPath: relativePath,
+        applicationPath: fixSlashes(filepath),
         autoRunBefore: false,
         gameId: game.id,
         launchCommand: "",
@@ -120,13 +115,10 @@ export function createManualsWatcher(platform: string): chokidar.FSWatcher {
     });
 
     watcher
-    .on("add", (path) => {
-        console.debug(`Manual ${path} added.`);
-        const relativePath = path.replace(
-            window.External.config.fullExodosPath,
-            ""
-        );
-        const title = relativePath.split("/").pop()?.split(".")[0];
+    .on("add", (manualPath) => {
+        console.debug(`Manual ${manualPath} added.`);
+        const relativePath = getRelativePath(manualPath, window.External.config.fullExodosPath);
+        const title = extractTitleFromMediaPath(manualPath, window.External.config.fullExodosPath);
         if (title) {
             const game = getGameByTitle(title);
             if (game) {

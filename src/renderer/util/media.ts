@@ -1,4 +1,4 @@
-import { deepCopy, fixSlashes } from "@shared/Util";
+import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath } from "@shared/Util";
 import {
     GameImagesCollection,
     GameVideosCollection,
@@ -220,11 +220,8 @@ export function createVideosWatcher(platform: string): chokidar.FSWatcher {
     watcher
     .on("add", (videoPath) => {
         console.debug(`Video ${videoPath} added.`);
-        const relativePath = videoPath.replace(
-            window.External.config.fullExodosPath,
-            ""
-        );
-        const title = relativePath.split("/").pop()?.split(".mp4")[0];
+        const relativePath = getRelativePath(videoPath, window.External.config.fullExodosPath);
+        const title = extractTitleFromMediaPath(videoPath, window.External.config.fullExodosPath);
         if (title) {
             const game = getGameByTitle(title);
             if (game) {

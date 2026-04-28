@@ -559,3 +559,17 @@ export function removeLowestDirectory(filePath: string, popCount = 1): string {
 
     return newPath;
 }
+
+export function getRelativePath(absolutePath: string, basePath: string): string {
+    const normalizedPath = fixSlashes(absolutePath);
+    const normalizedBase = fixSlashes(basePath).replace(/\/$/, "");
+    if (normalizedPath.startsWith(normalizedBase + "/")) {
+        return normalizedPath.slice(normalizedBase.length + 1);
+    }
+    return normalizedPath;
+}
+
+export function extractTitleFromMediaPath(absolutePath: string, basePath: string): string {
+    const relativePath = getRelativePath(absolutePath, basePath);
+    return removeFileExtension(path.basename(relativePath));
+}
