@@ -79,3 +79,27 @@ describe("GameParser.parseRawGame - orderTitle", () => {
         expect(game.orderTitle).toBe("king's quest 1");
     });
 });
+
+describe("GameParser.parseRawGame - leading-zero titles", () => {
+    // fast-xml-parser with leadingZeros:true converts "007" to the number 7,
+    // which then becomes the string "7" — causing image lookups to fail because
+    // image files are named "007-XX.jpg". leadingZeros:false keeps "007" as-is.
+    it("preserves leading zeros in title string", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, Title: "007" },
+            "ScummVM",
+            "/exo"
+        );
+        expect(game.title).toBe("007");
+        expect(game.orderTitle).toBe("007");
+    });
+
+    it("title parsed as number (leadingZeros:true regression) loses leading zeros", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, Title: 7 as any },
+            "ScummVM",
+            "/exo"
+        );
+        expect(game.title).toBe("7");
+    });
+});
