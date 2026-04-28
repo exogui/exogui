@@ -1,6 +1,7 @@
-import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath } from "@shared/Util";
+import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath, removeFileExtension } from "@shared/Util";
 import {
     GameImagesCollection,
+    GameMusicCollection,
     GameVideosCollection,
     IGameInfo,
 } from "@shared/game/interfaces";
@@ -250,4 +251,63 @@ export function createVideosWatcher(platform: string): chokidar.FSWatcher {
 
 function getPlatformVideosPath(platform: string) {
     return path.join(window.External.config.fullExodosPath, "Videos", platform);
+}
+
+const musicExtensions = new Set([".mp3", ".ogg", ".flac", ".wav", ".mod", ".s3m", ".xm", ".m3u"]);
+
+export function loadPlatformMusic(platform: string): GameMusicCollection {
+    const musicPath = getPlatformMusicPath(platform);
+    const music: GameMusicCollection = {};
+
+    if (fs.existsSync(musicPath)) {
+        const files = fs.readdirSync(musicPath).filter((f) =>
+            musicExtensions.has(path.extname(f).toLowerCase())
+        );
+        for (const f of files) {
+            music[removeFileExtension(f)] = `Music/${platform}/${f}`;
+        }
+    }
+
+    return music;
+}
+
+export function mapGamesMusic(game: IGameInfo, music: GameMusicCollection): void {
+    const gameName = getGameTitleForVideo(game);
+    if (music[gameName]) {
+        game.musicPath = music[gameName];
+    }
+}
+
+export function createMusicWatcher(platform: string): chokidar.FSWatcher {
+    const musicPath = getPlatformMusicPath(platform);
+    console.log(`Initializing music watcher for ${platform} path ${musicPath}`);
+
+    const watcher = chokidar.watch(musicPath, {
+        depth: 0,
+        persistent: true,
+        followSymlinks: false,
+        ignoreInitial: true,
+    });
+
+    watcher
+    .on("add", (filePath) => {
+        if (!musicExtensions.has(path.extname(filePath).toLowerCase())) { return; }
+        console.debug(`Music ${filePath} added.`);
+        const relativePath = getRelativePath(filePath, window.External.config.fullExodosPath);
+        const title = extractTitleFromMediaPath(filePath, window.External.config.fullExodosPath);
+        if (title) {
+            const game = getGameByTitle(title);
+            if (game) {
+                console.debug(`Found the game for new music. Updating game ${title}`);
+                store.dispatch(updateGame({ game: { ...game, musicPath: relativePath } }));
+            }
+        }
+    })
+    .on("error", (error) => console.log(`Watcher error: ${error}`));
+
+    return watcher;
+}
+
+function getPlatformMusicPath(platform: string) {
+    return path.join(window.External.config.fullExodosPath, "Music", platform);
 }

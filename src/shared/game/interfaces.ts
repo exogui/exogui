@@ -78,6 +78,10 @@ export type GameVideosCollection = {
     [key: string]: string; // "<game title> (from app path)" - "<FilePath>"
 };
 
+export type GameMusicCollection = {
+    [key: string]: string; // "<game title> (from app path)" - "<relative path>"
+};
+
 /** Represents the meta data for a single Game (including temporary data) */
 export interface IGameInfo extends IPureGameInfo {
     /** Library this game belongs to */

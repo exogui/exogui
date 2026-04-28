@@ -105,7 +105,7 @@ export class GameParser {
             orderTitle: generateGameOrderTitle(useSortTitle && data.SortTitle ? unescapeHTML(data.SortTitle) : title),
             placeholder: false, // (No loaded game is a placeholder),
             manualPath: unescapeHTML(data.ManualPath),
-            musicPath: unescapeHTML(data.MusicPath),
+            musicPath: "",
             configurationPath: unescapeHTML(data.ConfigurationPath),
             recommended: data.Favorite ?? false,
             favorite: false,
