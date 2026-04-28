@@ -103,7 +103,6 @@ describe("resolvePathSegmentCaseInsensitiveAsync", () => {
     });
 });
 
-// GREEN: existing utility functions
 describe("fixSlashes", () => {
     it("converts backslashes to forward slashes", () => {
         expect(fixSlashes("C:\\eXoDOS\\Videos\\MS-DOS")).toBe("C:/eXoDOS/Videos/MS-DOS");
@@ -140,7 +139,6 @@ describe("removeFileExtension", () => {
     });
 });
 
-// RED: getRelativePath does not exist yet
 describe("getRelativePath", () => {
     it("extracts relative path from a Unix absolute path", () => {
         expect(getRelativePath(
@@ -192,9 +190,22 @@ describe("getRelativePath", () => {
             "/home/user/exodos"
         )).toBe("Videos/MS-DOS/My Game.mp4");
     });
+
+    it("returns empty string when absolutePath does not start with basePath", () => {
+        expect(getRelativePath(
+            "/different/root/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos"
+        )).toBe("");
+    });
+
+    it("matches case-insensitively for Windows/macOS compatibility", () => {
+        expect(getRelativePath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "c:\\exodos"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
 });
 
-// RED: extractTitleFromMediaPath does not exist yet
 describe("extractTitleFromMediaPath", () => {
     it("extracts game title from a Unix video path", () => {
         expect(extractTitleFromMediaPath(
@@ -238,13 +249,19 @@ describe("extractTitleFromMediaPath", () => {
         )).toBe("GAMENAME");
     });
 
-    it("produces the same title that getGameByTitle would match against", () => {
-        // getGameByTitle compares against path.basename(fixSlashes(applicationPath)).split(".")[0]
-        // e.g. applicationPath "eXo\\eXoDOS\\1Ton\\1Ton.bat" -> title "1Ton"
-        // video file "C:\eXoDOS\Videos\MS-DOS\1Ton.mp4" -> should also produce "1Ton"
+    it("produces the same title that getGameByTitle would match against for single-dot filenames", () => {
         expect(extractTitleFromMediaPath(
             "C:\\eXoDOS\\Videos\\MS-DOS\\1Ton.mp4",
             "C:\\eXoDOS"
         )).toBe("1Ton");
+    });
+
+    it("preserves dots in title for multi-dot filenames, matching getGameByTitle behaviour", () => {
+        // getGameByTitle uses removeFileExtension (last-dot removal), so "Ultima IV. Quest of the Avatar.bat"
+        // -> "Ultima IV. Quest of the Avatar". The media file must produce the same string.
+        expect(extractTitleFromMediaPath(
+            "/home/user/exodos/Videos/MS-DOS/Ultima IV. Quest of the Avatar.mp4",
+            "/home/user/exodos"
+        )).toBe("Ultima IV. Quest of the Avatar");
     });
 });

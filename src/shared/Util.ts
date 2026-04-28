@@ -62,7 +62,7 @@ export function removeFileExtension(filename: string): string {
     if (lastDotIndex === -1) {
         return filename;
     }
-    return filename.substr(0, lastDotIndex);
+    return filename.substring(0, lastDotIndex);
 }
 
 export function getFilePathExtension(filepath: string): string {
@@ -563,10 +563,11 @@ export function removeLowestDirectory(filePath: string, popCount = 1): string {
 export function getRelativePath(absolutePath: string, basePath: string): string {
     const normalizedPath = fixSlashes(absolutePath);
     const normalizedBase = fixSlashes(basePath).replace(/\/$/, "");
-    if (normalizedPath.startsWith(normalizedBase + "/")) {
-        return normalizedPath.slice(normalizedBase.length + 1);
+    const prefix = normalizedBase + "/";
+    if (normalizedPath.toLowerCase().startsWith(prefix.toLowerCase())) {
+        return normalizedPath.slice(prefix.length);
     }
-    return normalizedPath;
+    return "";
 }
 
 export function extractTitleFromMediaPath(absolutePath: string, basePath: string): string {
