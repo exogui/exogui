@@ -192,7 +192,7 @@ class App extends React.Component<AppProps, AppState> {
             };
         })();
 
-        this.initializeAsync();
+        this.initializeAsync().catch((err) => console.error("initializeAsync failed:", err));
 
         // Listen for the window to move or resize (and update the preferences when it does)
         ipcRenderer.on(
