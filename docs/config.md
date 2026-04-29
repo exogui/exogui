@@ -54,11 +54,11 @@ The `config.json` and `preferences.json` files are located in different director
 -   **Type:** `boolean`
 -   **Required:** Yes
 -   **Default:** `true`
--   **Description:** When `true`, exogui automatically determines the eXoDOS path based on the build type and the location of the executable. When `false`, the `exodosPath` field is used instead.
+-   **Description:** When `true`, exogui automatically determines the Retro eXo Projects path based on the build type and the location of the executable. When `false`, the `exodosPath` field is used instead.
 -   **Notes:**
-    -   Recommended for standard installations where exogui is placed inside the eXoDOS directory
-    -   Set to `false` and configure `exodosPath` manually when running exogui from outside the eXoDOS directory structure
-    -   Controllable from the Config page under **eXoDOS → eXoDOS Location**
+    -   Recommended for standard installations where exogui is placed inside the Retro eXo Projects directory
+    -   Set to `false` and configure `exodosPath` manually when running exogui from outside the Retro eXo Projects directory structure
+    -   Controllable from the Config page under **Retro eXo Projects → Retro eXo Projects Location**
 
 #### `exodosPath`
 

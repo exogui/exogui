@@ -52,13 +52,13 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         You must press &apos;Save &amp; Restart&apos; for some changes to take effect.
                     </p>
 
-                    {/* eXoDOS */}
+                    {/* Retro eXo Projects */}
                     <section className="cfg-section">
-                        <h2 className="cfg-section__header">eXoDOS</h2>
+                        <h2 className="cfg-section__header">Retro eXo Projects</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
-                                <span className="cfg-row__name">eXoDOS Location</span>
-                                <span className="cfg-row__desc">How to locate the eXoDOS folder.</span>
+                                <span className="cfg-row__name">Retro eXo Projects Location</span>
+                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
                             </div>
                             <div className="cfg-row__control">
                                 <select
@@ -74,8 +74,8 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         {!this.state.useEmbeddedExodosPath && (
                             <div className="cfg-row cfg-row--filepath">
                                 <div className="cfg-row__label">
-                                    <span className="cfg-row__name">eXoDOS Path</span>
-                                    <span className="cfg-row__desc">Path to the eXoDOS folder (can be relative).</span>
+                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
+                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
                                 </div>
                                 <div className="cfg-row__control cfg-row__control--wide">
                                     <ConfigExodosPathInput

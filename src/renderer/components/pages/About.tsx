@@ -2,7 +2,7 @@ import * as React from "react";
 
 export type AboutPageProps = Record<string, never>;
 
-const discordlink = "https://discord.gg/WY25CAgz";
+const discordlink = "https://discord.gg/yMcZnyUn";
 const exoguiRepoLink = "https://github.com/exogui/exogui";
 const exoProjectsLink = "https://www.retro-exo.com";
 

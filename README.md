@@ -2,13 +2,13 @@
 
 **Important: This application requires eXo projects to be pre-patched with the Linux patch. For download and installation instructions, please visit the [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) and the [Linux Patch Wiki](https://wiki.retro-exo.com/index.php/Linux_Patch).**
 
-The launcher for the eXoDOS project.
+The launcher for Retro eXo Projects.
 
 ## Links
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
 -   [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) - Linux setup guide
--   [exogui discord](https://discord.gg/Epfsnu9rkD) - exogui-specific support
+-   [exogui discord](https://discord.gg/yMcZnyUn) - exogui-specific support
 
 ## About
 
@@ -42,7 +42,7 @@ Two macOS builds are produced automatically by the CI workflow:
 
 > ⚠️ **Security notice:** The legacy build uses an older version of Electron (v37) to support macOS 11. Older Electron versions may contain unpatched security vulnerabilities. Use the legacy build only if you cannot upgrade to macOS 12 or later, and avoid using it to browse untrusted content.
 
-If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/srHzx9HS) server. For general eXoDOS support and Linux setup, visit the [eXoDOS Discord](https://www.retro-exo.com/community.html) server.
+If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/yMcZnyUn) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) server.
 
 ## Development Setup
 

@@ -129,7 +129,7 @@ export function HomePage(props: HomePageProps) {
     const renderedGreetings = React.useMemo(
         () => (
             <div className="home-page__box">
-                <div className="home-page__box-head">Welcome to eXoDOS!</div>
+                <div className="home-page__box-head">Welcome to Retro eXo Projects!</div>
                 <div className="home-page__box-body">
                     <p>
                         This pack includes 7,200 DOS games. The games have
@@ -156,7 +156,7 @@ export function HomePage(props: HomePageProps) {
             <div className="home-page__header">
                 <div className="">
                     <div>
-                        <h1>eXoDOS v5</h1>
+                        <h1>Retro eXo Projects</h1>
                     </div>
                     <div>
                         <h4>{`backend: ${
@@ -171,7 +171,7 @@ export function HomePage(props: HomePageProps) {
                 </div>
                 <div className="home-page__subheader">
                     {link("Website", "https://www.retro-exo.com/exodos.html")}|
-                    {link("Discord", "https://discord.gg/SaMKayf")}
+                    {link("Discord", "https://discord.gg/yMcZnyUn")}
                 </div>
             </div>
             {/* Logo */}

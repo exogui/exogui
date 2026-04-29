@@ -19,7 +19,7 @@ const updateScriptFiles = [
 // Label mapping
 const labelMapping = {
     install_dependencies: "Install dependencies",
-    update: "Update eXoDOS",
+    update: "Update Retro eXo Projects",
     updateScummVm: "Update eXoScummVM",
     update3x: "Update eXoWin3x",
 };
