@@ -8,7 +8,7 @@ The launcher for the eXoDOS project.
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
 -   [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) - Linux setup guide
--   [exogui discord](https://discord.gg/srHzx9HS) - exogui-specific support
+-   [exogui discord](https://discord.gg/Epfsnu9rkD) - exogui-specific support
 
 ## About
 
