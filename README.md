@@ -44,6 +44,95 @@ Two macOS builds are produced automatically by the CI workflow:
 
 If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/yMcZnyUn) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) server.
 
+## Installation
+
+> **Note:** The Linux patch and macOS patch distributed by the Retro eXo Projects already include exogui — no manual installation is needed if you installed via the patch. This section is for manually updating exogui or setting it up without the patch.
+
+exogui must be placed inside an `exogui` subfolder directly within the root of your eXo project. This is where it looks for game data by default (`exodosPath: "../"`).
+
+### Directory layout
+
+```
+eXoDOS/               ← eXo project root (eXoDOS, eXoDREAMM, etc.)
+├── exogui/           ← create this folder and place exogui here
+│   └── <exogui files>
+├── eXo/
+├── Data/
+└── ...
+```
+
+### Examples by platform
+
+**Linux — AppImage**
+
+Download `exogui.AppImage`, place it in the `exogui` subfolder, and make it executable:
+
+```
+eXoDOS/
+└── exogui/
+    └── exogui.AppImage
+```
+
+```bash
+chmod +x exogui.AppImage
+./exogui.AppImage
+```
+
+**Linux — tar.gz**
+
+Extract the archive into the `exogui` subfolder:
+
+```
+eXoDOS/
+└── exogui/
+    ├── exogui
+    └── (other extracted files)
+```
+
+```bash
+tar -xzf exogui.tar.gz -C eXoDOS/exogui/
+./eXoDOS/exogui/exogui
+```
+
+**macOS — .app bundle**
+
+Extract the zip and move `exogui.app` into the `exogui` subfolder:
+
+```
+eXoDOS/
+└── exogui/
+    └── exogui.app
+```
+
+Double-click `exogui.app` to launch, or from Terminal:
+
+```bash
+open eXoDOS/exogui/exogui.app
+```
+
+**Windows — zip**
+
+Extract the zip into the `exogui` subfolder:
+
+```
+eXoDOS\
+└── exogui\
+    ├── exogui.exe
+    └── (other extracted files)
+```
+
+Run `exogui.exe`. The Windows NSIS installer (`.exe` setup file) handles this placement automatically.
+
+### Overriding the eXo project path
+
+If you cannot follow the above layout, open `exogui/config.json` and set `exodosPath` to the absolute path of your eXo project root:
+
+```json
+{
+    "exodosPath": "/path/to/eXoDOS"
+}
+```
+
 ## Development Setup
 
 This project is currently intended for developers. To set up your development environment:
