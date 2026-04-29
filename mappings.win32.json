@@ -1,7 +1,7 @@
 {
     "defaultMapping": {
         "extensions": [],
-        "command": "start \"\"",
+        "command": "start \"\" cmd /c",
         "includeFilename": true,
         "includeArgs": true,
         "setCwdToFileDir": true
