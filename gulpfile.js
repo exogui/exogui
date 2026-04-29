@@ -108,6 +108,13 @@ gulp.task("pack", (done) => {
                     icon: "./icons/icon.ico",
                     target: ["nsis", "zip"],
                 },
+                nsis: {
+                    oneClick: false,
+                    allowToChangeInstallationDirectory: false,
+                    perMachine: false,
+                    deleteAppDataOnUninstall: false,
+                    include: "./installer/win/exo-installer.nsh",
+                },
                 mac: {
                     icon: "./icons/icon.icns",
                     x64ArchFiles: "**/7za"
