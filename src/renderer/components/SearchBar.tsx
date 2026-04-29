@@ -7,7 +7,7 @@ import {
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
 import { updatePreferencesData } from "@shared/preferences/util";
-import { faCheck, faCirclePlay, faFilter, faFilterCircleXmark, faStar, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faFilter, faFilterCircleXmark, faGem, faLaptop, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { GameOrderBy, GameOrderReverse } from "@shared/order/interfaces";
@@ -272,13 +272,13 @@ export function SearchBar(props: SearchBarProps) {
                     onChangeOrderReverse={onChangeOrderReverse}
                 />
                 <TriStateIconButton
-                    icon={faCirclePlay}
+                    icon={faLaptop}
                     title="Installed"
                     value={view.advancedFilter.installed}
                     onChange={onInstalledChange}
                 />
                 <TriStateIconButton
-                    icon={faStar}
+                    icon={faGem}
                     title="Recommended"
                     value={view.advancedFilter.recommended}
                     onChange={onRecommendedChange}
