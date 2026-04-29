@@ -256,7 +256,7 @@ async function initializePlaylistManager() {
         });
     };
 
-    state.playlistManager.init({
+    await state.playlistManager.init({
         playlistFolder,
         log,
         onPlaylistAddOrUpdate,

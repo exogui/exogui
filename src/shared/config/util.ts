@@ -40,7 +40,7 @@ const configDataDefaults: IConfigDataDefaults = {
     // Windows
     win32: Object.freeze(
         overwriteConfigData(deepCopy(configDataDefaultBase), {
-            useCustomTitlebar: true,
+            useCustomTitlebar: false,
         })
     ),
     // Linux

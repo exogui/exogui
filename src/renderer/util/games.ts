@@ -5,7 +5,7 @@ import * as fs from "fs";
 import store from "@renderer/redux/store";
 import { updateGame } from "@renderer/redux/gamesSlice";
 import { IGameCollection, IGameInfo } from "@shared/game/interfaces";
-import { fixSlashes, removeLowestDirectory } from "@shared/Util";
+import { fixSlashes, removeFileExtension, removeLowestDirectory } from "@shared/Util";
 import { updateInstalledField } from "@renderer/file/PlatformFile";
 
 export function createGamesWatcher(platformCollection: IGameCollection) {
@@ -27,9 +27,7 @@ export function createGamesWatcher(platformCollection: IGameCollection) {
 export function getGameByTitle(title: string) {
     const state = store.getState().gamesState;
     const game = state.games.find((g) => {
-        const gameTitle = path
-        .basename(fixSlashes(g.applicationPath))
-        .split(".")[0];
+        const gameTitle = removeFileExtension(path.basename(fixSlashes(g.applicationPath)));
         return gameTitle === title;
     });
     return game;

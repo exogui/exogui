@@ -185,25 +185,38 @@ const searchSlice = createSlice({
                     : undefined;
                 const musicPath = view.selectedGame?.musicPath;
                 const autoplay = window.External.preferences.data.gameMusicPlay;
-                if (musicPath && autoplay) {
-                    // Play directly without stopping first — VLC keeps its audio pipeline
-                    // alive via add+next, avoiding the audio device reinit stutter
-                    const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
-                    window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
-                    state.isMusicPlaying = true;
-                } else {
-                    window.External.back.send(BackIn.STOP_MUSIC);
+                try {
+                    if (musicPath && autoplay) {
+                        // Play directly without stopping first — VLC keeps its audio pipeline
+                        // alive via add+next, avoiding the audio device reinit stutter
+                        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
+                        window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
+                        state.isMusicPlaying = true;
+                    } else {
+                        window.External.back.send(BackIn.STOP_MUSIC);
+                        state.isMusicPlaying = false;
+                    }
+                } catch (err) {
+                    console.error("Failed to send music command:", err);
                     state.isMusicPlaying = false;
                 }
             }
         },
         stopMusic(state: SearchState) {
-            window.External.back.send(BackIn.STOP_MUSIC);
+            try {
+                window.External.back.send(BackIn.STOP_MUSIC);
+            } catch (err) {
+                console.error("Failed to send STOP_MUSIC:", err);
+            }
             state.isMusicPlaying = false;
         },
         playMusic(state: SearchState, { payload }: PayloadAction<string>) {
-            window.External.back.send(BackIn.PLAY_AUDIO_FILE, payload);
-            state.isMusicPlaying = true;
+            try {
+                window.External.back.send(BackIn.PLAY_AUDIO_FILE, payload);
+                state.isMusicPlaying = true;
+            } catch (err) {
+                console.error("Failed to send PLAY_AUDIO_FILE:", err);
+            }
         },
         forceSearch(
             state: SearchState,

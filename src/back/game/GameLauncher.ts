@@ -92,7 +92,7 @@ export namespace GameLauncher {
         mappings: IAppCommandsMappingData,
     ): Promise<void> {
         const command = createCommand(appPath, appArgs, mappings);
-        const proc = exec(command.command, { cwd: command.cwd });
+        const proc = exec(command.command, { cwd: command.cwd, windowsHide: true });
         _logProcessOutput(proc);
         log(logSource, `Launch command (PID: ${proc.pid}) [ path: "${appPath}", arg: "${appArgs}", command: "${command.command}", cwd: "${command.cwd}" ]`);
         return new Promise((resolve, reject) => {
@@ -178,7 +178,7 @@ export namespace GameLauncher {
             return;
         }
 
-        const proc = exec(command.command, { cwd: command.cwd });
+        const proc = exec(command.command, { cwd: command.cwd, windowsHide: true });
         _logProcessOutput(proc);
         log(logSource, `Launch Game "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +
@@ -204,7 +204,7 @@ export namespace GameLauncher {
         );
 
         const command = createCommand(gamePath, opts.game.launchCommand, opts.mappings);
-        const proc = exec(command.command, { cwd: command.cwd });
+        const proc = exec(command.command, { cwd: command.cwd, windowsHide: true });
         _logProcessOutput(proc);
         log(logSource, `Launch Game Setup "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +

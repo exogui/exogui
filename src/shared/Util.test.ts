@@ -1,5 +1,9 @@
 import * as fs from "fs";
 import {
+    extractTitleFromMediaPath,
+    fixSlashes,
+    getRelativePath,
+    removeFileExtension,
     resolvePathSegmentCaseInsensitive,
     resolvePathSegmentCaseInsensitiveAsync,
 } from "./Util";
@@ -96,5 +100,168 @@ describe("resolvePathSegmentCaseInsensitiveAsync", () => {
     it("returns undefined when directory read fails with other error", async () => {
         mockReaddirAsync.mockRejectedValue(new Error("EPERM: permission denied"));
         await expect(resolvePathSegmentCaseInsensitiveAsync("/protected", "Extras")).resolves.toBeUndefined();
+    });
+});
+
+describe("fixSlashes", () => {
+    it("converts backslashes to forward slashes", () => {
+        expect(fixSlashes("C:\\eXoDOS\\Videos\\MS-DOS")).toBe("C:/eXoDOS/Videos/MS-DOS");
+    });
+
+    it("leaves forward slashes unchanged", () => {
+        expect(fixSlashes("/home/user/exodos/Videos/MS-DOS")).toBe("/home/user/exodos/Videos/MS-DOS");
+    });
+
+    it("handles mixed separators", () => {
+        expect(fixSlashes("C:/eXoDOS\\Videos/MS-DOS")).toBe("C:/eXoDOS/Videos/MS-DOS");
+    });
+
+    it("handles empty string", () => {
+        expect(fixSlashes("")).toBe("");
+    });
+});
+
+describe("removeFileExtension", () => {
+    it("removes extension from simple filename", () => {
+        expect(removeFileExtension("GAMENAME.mp4")).toBe("GAMENAME");
+    });
+
+    it("removes last extension when filename has multiple dots", () => {
+        expect(removeFileExtension("game.name.bat")).toBe("game.name");
+    });
+
+    it("returns filename unchanged when there is no extension", () => {
+        expect(removeFileExtension("GAMENAME")).toBe("GAMENAME");
+    });
+
+    it("removes pdf extension", () => {
+        expect(removeFileExtension("GAMENAME.pdf")).toBe("GAMENAME");
+    });
+});
+
+describe("getRelativePath", () => {
+    it("extracts relative path from a Unix absolute path", () => {
+        expect(getRelativePath(
+            "/home/user/exodos/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
+
+    it("extracts relative path from a Windows-style backslash path", () => {
+        expect(getRelativePath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "C:\\eXoDOS"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
+
+    it("handles base path with trailing forward slash", () => {
+        expect(getRelativePath(
+            "/home/user/exodos/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos/"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
+
+    it("handles base path with trailing backslash", () => {
+        expect(getRelativePath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "C:\\eXoDOS\\"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
+
+    it("always returns forward slashes regardless of input separators", () => {
+        const result = getRelativePath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "C:\\eXoDOS"
+        );
+        expect(result).not.toContain("\\");
+    });
+
+    it("returns result without a leading slash", () => {
+        const result = getRelativePath(
+            "/home/user/exodos/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos"
+        );
+        expect(result.startsWith("/")).toBe(false);
+    });
+
+    it("handles a filename with spaces", () => {
+        expect(getRelativePath(
+            "/home/user/exodos/Videos/MS-DOS/My Game.mp4",
+            "/home/user/exodos"
+        )).toBe("Videos/MS-DOS/My Game.mp4");
+    });
+
+    it("returns empty string when absolutePath does not start with basePath", () => {
+        expect(getRelativePath(
+            "/different/root/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos"
+        )).toBe("");
+    });
+
+    it("matches case-insensitively for Windows/macOS compatibility", () => {
+        expect(getRelativePath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "c:\\exodos"
+        )).toBe("Videos/MS-DOS/GAMENAME.mp4");
+    });
+});
+
+describe("extractTitleFromMediaPath", () => {
+    it("extracts game title from a Unix video path", () => {
+        expect(extractTitleFromMediaPath(
+            "/home/user/exodos/Videos/MS-DOS/GAMENAME.mp4",
+            "/home/user/exodos"
+        )).toBe("GAMENAME");
+    });
+
+    it("extracts game title from a Windows-style backslash video path", () => {
+        expect(extractTitleFromMediaPath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "C:\\eXoDOS"
+        )).toBe("GAMENAME");
+    });
+
+    it("extracts game title from a Unix manual path", () => {
+        expect(extractTitleFromMediaPath(
+            "/home/user/exodos/Manuals/MS-DOS/GAMENAME.pdf",
+            "/home/user/exodos"
+        )).toBe("GAMENAME");
+    });
+
+    it("extracts game title from a Windows manual path", () => {
+        expect(extractTitleFromMediaPath(
+            "C:\\eXoDOS\\Manuals\\MS-DOS\\GAMENAME.pdf",
+            "C:\\eXoDOS"
+        )).toBe("GAMENAME");
+    });
+
+    it("handles filenames with spaces", () => {
+        expect(extractTitleFromMediaPath(
+            "/home/user/exodos/Videos/MS-DOS/My Game.mp4",
+            "/home/user/exodos"
+        )).toBe("My Game");
+    });
+
+    it("handles Windows base path with trailing backslash", () => {
+        expect(extractTitleFromMediaPath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\GAMENAME.mp4",
+            "C:\\eXoDOS\\"
+        )).toBe("GAMENAME");
+    });
+
+    it("produces the same title that getGameByTitle would match against for single-dot filenames", () => {
+        expect(extractTitleFromMediaPath(
+            "C:\\eXoDOS\\Videos\\MS-DOS\\1Ton.mp4",
+            "C:\\eXoDOS"
+        )).toBe("1Ton");
+    });
+
+    it("preserves dots in title for multi-dot filenames, matching getGameByTitle behaviour", () => {
+        // getGameByTitle uses removeFileExtension (last-dot removal), so "Ultima IV. Quest of the Avatar.bat"
+        // -> "Ultima IV. Quest of the Avatar". The media file must produce the same string.
+        expect(extractTitleFromMediaPath(
+            "/home/user/exodos/Videos/MS-DOS/Ultima IV. Quest of the Avatar.mp4",
+            "/home/user/exodos"
+        )).toBe("Ultima IV. Quest of the Avatar");
     });
 });

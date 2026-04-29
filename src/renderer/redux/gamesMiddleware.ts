@@ -17,10 +17,13 @@ import { initializeViews } from "./searchSlice";
 import { IGameCollection } from "@shared/game/interfaces";
 import { GameCollection } from "@shared/game/GameCollection";
 import {
+    createMusicWatcher,
     createVideosWatcher,
     loadPlatformImages,
+    loadPlatformMusic,
     loadPlatformVideos,
     mapGamesMedia,
+    mapGamesMusic,
 } from "@renderer/util/media";
 import { createManualsWatcher } from "@renderer/util/addApps";
 import { createGamesWatcher } from "@renderer/util/games";
@@ -76,6 +79,7 @@ export function addGamesMiddleware() {
                             createGamesWatcher(platformCollection);
                             createVideosWatcher(platform);
                             createManualsWatcher(platform);
+                            createMusicWatcher(platform);
                         }
                     } catch (err) {
                         console.error(`Failed to load platform ${err}`);
@@ -121,7 +125,7 @@ async function loadPlatform(platform: string, platformsPath: string) {
             const parseXmlStart = Date.now();
             const parser = new XMLParser({
                 numberParseOptions: {
-                    leadingZeros: true,
+                    leadingZeros: false,
                     eNotation: true,
                     hex: false,
                 },
@@ -153,6 +157,10 @@ async function loadPlatform(platform: string, platformsPath: string) {
             const videos = loadPlatformVideos(platform);
             console.log(`[PERF] ${platform} - Load videos: ${Date.now() - videosStart}ms`);
 
+            const musicStart = Date.now();
+            const music = loadPlatformMusic(platform);
+            console.log(`[PERF] ${platform} - Load music: ${Date.now() - musicStart}ms`);
+
             const parseGamesStart = Date.now();
             const platformCollection = GameParser.parse(
                 data,
@@ -165,6 +173,7 @@ async function loadPlatform(platform: string, platformsPath: string) {
             const mapMediaStart = Date.now();
             for (const game of platformCollection.games) {
                 mapGamesMedia(game, images, videos);
+                mapGamesMusic(game, music);
             }
             console.log(`[PERF] ${platform} - Map media: ${Date.now() - mapMediaStart}ms`);
 
