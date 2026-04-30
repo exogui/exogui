@@ -279,6 +279,14 @@ export function main(init: Init): void {
             // (Local back)
             state.socket.send(BackIn.QUIT);
             event.preventDefault();
+            // Backend may die before its BackOut.QUIT message reaches us (race on socket close).
+            // Force quit after a grace period so the main process never hangs.
+            setTimeout(() => {
+                if (!state.isQuitting) {
+                    state.isQuitting = true;
+                    app.quit();
+                }
+            }, 3000);
         }
     }
 

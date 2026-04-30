@@ -274,36 +274,41 @@ export function exit() {
         // Broadcast quit signal to all connected clients (including Main process)
         state.socketServer.broadcast(BackOut.QUIT);
 
-        Promise.all([
-            // Close WebSocket server
-            isErrorProxy(state.server)
-                ? undefined
-                : new Promise<void>((resolve) =>
-                    state.server.close((error) => {
-                        if (error) {
-                            console.warn(
-                                "An error occurred whie closing the WebSocket server.",
-                                error
-                            );
-                        }
-                        resolve();
-                    })
-                ),
-            // Close file server
-            new Promise<void>((resolve) =>
-                state.fileServer?.server.close((error) => {
+        const forceExitTimer = setTimeout(() => {
+            console.warn("exit() timed out after 5s — forcing process.exit()");
+            process.exit(1);
+        }, 5000);
+        forceExitTimer.unref();
+
+        const wsServer = state.socketServer.server;
+        const wsPromise = wsServer
+            ? new Promise<void>((resolve) =>
+                wsServer.close((error) => {
                     if (error) {
-                        console.warn(
-                            "An error occurred whie closing the file server.",
-                            error
-                        );
+                        console.warn("An error occurred whie closing the WebSocket server.", error);
                     }
+                    console.log("exit: WebSocket server closed");
                     resolve();
                 })
-            ),
-            // Quit VLC player
-            state.vlcPlayer?.quit(),
-        ]).then(() => {
+            )
+            : Promise.resolve();
+        const fileServerPromise = state.fileServer
+            ? new Promise<void>((resolve) =>
+                state.fileServer!.server.close((error) => {
+                    if (error) {
+                        console.warn("An error occurred whie closing the file server.", error);
+                    }
+                    console.log("exit: file server closed");
+                    resolve();
+                })
+            )
+            : Promise.resolve();
+        const vlcPromise = state.vlcPlayer?.quit() ?? Promise.resolve();
+
+        console.log("exit: waiting for servers to close...");
+        Promise.all([wsPromise, fileServerPromise, vlcPromise]).then(() => {
+            console.log("exit: all closed, calling process.exit()");
+            clearTimeout(forceExitTimer);
             process.exit();
         });
     }
