@@ -199,7 +199,7 @@ async function initialize(message: any, _: any): Promise<void> {
             }
             case "darwin": {
                 state.vlcPlayer = await VlcPlayer.create(
-                    "vlc",
+                    "VLC",
                     ["--no-video"],
                     state.config.vlcPort,
                     state.preferences.gameMusicVolume,
