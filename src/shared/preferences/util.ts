@@ -33,7 +33,7 @@ const { num, str } = Coerce;
 /** Default Preferences Data used for values that are not found in the file */
 export const defaultPreferencesData: Readonly<IAppPreferencesData> =
     Object.freeze<IAppPreferencesData>({
-        browsePageGameScale: 0.087,
+        browsePageGameScale: 0.496,
         browsePageLayout: BrowsePageLayout.grid,
         browsePageShowLeftSidebar: true,
         browsePageShowRightSidebar: true,
@@ -47,7 +47,7 @@ export const defaultPreferencesData: Readonly<IAppPreferencesData> =
             y: undefined,
             width: undefined,
             height: undefined,
-            maximized: false,
+            maximized: true,
         }),
         showLogSource: Object.freeze({
             // (Add log sources that should be hidden by default here)
