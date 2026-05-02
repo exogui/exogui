@@ -94,19 +94,38 @@ const initialState: SearchState = {
     isMusicPlaying: false,
 };
 
-function playGameMusic(musicPath: string | undefined): boolean {
+const MUSIC_PLAY_DELAY_MS = 250;
+let musicPlayTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPendingMusic(): void {
+    if (musicPlayTimer !== null) {
+        clearTimeout(musicPlayTimer);
+        musicPlayTimer = null;
+    }
+}
+
+function playGameMusic(musicPath: string | undefined, isPlaying: boolean): boolean {
     const autoplay = window.External.preferences.data.gameMusicPlay;
-    try {
-        if (musicPath && autoplay) {
-            const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
-            window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
-            return true;
-        } else {
-            window.External.back.send(BackIn.STOP_MUSIC);
-            return false;
+    cancelPendingMusic();
+    if (musicPath && autoplay) {
+        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
+        musicPlayTimer = setTimeout(() => {
+            musicPlayTimer = null;
+            try {
+                window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
+            } catch (err) {
+                console.error("Failed to send PLAY_AUDIO_FILE:", err);
+            }
+        }, MUSIC_PLAY_DELAY_MS);
+        return true;
+    } else {
+        if (isPlaying) {
+            try {
+                window.External.back.send(BackIn.STOP_MUSIC);
+            } catch (err) {
+                console.error("Failed to send STOP_MUSIC:", err);
+            }
         }
-    } catch (err) {
-        console.error("Failed to send music command:", err);
         return false;
     }
 }
@@ -202,11 +221,12 @@ const searchSlice = createSlice({
                     ? deepCopy(payload.game)
                     : undefined;
                 if (payload.userInitiated !== false) {
-                    state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath);
+                    state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath, state.isMusicPlaying);
                 }
             }
         },
         stopMusic(state: SearchState) {
+            cancelPendingMusic();
             try {
                 window.External.back.send(BackIn.STOP_MUSIC);
             } catch (err) {
