@@ -57,6 +57,7 @@ export type SearchSetViewGamesAction = {
 export type SearchSetGameAction = {
     view: string;
     game?: IGameInfo;
+    userInitiated?: boolean;
 };
 
 export type SearchSetPlaylistAction = {
@@ -92,6 +93,23 @@ const initialState: SearchState = {
     views: {},
     isMusicPlaying: false,
 };
+
+function playGameMusic(musicPath: string | undefined): boolean {
+    const autoplay = window.External.preferences.data.gameMusicPlay;
+    try {
+        if (musicPath && autoplay) {
+            const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
+            window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
+            return true;
+        } else {
+            window.External.back.send(BackIn.STOP_MUSIC);
+            return false;
+        }
+    } catch (err) {
+        console.error("Failed to send music command:", err);
+        return false;
+    }
+}
 
 const searchSlice = createSlice({
     name: "search",
@@ -183,22 +201,8 @@ const searchSlice = createSlice({
                 view.selectedGame = payload.game
                     ? deepCopy(payload.game)
                     : undefined;
-                const musicPath = view.selectedGame?.musicPath;
-                const autoplay = window.External.preferences.data.gameMusicPlay;
-                try {
-                    if (musicPath && autoplay) {
-                        // Play directly without stopping first — VLC keeps its audio pipeline
-                        // alive via add+next, avoiding the audio device reinit stutter
-                        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
-                        window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
-                        state.isMusicPlaying = true;
-                    } else {
-                        window.External.back.send(BackIn.STOP_MUSIC);
-                        state.isMusicPlaying = false;
-                    }
-                } catch (err) {
-                    console.error("Failed to send music command:", err);
-                    state.isMusicPlaying = false;
+                if (payload.userInitiated !== false) {
+                    state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath);
                 }
             }
         },

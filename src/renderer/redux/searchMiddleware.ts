@@ -68,6 +68,7 @@ export function addSearchMiddleware() {
                         selectGame({
                             view: viewName,
                             game,
+                            userInitiated: false,
                         })
                     );
                 debounceSearch(state, viewName, view);

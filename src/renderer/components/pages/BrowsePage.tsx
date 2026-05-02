@@ -395,6 +395,7 @@ class BrowsePage extends React.Component<
             this.props.onSelectGame({
                 view: this.props.gameLibrary,
                 game,
+                userInitiated: true,
             });
         }
     };
