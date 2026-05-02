@@ -275,6 +275,11 @@ export function mapGamesMusic(game: IGameInfo, music: GameMusicCollection): void
     const gameName = getGameTitleForVideo(game);
     if (music[gameName]) {
         game.musicPath = music[gameName];
+    } else if (game.musicPath) {
+        const absolutePath = path.join(window.External.config.fullExodosPath, fixSlashes(game.musicPath));
+        if (!fs.existsSync(absolutePath)) {
+            game.musicPath = "";
+        }
     }
 }
 
