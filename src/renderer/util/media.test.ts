@@ -3,6 +3,7 @@ jest.mock("@renderer/redux/store", () => ({ getState: jest.fn(), dispatch: jest.
 jest.mock("@renderer/redux/gamesSlice", () => ({ updateGame: jest.fn() }));
 jest.mock("chokidar", () => ({ watch: jest.fn(() => ({ on: jest.fn() })) }));
 
+import * as fs from "fs";
 import { GameMusicCollection, IGameInfo } from "@shared/game/interfaces";
 import { convertToGameTitleIndex, getGameTitleIndexFromFilename, mapGamesMusic } from "./media";
 
@@ -47,6 +48,14 @@ function makeGame(applicationPath: string): IGameInfo {
 }
 
 describe("mapGamesMusic", () => {
+    beforeAll(() => {
+        (window as any).External = { config: { fullExodosPath: "/test" } };
+    });
+
+    afterAll(() => {
+        delete (window as any).External;
+    });
+
     it("sets musicPath when bat basename matches", () => {
         const game = makeGame("eXo\\eXoDOS\\!dos\\quake\\Quake (1996).bat");
         const music: GameMusicCollection = { "Quake (1996)": "Music/MS-DOS/Quake (1996).mp3" };
@@ -62,10 +71,12 @@ describe("mapGamesMusic", () => {
     });
 
     it("does not overwrite existing musicPath when no match", () => {
+        jest.spyOn(fs, "existsSync").mockReturnValueOnce(true);
         const game = makeGame("eXo\\eXoDOS\\!dos\\game\\Some Game (1994).bat");
         game.musicPath = "Music/MS-DOS/Some Game (1994).ogg";
         mapGamesMusic(game, {});
         expect(game.musicPath).toBe("Music/MS-DOS/Some Game (1994).ogg");
+        jest.restoreAllMocks();
     });
 
     it("overrides XML musicPath when filesystem match exists", () => {
@@ -77,10 +88,12 @@ describe("mapGamesMusic", () => {
     });
 
     it("keeps XML musicPath as fallback when filesystem has no match", () => {
+        jest.spyOn(fs, "existsSync").mockReturnValueOnce(true);
         const game = makeGame("eXo\\eXoDOS\\!dos\\storm\\Storm (1987).bat");
         game.musicPath = "Music\\MS-DOS\\S.T.O.R.M. (1996).mp3";
         mapGamesMusic(game, {});
         expect(game.musicPath).toBe("Music\\MS-DOS\\S.T.O.R.M. (1996).mp3");
+        jest.restoreAllMocks();
     });
 });
 
