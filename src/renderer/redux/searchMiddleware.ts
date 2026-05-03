@@ -68,6 +68,7 @@ export function addSearchMiddleware() {
                         selectGame({
                             view: viewName,
                             game,
+                            userInitiated: false,
                         })
                     );
                 debounceSearch(state, viewName, view);
@@ -81,16 +82,14 @@ const debounceSearch = debounce(
         let games = state.gamesState.games;
         console.debug("Start count " + games.length);
 
-        // Check if we're a special installed games playlist
         if (view.selectedPlaylist) {
             if (view.selectedPlaylist.games.length > 0) {
-                const playlistGameIds = view.selectedPlaylist.games.map(
-                    (g) => g.id
+                const playlistIds = new Set(
+                    view.selectedPlaylist.games.map((g) => g.id)
                 );
-                games = games.filter((g) => playlistGameIds.includes(g.id));
+                games = games.filter((g) => playlistIds.has(g.id));
             }
         } else {
-            // Not in a playlist, treat view name as platform
             games = games.filter((g) => g.platform === viewName);
         }
 

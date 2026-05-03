@@ -98,9 +98,9 @@ This will generate all necessary files in the `./build/` directory.
 
 **Solutions:**
 
-1. **Verify eXoDOS path in config.json:**
+1. **Verify Retro eXo Projects path in config.json:**
 
-    - Check that `exodosPath` points to your eXoDOS installation
+    - Check that `exodosPath` points to your Retro eXo Projects installation
     - Example: `"/home/user/Games/eXoDOS/"`
 
 2. **Check platform data:**
@@ -110,7 +110,7 @@ This will generate all necessary files in the `./build/` directory.
 
 3. **Check file permissions:**
 
-    - Ensure exogui has read access to the eXoDOS directory
+    - Ensure exogui has read access to the Retro eXo Projects directory
     - On Linux/macOS: `chmod -R +r /path/to/eXoDOS`
 
 4. **Restart exogui:**
@@ -186,7 +186,7 @@ After installing fonts, restart exogui for the changes to take effect.
 -   Some features may be incomplete or non-functional
 
 **Status:**
-Check the [exogui discord](https://discord.gg/srHzx9HS) for the latest macOS development updates.
+Check the [exogui discord](https://discord.gg/yMcZnyUn) for the latest macOS development updates.
 
 ---
 
@@ -235,8 +235,8 @@ If you continue to experience issues:
 
 2. **Search or ask on Discord:**
 
-    - [exogui discord](https://discord.gg/srHzx9HS) - exogui-specific issues
-    - [eXoDOS Discord](https://www.retro-exo.com/community.html) - General eXoDOS support
+    - [exogui discord](https://discord.gg/yMcZnyUn) - exogui-specific issues
+    - [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) - General Retro eXo Projects support
 
 3. **Report bugs:**
     - Check [GitHub Issues](https://github.com/exogui/exogui-launcher/issues)

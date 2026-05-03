@@ -16,7 +16,6 @@ import {
 import { ConnectedLogsPage } from "./containers/ConnectedLogsPage";
 
 export type AppRouterProps = {
-    gamesTotal: number;
     playlists: GamePlaylist[];
     appPaths: Record<string, string>;
     playlistIconCache: Record<string, string>;

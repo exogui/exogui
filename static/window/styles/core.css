@@ -2101,8 +2101,8 @@ body {
   pointer-events: none;
 }
 .splash-screen__logo {
-  width: 614px;
-  height: 410px;
+  width: 491px;
+  height: 328px;
   background-image: url("../images/exogui-logo.png");
   background-size: contain;
   background-repeat: no-repeat;

@@ -395,6 +395,7 @@ class BrowsePage extends React.Component<
             this.props.onSelectGame({
                 view: this.props.gameLibrary,
                 game,
+                userInitiated: true,
             });
         }
     };
@@ -479,7 +480,7 @@ class BrowsePage extends React.Component<
         if (this.state.currentPlaylist) {
             // Synchronously show a "open dialog" (this makes the main window "frozen" while this is open)
             const filePaths = window.External.showOpenDialogSync({
-                title: "Select the eXoDOS root directory",
+                title: "Select the Retro eXo Projects root directory",
                 properties: ["openFile"],
             });
             if (filePaths && filePaths.length > 0) {

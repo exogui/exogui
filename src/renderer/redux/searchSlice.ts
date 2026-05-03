@@ -5,7 +5,7 @@ import {
     parseAdvancedFilter,
     parseUserInput,
 } from "@renderer/util/search";
-import { deepCopy, fixSlashes } from "@shared/Util";
+import { fixSlashes } from "@shared/Util";
 import { BackIn } from "@shared/back/types";
 import { getOrderFunction } from "@shared/game/GameFilter";
 import { IGameInfo } from "@shared/game/interfaces";
@@ -57,6 +57,7 @@ export type SearchSetViewGamesAction = {
 export type SearchSetGameAction = {
     view: string;
     game?: IGameInfo;
+    userInitiated?: boolean;
 };
 
 export type SearchSetPlaylistAction = {
@@ -92,6 +93,42 @@ const initialState: SearchState = {
     views: {},
     isMusicPlaying: false,
 };
+
+const MUSIC_PLAY_DELAY_MS = 500;
+let musicPlayTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPendingMusic(): void {
+    if (musicPlayTimer !== null) {
+        clearTimeout(musicPlayTimer);
+        musicPlayTimer = null;
+    }
+}
+
+function playGameMusic(musicPath: string | undefined, isPlaying: boolean): boolean {
+    const autoplay = window.External.preferences.data.gameMusicPlay;
+    cancelPendingMusic();
+    if (musicPath && autoplay) {
+        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
+        musicPlayTimer = setTimeout(() => {
+            musicPlayTimer = null;
+            try {
+                window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
+            } catch (err) {
+                console.error("Failed to send PLAY_AUDIO_FILE:", err);
+            }
+        }, MUSIC_PLAY_DELAY_MS);
+        return true;
+    } else {
+        if (isPlaying) {
+            try {
+                window.External.back.send(BackIn.STOP_MUSIC);
+            } catch (err) {
+                console.error("Failed to send STOP_MUSIC:", err);
+            }
+        }
+        return false;
+    }
+}
 
 const searchSlice = createSlice({
     name: "search",
@@ -167,10 +204,7 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                const playlist = payload.playlist
-                    ? deepCopy(payload.playlist)
-                    : undefined;
-                view.selectedPlaylist = playlist;
+                view.selectedPlaylist = payload.playlist ?? undefined;
                 view.filter = createFilter(view);
             }
         },
@@ -180,29 +214,14 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                view.selectedGame = payload.game
-                    ? deepCopy(payload.game)
-                    : undefined;
-                const musicPath = view.selectedGame?.musicPath;
-                const autoplay = window.External.preferences.data.gameMusicPlay;
-                try {
-                    if (musicPath && autoplay) {
-                        // Play directly without stopping first — VLC keeps its audio pipeline
-                        // alive via add+next, avoiding the audio device reinit stutter
-                        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
-                        window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
-                        state.isMusicPlaying = true;
-                    } else {
-                        window.External.back.send(BackIn.STOP_MUSIC);
-                        state.isMusicPlaying = false;
-                    }
-                } catch (err) {
-                    console.error("Failed to send music command:", err);
-                    state.isMusicPlaying = false;
+                view.selectedGame = payload.game ?? undefined;
+                if (payload.userInitiated !== false) {
+                    state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath, state.isMusicPlaying);
                 }
             }
         },
         stopMusic(state: SearchState) {
+            cancelPendingMusic();
             try {
                 window.External.back.send(BackIn.STOP_MUSIC);
             } catch (err) {

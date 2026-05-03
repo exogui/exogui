@@ -177,16 +177,18 @@ function createImagePath(platformImagePath: string, fileInfo: IFileInfo) {
     );
 }
 
-function getGameTitleIndexFromFilename(filename: string) {
-    const lastIdx = filename.lastIndexOf("-0");
-    if (lastIdx > -1) return filename.slice(0, lastIdx);
-    return null;
+export function getGameTitleIndexFromFilename(filename: string): string | null {
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, "");
+    const nameWithoutNum = nameWithoutExt.replace(/-\d{2,}$/, "");
+    const title = nameWithoutNum.trim();
+    return title || null;
 }
 
-function convertToGameTitleIndex(title: string) {
-    // Remove unnecessary characters and stuff and lowercase
+export function convertToGameTitleIndex(title: string): string {
     return title
-    .replace(/[:;?'"/\\]/g, "_")
+    .replace(/\s*\(\d{4}\)\s*$/, "")
+    .replace(/[^a-zA-Z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
 }
@@ -275,6 +277,11 @@ export function mapGamesMusic(game: IGameInfo, music: GameMusicCollection): void
     const gameName = getGameTitleForVideo(game);
     if (music[gameName]) {
         game.musicPath = music[gameName];
+    } else if (game.musicPath) {
+        const absolutePath = path.join(window.External.config.fullExodosPath, fixSlashes(game.musicPath));
+        if (!fs.existsSync(absolutePath)) {
+            game.musicPath = "";
+        }
     }
 }
 
