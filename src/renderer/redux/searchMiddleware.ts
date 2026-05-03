@@ -80,7 +80,6 @@ export function addSearchMiddleware() {
 const debounceSearch = debounce(
     (state: RootState, viewName: string, view: ResultsView) => {
         let games = state.gamesState.games;
-        console.debug("Start count " + games.length);
 
         if (view.selectedPlaylist) {
             if (view.selectedPlaylist.games.length > 0) {
@@ -93,17 +92,11 @@ const debounceSearch = debounce(
             games = games.filter((g) => g.platform === viewName);
         }
 
-        console.debug("Results after playlist " + games.length);
-
-        // Narrow by filter
         games = filterGames(games, view.filter);
 
         const orderFn = getOrderFunction(view.orderBy, view.orderReverse);
         games = games.sort(orderFn);
 
-        console.debug(`Final Results: ${games.length}`);
-
-        // Update games in state
         store.dispatch(
             setViewGames({
                 view: viewName,
