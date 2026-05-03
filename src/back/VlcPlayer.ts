@@ -2,13 +2,27 @@ import { ChildProcess, spawn } from "child_process";
 import * as net from "net";
 import { pathToFileURL } from "url";
 
+const COMMAND_TIMEOUT_MS = 2000;
+const VERBOSE = false;
+
+type QueuedCommand = {
+    command: string;
+    resolve: (value: string) => void;
+    reject: (reason?: any) => void;
+};
+
+type ActiveCommand = QueuedCommand & {
+    timer: ReturnType<typeof setTimeout>;
+};
+
 export class VlcPlayer {
     server: ChildProcess | null = null;
     filepath: string = "";
     private socket: net.Socket | null = null;
-    private commandQueue: { command: string; resolve: (value: string) => void; reject: (reason?: any) => void }[] = [];
-    private isProcessingQueue: boolean = false;
     private isSocketConnected: boolean = false;
+    private commandQueue: QueuedCommand[] = [];
+    private activeCommand: ActiveCommand | null = null;
+    private buffer: string = "";
     private loopEnabled: boolean = false;
     private ownsProcess: boolean = false;
 
@@ -73,17 +87,120 @@ export class VlcPlayer {
     private attachSocket(socket: net.Socket): void {
         this.socket = socket;
         this.isSocketConnected = true;
-        socket.on("data", (d: Buffer) => console.log(`VLC rc: ${d.toString().trimEnd()}`));
-        socket.on("error", (err) => {
-            console.log(`VLC: RC socket error — ${err}`);
-            this.isSocketConnected = false;
-        });
-        socket.on("close", () => {
-            console.log("VLC: RC socket closed");
-            this.isSocketConnected = false;
-        });
+        this.buffer = "";
+
+        socket.on("data", this.onSocketData);
+        socket.on("error", this.onSocketError);
+        socket.on("close", this.onSocketClose);
+
         const vlcVol = Math.floor(Math.max(0, Math.min(1, this.initialVol)) * 256);
         socket.write(`volume ${vlcVol}\nrepeat ${this.loopEnabled ? "on" : "off"}\n`);
+    }
+
+    private detachSocket(): net.Socket | null {
+        const sock = this.socket;
+        if (sock) {
+            sock.off("data", this.onSocketData);
+            sock.off("error", this.onSocketError);
+            sock.off("close", this.onSocketClose);
+            this.socket = null;
+        }
+        this.buffer = "";
+        return sock;
+    }
+
+    private onSocketData = (data: Buffer): void => {
+        const text = data.toString();
+        if (VERBOSE) console.log(`VLC rc: ${text.trimEnd()}`);
+        this.buffer += text;
+        this.tryResolveActive();
+    };
+
+    private onSocketError = (err: Error): void => {
+        console.log(`VLC: RC socket error — ${err}`);
+        this.failAll(err);
+    };
+
+    private onSocketClose = (): void => {
+        console.log("VLC: RC socket closed");
+        this.failAll(new Error("VLC socket closed"));
+    };
+
+    private failAll(err: any): void {
+        this.isSocketConnected = false;
+        const detached = this.detachSocket();
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            const cmd = this.activeCommand;
+            this.activeCommand = null;
+            cmd.reject(err);
+        }
+        const queue = this.commandQueue;
+        this.commandQueue = [];
+        for (const item of queue) {
+            item.reject(err);
+        }
+        if (detached && !detached.destroyed) {
+            detached.destroy();
+        }
+    }
+
+    private tryResolveActive(): void {
+        if (!this.activeCommand) return;
+
+        // VLC's RC interface terminates each response with a "> " prompt on its
+        // own line. Wait for that prompt before resolving.
+        if (!this.buffer.trimEnd().endsWith(">")) return;
+
+        const promptIdx = this.buffer.lastIndexOf("\n> ");
+        const response = promptIdx >= 0
+            ? this.buffer.substring(0, promptIdx)
+            : (this.buffer.startsWith("> ") ? "" : this.buffer);
+
+        this.buffer = "";
+        const cmd = this.activeCommand;
+        this.activeCommand = null;
+        clearTimeout(cmd.timer);
+        cmd.resolve(response);
+        this.runNext();
+    }
+
+    private runNext(): void {
+        if (this.activeCommand || this.commandQueue.length === 0) return;
+
+        const next = this.commandQueue.shift()!;
+        if (!this.socket || !this.isSocketConnected) {
+            next.reject(new Error("VLC not connected"));
+            this.runNext();
+            return;
+        }
+
+        // Discard any stale data (connect banner, late response from a timed-out
+        // command) so the next prompt we see belongs to this command.
+        this.buffer = "";
+
+        const active: ActiveCommand = {
+            ...next,
+            timer: setTimeout(() => {
+                if (this.activeCommand !== active) return;
+                console.log(`VLC: command timed out — "${active.command}"`);
+                this.failAll(new Error(`VLC command timeout: ${active.command}`));
+            }, COMMAND_TIMEOUT_MS),
+        };
+        this.activeCommand = active;
+        this.socket.write(next.command + "\n");
+    }
+
+    private async sendCommand(command: string): Promise<string> {
+        await this.connectSocket();
+        if (!this.socket) {
+            throw new Error("VLC not available");
+        }
+
+        return new Promise((resolve, reject) => {
+            this.commandQueue.push({ command, resolve, reject });
+            this.runNext();
+        });
     }
 
     private async connectSocket(): Promise<void> {
@@ -106,47 +223,6 @@ export class VlcPlayer {
                 console.log(`VLC: RC socket error — ${err}`);
                 reject(err);
             });
-        });
-    }
-
-    private async sendCommand(command: string): Promise<string> {
-        await this.connectSocket();
-        if (!this.socket) {
-            throw new Error("VLC not available");
-        }
-
-        return new Promise((resolve, reject) => {
-            this.commandQueue.push({ command, resolve, reject });
-
-            if (!this.isProcessingQueue) {
-                this.processQueue();
-            }
-        });
-    }
-
-    private processQueue() {
-        if (this.commandQueue.length === 0) {
-            this.isProcessingQueue = false;
-            return;
-        }
-
-        this.isProcessingQueue = true;
-        const { command, resolve, reject } = this.commandQueue.shift()!;
-
-        this.socket?.write(command + "\n");
-
-        const onData = (data: Buffer) => {
-            resolve(data.toString());
-            this.socket?.removeListener("data", onData);
-            this.processQueue();
-        };
-
-        this.socket?.on("data", onData);
-
-        this.socket?.on("error", (err) => {
-            reject(err);
-            this.socket?.removeListener("data", onData);
-            this.processQueue();
         });
     }
 
@@ -198,10 +274,18 @@ export class VlcPlayer {
     }
 
     async close(): Promise<void> {
-        if (this.socket) {
-            this.socket.end();
-            this.socket = null;
-            this.isSocketConnected = false;
+        const err = new Error("VLC closed by client");
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            this.activeCommand.reject(err);
+            this.activeCommand = null;
+        }
+        for (const item of this.commandQueue) item.reject(err);
+        this.commandQueue = [];
+        const sock = this.detachSocket();
+        this.isSocketConnected = false;
+        if (sock) {
+            sock.end();
         }
     }
 
