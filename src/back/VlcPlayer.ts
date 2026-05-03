@@ -291,9 +291,28 @@ export class VlcPlayer {
 
     async quit(): Promise<void> {
         console.log("VLC: quitting");
-        if (this.ownsProcess && this.socket && this.isSocketConnected) {
-            this.socket.write("shutdown\n");
+
+        // Abort any in-flight stop/play chain so our final command goes in cleanly.
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            this.activeCommand.reject(new Error("VLC quit"));
+            this.activeCommand = null;
         }
+        this.commandQueue = [];
+
+        if (this.socket && this.isSocketConnected) {
+            if (this.ownsProcess) {
+                // Queue shutdown — it will be properly sequenced through the
+                // prompt-based queue. Timeout handles the case where VLC dies
+                // before responding.
+                await this.sendCommand("shutdown").catch(() => {});
+            } else {
+                // We attached to an existing VLC; don't shut it down, but stop
+                // any music we started.
+                await this.stop().catch(() => {});
+            }
+        }
+
         await this.close();
         if (this.ownsProcess && this.server && !this.server.killed) {
             this.server.kill();
