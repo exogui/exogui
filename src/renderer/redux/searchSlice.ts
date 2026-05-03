@@ -5,7 +5,7 @@ import {
     parseAdvancedFilter,
     parseUserInput,
 } from "@renderer/util/search";
-import { deepCopy, fixSlashes } from "@shared/Util";
+import { fixSlashes } from "@shared/Util";
 import { BackIn } from "@shared/back/types";
 import { getOrderFunction } from "@shared/game/GameFilter";
 import { IGameInfo } from "@shared/game/interfaces";
@@ -204,10 +204,7 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                const playlist = payload.playlist
-                    ? deepCopy(payload.playlist)
-                    : undefined;
-                view.selectedPlaylist = playlist;
+                view.selectedPlaylist = payload.playlist ?? undefined;
                 view.filter = createFilter(view);
             }
         },
@@ -217,9 +214,7 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                view.selectedGame = payload.game
-                    ? deepCopy(payload.game)
-                    : undefined;
+                view.selectedGame = payload.game ?? undefined;
                 if (payload.userInitiated !== false) {
                     state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath, state.isMusicPlaying);
                 }
