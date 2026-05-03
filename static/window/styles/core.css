@@ -1568,7 +1568,7 @@ body {
   right: 0;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   pointer-events: none;
 }
 .game-grid-item__music-badge {
