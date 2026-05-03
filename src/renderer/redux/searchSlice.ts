@@ -94,7 +94,7 @@ const initialState: SearchState = {
     isMusicPlaying: false,
 };
 
-const MUSIC_PLAY_DELAY_MS = 250;
+const MUSIC_PLAY_DELAY_MS = 500;
 let musicPlayTimer: ReturnType<typeof setTimeout> | null = null;
 
 function cancelPendingMusic(): void {
