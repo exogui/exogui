@@ -1561,19 +1561,19 @@ body {
   background-position: center;
 }
 /* GameGrid Item Music Badge */
-/* GameGrid Item Badges Row */
+/* GameGrid Item Badges Column */
 .game-grid-item__badges {
   position: absolute;
   top: 0;
   right: 0;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: flex-end;
   pointer-events: none;
 }
 .game-grid-item__music-badge {
   font-size: calc(0.17px * var(--width));
-  padding: 0.05em 0.1em;
+  padding: 0.1em;
   opacity: 0.8;
   color: var(--layout__game-item-background-selected);
 }
