@@ -93,8 +93,8 @@ export function GameGridItem(props: GameGridItemProps) {
                     >
                         {(hasMusic || isFavorite) && (
                             <div className="game-grid-item__badges">
-                                {hasMusic && <span className="game-grid-item__music-badge">♪</span>}
                                 {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-grid-item__favorite-badge" />}
+                                {hasMusic && <span className="game-grid-item__music-badge">♪</span>}
                             </div>
                         )}
                         <div className="game-grid-item__thumb__icons">

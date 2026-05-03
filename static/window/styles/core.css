@@ -1573,7 +1573,7 @@ body {
 }
 .game-grid-item__music-badge {
   font-size: calc(0.17px * var(--width));
-  padding: 0.1em;
+  padding: calc(0.0082px * var(--width));
   opacity: 0.8;
   color: var(--layout__game-item-background-selected);
 }
