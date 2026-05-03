@@ -1570,19 +1570,28 @@ body {
   flex-direction: column;
   align-items: flex-end;
   pointer-events: none;
+  padding: calc(0.03px * var(--width));
+  gap: calc(0.03px * var(--width));
+}
+.game-grid-item__music-badge,
+.game-grid-item__favorite-badge {
+  width: calc(0.2px * var(--width));
+  height: calc(0.2px * var(--width));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .game-grid-item__music-badge {
-  font-size: calc(0.17px * var(--width));
-  padding: calc(0.0082px * var(--width));
-  opacity: 0.8;
-  color: var(--layout__game-item-background-selected);
+  font-size: calc(0.13px * var(--width));
+  background-color: rgba(0, 0, 0, 0.55);
+  color: white;
 }
 /* GameGrid Item Favorite Badge */
 .game-grid-item__favorite-badge {
-  font-size: calc(0.082px * var(--width));
-  padding: 0.1em;
-  opacity: 0.9;
-  color: #e05050;
+  font-size: calc(0.12px * var(--width));
+  background-color: rgba(180, 40, 40, 0.75);
+  color: white;
 }
 /* GameGrid Item Title */
 .game-grid-item__title {
