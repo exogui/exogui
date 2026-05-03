@@ -248,7 +248,7 @@ const fieldFilterKeys: Array<keyof FieldFilter> = [
 
 const booleanFilterKeys: Array<keyof BooleanFilter> = [
     "installed",
-    "recommended",
+    "favorite",
 ];
 
 const compareFilterKeys: Array<keyof CompareFilter> = [

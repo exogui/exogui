@@ -55,7 +55,6 @@ export interface IPureGameInfo {
     /** The language(s) the game is in */
     language: string;
     favorite: boolean;
-    recommended: boolean;
     region: string;
     rating: string;
     maxPlayers?: number;

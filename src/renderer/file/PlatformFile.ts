@@ -144,3 +144,69 @@ export const updateInstalledField = async (
         });
     });
 };
+
+export const updateFavoriteField = async (
+    filePath: string,
+    gameId: string,
+    newValue: boolean
+) => {
+    const tempFilePath = `${filePath}.tmp`;
+    const readStream = fs.createReadStream(filePath);
+    const writeStream = fs.createWriteStream(tempFilePath);
+    const rl = readline.createInterface({
+        input: readStream,
+        output: writeStream,
+        terminal: false,
+    });
+
+    let state: UpdateState = UpdateState.LookingForGameElement;
+    let temporaryLineBuffer: string[] = [];
+
+    const newLineCharacters = "\r\n";
+
+    rl.on("line", (line) => {
+        switch (state) {
+            case UpdateState.LookingForGameElement:
+                if (line.includes("<Game>")) {
+                    state = UpdateState.InsideGameElement;
+                    temporaryLineBuffer = [];
+                }
+                writeStream.write(`${line}${newLineCharacters}`);
+                break;
+
+            case UpdateState.InsideGameElement:
+                temporaryLineBuffer.push(line);
+                if (line.includes("</Game>")) {
+                    const targetGameFound =
+                        temporaryLineBuffer.find((l) =>
+                            l.includes(`<ID>${gameId}</ID>`)
+                        ) !== undefined;
+                    for (const tempLine of temporaryLineBuffer) {
+                        const shouldUpdateLine =
+                            targetGameFound && tempLine.includes("<Favorite>");
+                        const lineToSave = shouldUpdateLine
+                            ? tempLine.replace(
+                                /<Favorite>.*<\/Favorite>/,
+                                `<Favorite>${newValue}</Favorite>`
+                            )
+                            : tempLine;
+                        writeStream.write(`${lineToSave}${newLineCharacters}`);
+                    }
+                    state = targetGameFound
+                        ? UpdateState.GameUpdated
+                        : UpdateState.LookingForGameElement;
+                }
+                break;
+
+            case UpdateState.GameUpdated:
+                writeStream.write(`${line}${newLineCharacters}`);
+                break;
+        }
+    });
+
+    rl.on("close", () => {
+        fs.rename(tempFilePath, filePath, (err) => {
+            if (err) throw err;
+        });
+    });
+};

@@ -203,6 +203,7 @@ export class GameGrid extends React.Component<GameGridProps> {
                 isDragged={game.id === draggedGameId}
                 isInstalled={game.installed}
                 hasMusic={!!game.musicPath}
+                isFavorite={game.favorite}
             />
         ) : (
             <div key={props.key} style={props.style} />

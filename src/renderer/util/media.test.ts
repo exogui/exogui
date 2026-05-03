@@ -31,7 +31,6 @@ function makeGame(applicationPath: string): IGameInfo {
         originalDescription: "",
         language: "",
         favorite: false,
-        recommended: false,
         region: "",
         rating: "",
         maxPlayers: 1,

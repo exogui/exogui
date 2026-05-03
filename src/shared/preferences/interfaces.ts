@@ -42,8 +42,8 @@ export type IAppPreferencesData = {
     browsePageSearchOrderReverse: GameOrderReverse;
     /** Persisted installed filter (null = no filter). */
     browsePageSearchInstalled: boolean | null;
-    /** Persisted recommended filter (null = no filter). */
-    browsePageSearchRecommended: boolean | null;
+    /** Persisted favorite filter (null = no filter). */
+    browsePageSearchFavorite: boolean | null;
     /** Whether the filter panel is expanded in the browse page */
     browsePageFiltersExpanded: boolean;
 };

@@ -80,6 +80,31 @@ describe("GameParser.parseRawGame - orderTitle", () => {
     });
 });
 
+describe("GameParser.parseRawGame - favorite field", () => {
+    it("maps Favorite=true to game.favorite=true", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, Favorite: true },
+            "MS-DOS",
+            "/exo"
+        );
+        expect(game.favorite).toBe(true);
+    });
+
+    it("maps Favorite=false to game.favorite=false", () => {
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, Favorite: false },
+            "MS-DOS",
+            "/exo"
+        );
+        expect(game.favorite).toBe(false);
+    });
+
+    it("defaults game.favorite to false when Favorite is absent", () => {
+        const game = GameParser.parseRawGame(minimalRawGame, "MS-DOS", "/exo");
+        expect(game.favorite).toBe(false);
+    });
+});
+
 describe("GameParser.parseRawGame - leading-zero titles", () => {
     // fast-xml-parser with leadingZeros:true converts "007" to the number 7,
     // which then becomes the string "7" — causing image lookups to fail because
