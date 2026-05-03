@@ -573,7 +573,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     orderAndFilterPlaylistsMemo = memoizeOne((playlists: GamePlaylist[]) => {
-        return playlists.sort((a, b) => {
+        return [...playlists].sort((a, b) => {
             if (a.title < b.title) {
                 return -1;
             }
