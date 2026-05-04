@@ -1,5 +1,5 @@
 import { shell } from "@electron/remote";
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
+import { faFolder, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { englishTranslation } from "@renderer/lang/en";
 import { loadDynamicAddAppsForGame } from "@renderer/util/addApps";
@@ -35,6 +35,8 @@ type OwnProps = {
     onGameLaunchSetup: (gameId: string) => void;
     /** Launch add app */
     onAddAppLaunch: (addApp: IAdditionalApplicationInfo) => void;
+    /** Toggle favorite state for the current game */
+    onFavoriteToggle: (game: IGameInfo) => void;
 };
 
 export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
@@ -177,6 +179,13 @@ export class RightBrowseSidebar extends React.Component<
                                                         )
                                                     }
                                                 />
+                                            </i>
+                                            <i
+                                                className={`simple-button browse-right-sidebar__favorite-btn${game.favorite ? " browse-right-sidebar__favorite-btn--active" : ""}`}
+                                                title={game.favorite ? "Remove from Favorites" : "Add to Favorites"}
+                                                onClick={() => this.props.onFavoriteToggle(game)}
+                                            >
+                                                <FontAwesomeIcon icon={faHeart} />
                                             </i>
                                         </>
                                     ) : null}

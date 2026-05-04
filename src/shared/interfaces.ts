@@ -272,7 +272,7 @@ export interface CompareFilter {
 
 export interface BooleanFilter {
     installed?: boolean;
-    recommended?: boolean;
+    favorite?: boolean;
 }
 
 export type GameFilter = {

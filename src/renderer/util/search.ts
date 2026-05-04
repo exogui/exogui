@@ -286,7 +286,7 @@ export function parseUserInput(input: string): GameFilter {
                             break;
                         }
                         default: {
-                            // Cheat a little and assume nobody is writing installed or recommended as a value
+                            // Cheat a little and assume nobody is writing installed or favorite as a value
                             if (
                                 !workingKeyChar &&
                                 value.toLowerCase() === "installed"
@@ -298,12 +298,12 @@ export function parseUserInput(input: string): GameFilter {
                                 }
                             } else if (
                                 !workingKeyChar &&
-                                value.toLowerCase() === "recommended"
+                                value.toLowerCase() === "favorite"
                             ) {
                                 if (negative) {
-                                    filter.booleans.recommended = false;
+                                    filter.booleans.favorite = false;
                                 } else {
-                                    filter.booleans.recommended = true;
+                                    filter.booleans.favorite = true;
                                 }
                             } else {
                                 if (workingKeyChar) {
@@ -405,7 +405,7 @@ export function isCompareFilterEmpty(filter: CompareFilter) {
 
 export function isBooleanFilterEmpty(filter: BooleanFilter) {
     return !(
-        filter.installed !== undefined || filter.recommended !== undefined
+        filter.installed !== undefined || filter.favorite !== undefined
     );
 }
 
@@ -413,7 +413,7 @@ export function parseAdvancedFilter(filter: AdvancedFilter): GameFilter {
     const newFilter = getDefaultGameFilter();
 
     newFilter.booleans.installed = filter.installed;
-    newFilter.booleans.recommended = filter.recommended;
+    newFilter.booleans.favorite = filter.favorite;
 
     if (filter.developer.length > 0) {
         const developerFilter = getDefaultGameFilter();

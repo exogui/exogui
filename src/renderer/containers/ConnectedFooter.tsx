@@ -20,14 +20,14 @@ type OwnProps = WithPreferencesProps & {
 
 function FooterContainer(props: OwnProps) {
     const dispatch = useDispatch();
-    const view = useSelector((state: RootState) => state.searchState.views[props.libraryPath]);
+    const currentCount = useSelector((state: RootState) => state.searchState.views[props.libraryPath]?.games.length ?? 0);
+    const musicPath = useSelector((state: RootState) => state.searchState.views[props.libraryPath]?.selectedGame?.musicPath);
     const isMusicPlaying = useSelector((state: RootState) => state.searchState.isMusicPlaying);
-    const musicPath = view?.selectedGame?.musicPath;
 
     return (
         <Footer
             {...props}
-            currentCount={view?.games.length ?? 0}
+            currentCount={currentCount}
             hasMusicPath={!!musicPath}
             isMusicPlaying={isMusicPlaying}
             onPlayMusic={() => {

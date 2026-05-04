@@ -28,7 +28,7 @@ export type ResultsView = {
 
 export type AdvancedFilter = {
     installed?: boolean;
-    recommended?: boolean;
+    favorite?: boolean;
     series: string[];
     developer: string[];
     publisher: string[];
@@ -143,7 +143,7 @@ const searchSlice = createSlice({
             for (const view of payload) {
                 if (!state.views[view]) {
                     const installedPref = prefs.browsePageSearchInstalled;
-                    const recommendedPref = prefs.browsePageSearchRecommended;
+                    const favoritePref = prefs.browsePageSearchFavorite;
                     const newView: ResultsView = {
                         games: [],
                         text: "",
@@ -151,7 +151,7 @@ const searchSlice = createSlice({
                         orderReverse: prefs.browsePageSearchOrderReverse ?? "ascending",
                         advancedFilter: {
                             installed: installedPref === null ? undefined : installedPref,
-                            recommended: recommendedPref === null ? undefined : recommendedPref,
+                            favorite: favoritePref === null ? undefined : favoritePref,
                             series: [],
                             developer: [],
                             publisher: [],

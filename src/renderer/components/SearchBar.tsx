@@ -7,7 +7,7 @@ import {
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
 import { updatePreferencesData } from "@shared/preferences/util";
-import { faCheck, faFilter, faFilterCircleXmark, faGem, faLaptop, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faFilter, faFilterCircleXmark, faHeart, faLaptop, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { GameOrderBy, GameOrderReverse } from "@shared/order/interfaces";
@@ -84,15 +84,15 @@ export function SearchBar(props: SearchBarProps) {
         updatePreferencesData({ browsePageSearchInstalled: value === undefined ? null : value });
     };
 
-    const onRecommendedChange = (value?: boolean) => {
-        dispatch(setAdvancedFilter({ view: props.view, filter: { ...view.advancedFilter, recommended: value } }));
-        updatePreferencesData({ browsePageSearchRecommended: value === undefined ? null : value });
+    const onFavoriteChange = (value?: boolean) => {
+        dispatch(setAdvancedFilter({ view: props.view, filter: { ...view.advancedFilter, favorite: value } }));
+        updatePreferencesData({ browsePageSearchFavorite: value === undefined ? null : value });
     };
 
     const hasActiveFilters =
         view.text !== "" ||
         view.advancedFilter.installed !== undefined ||
-        view.advancedFilter.recommended !== undefined ||
+        view.advancedFilter.favorite !== undefined ||
         view.advancedFilter.developer.length > 0 ||
         view.advancedFilter.publisher.length > 0 ||
         view.advancedFilter.series.length > 0 ||
@@ -109,10 +109,10 @@ export function SearchBar(props: SearchBarProps) {
             filter: {
                 series: [], developer: [], publisher: [], genre: [],
                 playMode: [], region: [], releaseYear: [], rating: [],
-                installed: undefined, recommended: undefined,
+                installed: undefined, favorite: undefined,
             },
         }));
-        updatePreferencesData({ browsePageSearchInstalled: null, browsePageSearchRecommended: null });
+        updatePreferencesData({ browsePageSearchInstalled: null, browsePageSearchFavorite: null });
     };
 
     const onToggleFactory = (key: keyof AdvancedFilter) => {
@@ -278,10 +278,10 @@ export function SearchBar(props: SearchBarProps) {
                     onChange={onInstalledChange}
                 />
                 <TriStateIconButton
-                    icon={faGem}
-                    title="Recommended"
-                    value={view.advancedFilter.recommended}
-                    onChange={onRecommendedChange}
+                    icon={faHeart}
+                    title="Favorites"
+                    value={view.advancedFilter.favorite}
+                    onChange={onFavoriteChange}
                 />
                 <button
                     className="simple-button"
