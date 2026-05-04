@@ -1,4 +1,4 @@
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import * as React from "react";
 import { ListRowProps } from "react-virtualized";
@@ -104,10 +104,10 @@ export function GameListItem(props: GameListItemProps) {
                         {tags}
                     </div>
                     <div className="game-list-item__field game-list-item__field--note">
-                        {hasMusic && <span className="game-list-item__music-note">♪</span>}
+                        {hasMusic && <FontAwesomeIcon icon={faMusic} className="game-list-item__icon" />}
                     </div>
                     <div className="game-list-item__field game-list-item__field--icons">
-                        {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-list-item__favorite-icon" />}
+                        {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-list-item__icon" />}
                     </div>
                 </div>
             </li>

@@ -1,5 +1,5 @@
 import { getFileServerURL } from "@shared/Util";
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import * as React from "react";
 import { GridCellProps } from "react-virtualized";
@@ -93,8 +93,8 @@ export function GameGridItem(props: GameGridItemProps) {
                     >
                         {(hasMusic || isFavorite) && (
                             <div className="game-grid-item__badges">
-                                {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-grid-item__favorite-badge" />}
-                                {hasMusic && <span className="game-grid-item__music-badge">♪</span>}
+                                {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-grid-item__badge" />}
+                                {hasMusic && <FontAwesomeIcon icon={faMusic} className="game-grid-item__badge" />}
                             </div>
                         )}
                         <div className="game-grid-item__thumb__icons">
