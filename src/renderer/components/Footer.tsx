@@ -1,7 +1,7 @@
 import { englishTranslation } from "@renderer/lang/en";
-import { faBorderAll, faForward, faList, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
+import { faBorderAll, faCircleNotch, faExclamationCircle, faForward, faList, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { BackIn } from "@shared/back/types";
+import { BackIn, VlcState } from "@shared/back/types";
 import { BrowsePageLayout } from "@shared/BrowsePageLayout";
 import { updatePreferencesData } from "@shared/preferences/util";
 import { Coerce } from "@shared/utils/Coerce";
@@ -29,6 +29,8 @@ type OwnProps = {
     hasMusicPath?: boolean;
     /** Whether music is currently playing. */
     isMusicPlaying: boolean;
+    /** Current VLC player state. */
+    vlcState: VlcState;
     /** Called to start playing music for the current game. */
     onPlayMusic: () => void;
     /** Called to stop playing music. */
@@ -58,6 +60,7 @@ export class Footer extends React.Component<FooterProps> {
             currentLabel,
             hasMusicPath,
             isMusicPlaying,
+            vlcState,
             layout,
             onPlayMusic,
             onStopMusic,
@@ -84,8 +87,28 @@ export class Footer extends React.Component<FooterProps> {
                 <div className="footer__wrap footer__right">
                     <div>
                         <div className="footer__right__inner">
-                            {/* Volume Slider (only if VLC is available) */}
-                            {window.External.vlcAvailable && (
+                            {/* Music player controls */}
+                            {vlcState === "connecting" && (
+                                <div className="footer__wrap">
+                                    <span
+                                        className="simple-button"
+                                        title="Music player is starting up, please wait…"
+                                        style={{ opacity: 0.5, cursor: "default" }}>
+                                        <FontAwesomeIcon icon={faCircleNotch} spin />
+                                    </span>
+                                </div>
+                            )}
+                            {vlcState === "failed" && (
+                                <div className="footer__wrap">
+                                    <span
+                                        className="simple-button"
+                                        title="Music player failed to connect. Restart the app to retry."
+                                        style={{ opacity: 0.6, cursor: "default", color: "var(--text-error, #e05252)" }}>
+                                        <FontAwesomeIcon icon={faExclamationCircle} />
+                                    </span>
+                                </div>
+                            )}
+                            {vlcState === "connected" && (
                                 <>
                                     {/* Loop button */}
                                     <div className="footer__wrap">

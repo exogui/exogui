@@ -6,6 +6,7 @@ import { ILogEntry } from "./Log/interface";
 import { IAppCommandsMappingData } from "./mappings/interfaces";
 import { IAppPreferencesData } from "./preferences/interfaces";
 import { Theme } from "./ThemeFile";
+import { VlcState } from "./back/types";
 
 /** Recursively set all properties as optional. */
 export type DeepPartial<T> = {
@@ -89,8 +90,8 @@ export interface IMainWindowExternal {
     initialPlaylists?: GamePlaylist[];
     initialLocaleCode: string;
 
-    /** Whether VLC player is available for background music (Windows only). */
-    vlcAvailable: boolean;
+    /** Current VLC player state: unavailable (not supported), connecting (starting up), or ready (RC connected). */
+    vlcState: VlcState;
 
     /** Runtime capabilities detected at startup (read-only). */
     runtime: RuntimeCapabilities;

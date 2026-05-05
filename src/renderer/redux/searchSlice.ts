@@ -6,7 +6,7 @@ import {
     parseUserInput,
 } from "@renderer/util/search";
 import { fixSlashes } from "@shared/Util";
-import { BackIn } from "@shared/back/types";
+import { BackIn, VlcState } from "@shared/back/types";
 import { getOrderFunction } from "@shared/game/GameFilter";
 import { IGameInfo } from "@shared/game/interfaces";
 import { GameFilter, GamePlaylist } from "@shared/interfaces";
@@ -42,6 +42,7 @@ export type AdvancedFilter = {
 type SearchState = {
     views: Record<string, ResultsView>;
     isMusicPlaying: boolean;
+    vlcState: VlcState;
 };
 
 export type SearchSetTextAction = {
@@ -92,6 +93,7 @@ export type SearchViewAction = {
 const initialState: SearchState = {
     views: {},
     isMusicPlaying: false,
+    vlcState: "idle",
 };
 
 const MUSIC_PLAY_DELAY_MS = 500;
@@ -237,6 +239,9 @@ const searchSlice = createSlice({
                 console.error("Failed to send PLAY_AUDIO_FILE:", err);
             }
         },
+        setVlcState(state: SearchState, { payload }: PayloadAction<VlcState>) {
+            state.vlcState = payload;
+        },
         forceSearch(
             state: SearchState,
             { payload }: PayloadAction<SearchViewAction>
@@ -325,5 +330,6 @@ export const {
     setAdvancedFilter,
     stopMusic,
     playMusic,
+    setVlcState,
 } = searchSlice.actions;
 export default searchSlice.reducer;

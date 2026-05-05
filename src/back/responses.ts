@@ -70,7 +70,7 @@ export function registerRequestCallbacks(state: BackState): void {
                 ? state.playlistManager.playlists
                 : undefined,
             localeCode: state.localeCode,
-            vlcAvailable: state.vlcPlayer !== undefined
+            vlcState: state.vlcPlayer?.vlcState ?? "idle"
         };
     });
 

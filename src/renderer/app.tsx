@@ -30,7 +30,7 @@ import {
     setPlaylistsLoaded,
     setExecLoaded,
 } from "./redux/loadingSlice";
-import { stopMusic } from "./redux/searchSlice";
+import { stopMusic, setVlcState } from "./redux/searchSlice";
 import {
     showChecking,
     showNetworkError,
@@ -65,6 +65,7 @@ const mapDispatch = {
     showError,
     hideDialog,
     stopMusic,
+    setVlcState,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -228,6 +229,14 @@ class App extends React.Component<AppProps, AppState> {
         });
 
         this.props.initializeLoading();
+        this.props.setVlcState(window.External.vlcState);
+
+        window.External.back.register(
+            BackOut.VLC_STATE_CHANGED,
+            (event, vlcState) => {
+                this.props.setVlcState(vlcState);
+            }
+        );
 
         window.External.back.register(
             BackOut.INIT_EVENT,
