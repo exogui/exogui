@@ -25,6 +25,29 @@ function logFactory(socketServer: SocketClient<WebSocket>): LogFunc {
 }
 
 (async () => {
+    const diagnosticsEnabled = (typeof process !== "undefined" && Array.isArray(process.argv))
+        ? process.argv.includes("--exogui-diagnostics=true")
+        : false;
+
+    if (diagnosticsEnabled) {
+        window.addEventListener("error", (event) => {
+            console.error(
+                `[Diagnostics][renderer] window.error: ${event.message} @ ${event.filename}:${event.lineno}:${event.colno}`,
+                event.error?.stack
+            );
+        });
+        window.addEventListener("unhandledrejection", (event) => {
+            const reason = event.reason;
+            const detail =
+                reason instanceof Error
+                    ? `${reason.name}: ${reason.message}\n${reason.stack ?? ""}`
+                    : typeof reason === "string"
+                        ? reason
+                        : (() => { try { return JSON.stringify(reason); } catch { return String(reason); } })();
+            console.error(`[Diagnostics][renderer] unhandledrejection: ${detail}`);
+        });
+    }
+
     // Toggle DevTools when CTRL+SHIFT+I is pressed
     window.addEventListener("keypress", (event) => {
         if (event.ctrlKey && event.shiftKey && event.code === "KeyI") {

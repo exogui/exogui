@@ -97,6 +97,7 @@ export enum BackOut {
     PLAYLIST_REMOVE,
     GAME_CHANGE,
     QUIT,
+    VLC_STATE_CHANGED,
 }
 
 export type BackOutTemplate = SocketTemplate<BackOut, {
@@ -117,6 +118,7 @@ export type BackOutTemplate = SocketTemplate<BackOut, {
     [BackOut.PLAYLIST_REMOVE]: (filename: string) => void;
     [BackOut.GAME_CHANGE]: (game: IGameInfo) => void;
     [BackOut.QUIT]: UnknownCallback;
+    [BackOut.VLC_STATE_CHANGED]: (state: VlcState) => void;
 }>;
 
 export const BackRes = {
@@ -176,6 +178,8 @@ export type GetMainInitDataResponse = {
     preferences: IAppPreferencesData;
 };
 
+export type VlcState = "idle" | "connecting" | "connected" | "failed";
+
 export type GetRendererInitDataResponse = {
     config: IAppConfigData;
     preferences: IAppPreferencesData;
@@ -185,7 +189,7 @@ export type GetRendererInitDataResponse = {
     themes: Theme[];
     playlists?: GamePlaylist[];
     localeCode: string;
-    vlcAvailable: boolean;
+    vlcState: VlcState;
 };
 
 export type GetGamesTotalResponseData = number;

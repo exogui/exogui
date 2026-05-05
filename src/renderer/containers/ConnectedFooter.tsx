@@ -23,6 +23,7 @@ function FooterContainer(props: OwnProps) {
     const currentCount = useSelector((state: RootState) => state.searchState.views[props.libraryPath]?.games.length ?? 0);
     const musicPath = useSelector((state: RootState) => state.searchState.views[props.libraryPath]?.selectedGame?.musicPath);
     const isMusicPlaying = useSelector((state: RootState) => state.searchState.isMusicPlaying);
+    const vlcState = useSelector((state: RootState) => state.searchState.vlcState);
 
     return (
         <Footer
@@ -30,6 +31,7 @@ function FooterContainer(props: OwnProps) {
             currentCount={currentCount}
             hasMusicPath={!!musicPath}
             isMusicPlaying={isMusicPlaying}
+            vlcState={vlcState}
             onPlayMusic={() => {
                 if (musicPath) {
                     dispatch(playMusic(path.join(window.External.config.fullExodosPath, fixSlashes(musicPath))));

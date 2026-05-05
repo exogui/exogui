@@ -219,6 +219,13 @@ async function initialize(message: any, _: any): Promise<void> {
         console.log(`Error starting VLC server: ${err}`);
     }
 
+    if (state.vlcPlayer) {
+        state.vlcPlayer.onStateChange = (vlcState) => {
+            state.socketServer.broadcast(BackOut.VLC_STATE_CHANGED, vlcState);
+        };
+        startVlcConnectLoop(state.vlcPlayer);
+    }
+
     send(state.socketServer.port);
 }
 
@@ -264,6 +271,38 @@ async function initializePlaylistManager() {
 
     state.init[BackInit.PLAYLISTS] = true;
     state.initEmitter.emit(BackInit.PLAYLISTS);
+}
+
+function startVlcConnectLoop(player: VlcPlayer): void {
+    const MAX_ATTEMPTS = 15;
+    let loopRunning = false;
+
+    const runLoop = async () => {
+        if (loopRunning) return;
+        loopRunning = true;
+        let attempts = 0;
+        while (player.isProcessAlive() && player.vlcState !== "connected" && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            try {
+                await player.connect();
+                break;
+            } catch {
+                await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+        loopRunning = false;
+    };
+
+    // Restart the loop each time VLC disconnects mid-session.
+    const prevOnStateChange = player.onStateChange;
+    player.onStateChange = (vlcState) => {
+        prevOnStateChange?.(vlcState);
+        if (vlcState === "failed") {
+            runLoop();
+        }
+    };
+
+    runLoop();
 }
 
 /** Exit the process cleanly. */

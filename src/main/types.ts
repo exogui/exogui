@@ -4,6 +4,9 @@ export type InitArgs = Partial<{
     "host-remote": boolean;
     "back-only": boolean;
 
+    /** Enable verbose renderer/main diagnostics (Electron lifecycle hooks, memory polling, log file). */
+    diagnostics: boolean;
+
     // Flash mode
     /** If the application should start in "flash" mode. */
     flash: boolean;
