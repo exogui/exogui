@@ -29,6 +29,11 @@ import {
 import * as path from "path";
 import * as WebSocket from "ws";
 import { OnlineUpdater } from "./OnlineUpdater";
+import {
+    attachWindowDiagnostics,
+    initRendererDiagnostics,
+    shutdownRendererDiagnostics,
+} from "./RendererDiagnostics";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -53,6 +58,7 @@ type MainState = {
 };
 
 export function main(init: Init): void {
+    const diagnosticsEnabled = !!init.args.diagnostics;
     const state: MainState = {
         window: undefined,
         _installed: undefined,
@@ -106,6 +112,10 @@ export function main(init: Init): void {
         state._installed = false;
         state.mainFolderPath = Util.getMainFolderPath();
         console.log("Main folder: " + state.mainFolderPath);
+
+        if (diagnosticsEnabled) {
+            initRendererDiagnostics(state.mainFolderPath);
+        }
 
         // Start back process
         if (!init.args["connect-remote"]) {
@@ -275,6 +285,10 @@ export function main(init: Init): void {
             state.onlineUpdater.cleanup();
         }
 
+        if (diagnosticsEnabled) {
+            shutdownRendererDiagnostics();
+        }
+
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
             state.socket.send(BackIn.QUIT);
@@ -404,9 +418,15 @@ export function main(init: Init): void {
                 preload: path.resolve(__dirname, "./MainWindowPreload.js"),
                 nodeIntegration: true,
                 contextIsolation: false,
+                additionalArguments: diagnosticsEnabled
+                    ? ["--exogui-diagnostics=true"]
+                    : [],
             },
         });
         remoteMain.enable(window.webContents);
+        if (diagnosticsEnabled) {
+            attachWindowDiagnostics(window);
+        }
         // Remove the menu bar
         window.setMenuBarVisibility(false);
         // and load the index.html of the app.

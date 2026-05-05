@@ -49,7 +49,7 @@ export class VlcPlayer {
             return player;
         }
 
-        const fullArgs = [...args, "-I", "rc", "--rc-host", `127.0.0.1:${port}`];
+        const fullArgs = [...args, "-I", "rc", "--rc-host", `127.0.0.1:${port}`, "--no-plugins-cache"];
         console.log(`VLC: starting process "${vlcPath}" with args: ${fullArgs.join(" ")}`);
         player.ownsProcess = true;
         player.server = spawn(vlcPath, fullArgs, { windowsHide: true });

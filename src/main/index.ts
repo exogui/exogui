@@ -34,6 +34,7 @@ function getArgs(): Init {
                 case "host-remote":
                 case "back-only":
                 case "flash":
+                case "diagnostics":
                     init.args[name] = Coerce.strToBool(value);
                     lastArgIndex = i;
                     break;
