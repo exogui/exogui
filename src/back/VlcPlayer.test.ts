@@ -2,17 +2,23 @@ import * as net from "net";
 import { VlcPlayer } from "./VlcPlayer";
 import { VlcState } from "@shared/back/types";
 
-// Fully controlled mock socket — avoids real net.Socket lifecycle side-effects.
 function makeMockSocket() {
     const listeners: Record<string, Array<(...args: any[]) => void>> = {};
-    return {
+    const self = {
         on(event: string, fn: (...args: any[]) => void) {
             (listeners[event] ??= []).push(fn);
-            return this;
+            return self;
+        },
+        once(event: string, fn: (...args: any[]) => void) {
+            const wrapped = (...args: any[]) => {
+                self.off(event, wrapped);
+                fn(...args);
+            };
+            return self.on(event, wrapped);
         },
         off(event: string, fn: (...args: any[]) => void) {
             listeners[event] = (listeners[event] ?? []).filter((f) => f !== fn);
-            return this;
+            return self;
         },
         emit(event: string, ...args: any[]) {
             (listeners[event] ?? []).slice().forEach((f) => f(...args));
@@ -22,6 +28,7 @@ function makeMockSocket() {
         destroy: jest.fn(),
         destroyed: false,
     };
+    return self;
 }
 
 type MockSocket = ReturnType<typeof makeMockSocket>;
@@ -38,21 +45,18 @@ function makeFakeProcess(alive = true) {
     } as any;
 }
 
-// Bypass the private constructor to build a player without spawning anything.
 function makePlayer(): VlcPlayer {
     const player = new (VlcPlayer as any)("vlc", [], 12345, 0.5) as VlcPlayer;
     player.server = makeFakeProcess(true);
     return player;
 }
 
-// Helper: mock the next net.connect call and return the mock socket.
 function mockConnect(socket: MockSocket) {
     jest.spyOn(net, "connect").mockReturnValueOnce(socket as any);
 }
 
 afterEach(() => {
     jest.restoreAllMocks();
-    jest.useRealTimers();
 });
 
 describe("VlcPlayer state machine", () => {
@@ -61,7 +65,7 @@ describe("VlcPlayer state machine", () => {
         expect(player.vlcState).toBe<VlcState>("idle");
     });
 
-    test("transitions idle → connecting → connected on successful connect", async () => {
+    test("transitions idle → connecting → connected on successful TCP connect", async () => {
         const states: VlcState[] = [];
         const player = makePlayer();
         player.onStateChange = (s) => states.push(s);
@@ -70,7 +74,7 @@ describe("VlcPlayer state machine", () => {
         mockConnect(socket);
 
         const p = player.connect();
-        socket.emit("data", Buffer.from("\n> "));
+        socket.emit("connect");
         await p;
 
         expect(states).toEqual<VlcState[]>(["connecting", "connected"]);
@@ -93,22 +97,6 @@ describe("VlcPlayer state machine", () => {
         expect(player.vlcState).toBe<VlcState>("failed");
     });
 
-    test("transitions connecting → failed on RC timeout", async () => {
-        jest.useFakeTimers();
-        const states: VlcState[] = [];
-        const player = makePlayer();
-        player.onStateChange = (s) => states.push(s);
-
-        const socket = makeMockSocket();
-        mockConnect(socket);
-
-        const p = player.connect();
-        jest.advanceTimersByTime(15001);
-        await expect(p).rejects.toThrow("timed out");
-
-        expect(states).toEqual<VlcState[]>(["connecting", "failed"]);
-    });
-
     test("transitions connected → failed when socket closes", async () => {
         const states: VlcState[] = [];
         const player = makePlayer();
@@ -117,7 +105,7 @@ describe("VlcPlayer state machine", () => {
         mockConnect(socket);
 
         const p = player.connect();
-        socket.emit("data", Buffer.from("\n> "));
+        socket.emit("connect");
         await p;
         expect(player.vlcState).toBe<VlcState>("connected");
 
@@ -138,7 +126,7 @@ describe("VlcPlayer state machine", () => {
         .mockReturnValueOnce(socket2 as any);
 
         const p1 = player.connect();
-        socket1.emit("data", Buffer.from("\n> "));
+        socket1.emit("connect");
         await p1;
         expect(player.vlcState).toBe<VlcState>("connected");
 
@@ -146,7 +134,7 @@ describe("VlcPlayer state machine", () => {
         expect(player.vlcState).toBe<VlcState>("failed");
 
         const p2 = player.connect();
-        socket2.emit("data", Buffer.from("\n> "));
+        socket2.emit("connect");
         await p2;
         expect(player.vlcState).toBe<VlcState>("connected");
     });
@@ -161,11 +149,10 @@ describe("VlcPlayer state machine", () => {
         const p2 = player.connect();
         expect(p1).toBe(p2);
 
-        socket.emit("data", Buffer.from("\n> "));
+        socket.emit("connect");
         await Promise.all([p1, p2]);
 
         expect(player.vlcState).toBe<VlcState>("connected");
-        // net.connect should only have been called once
         expect(net.connect).toHaveBeenCalledTimes(1);
     });
 
@@ -174,14 +161,11 @@ describe("VlcPlayer state machine", () => {
         const spy = jest.fn();
         player.onStateChange = spy;
 
-        const socket1 = makeMockSocket();
-        const socket2 = makeMockSocket();
-        jest.spyOn(net, "connect")
-        .mockReturnValueOnce(socket1 as any)
-        .mockReturnValueOnce(socket2 as any);
+        const socket = makeMockSocket();
+        mockConnect(socket);
 
         const p1 = player.connect();
-        socket1.emit("data", Buffer.from("\n> "));
+        socket.emit("connect");
         await p1;
 
         // Second connect while already connected should be a no-op
@@ -190,20 +174,6 @@ describe("VlcPlayer state machine", () => {
         const connectedCalls = spy.mock.calls.filter(([s]) => s === "connected");
         expect(connectedCalls).toHaveLength(1);
         expect(net.connect).toHaveBeenCalledTimes(1);
-    });
-
-    test("banner split across multiple data events resolves correctly", async () => {
-        const player = makePlayer();
-        const socket = makeMockSocket();
-        mockConnect(socket);
-
-        const p = player.connect();
-        // Send the prompt in two chunks
-        socket.emit("data", Buffer.from("\n"));
-        socket.emit("data", Buffer.from("> "));
-        await p;
-
-        expect(player.vlcState).toBe<VlcState>("connected");
     });
 });
 
