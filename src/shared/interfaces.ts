@@ -187,6 +187,8 @@ export enum UpdaterIPC {
     TEST_CANCELLED = "updater:test-cancelled",
     /** Renderer -> Main: Renderer is ready to receive update notifications */
     RENDERER_READY = "updater:renderer-ready",
+    /** Renderer -> Main: Online-update config (enabled / channel) changed */
+    UPDATE_CONFIG = "updater:update-config",
     /** Main -> Renderer: Update check is in progress */
     UPDATE_CHECKING = "updater:checking",
     /** Main -> Renderer: Update check failed due to network error */

@@ -24,6 +24,8 @@ export type BackState = {
     secret: string;
     preferences: IAppPreferencesData;
     config: IAppConfigData;
+    /** Original `exodosPath` value as loaded from `config.json`, before startup-time path resolution. */
+    diskExodosPath: string;
     configFolder: string;
     exePath: string;
     basePath: string;

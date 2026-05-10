@@ -28,6 +28,27 @@ All CSS lives in `core.css` (2756 lines). Update system added 477 lines for Upda
 
 ---
 
+## ConfigPage restart-required snapshot lost on renderer reload
+**Priority:** Low
+**Severity:** Low
+**Effort:** Medium
+
+**Issue:**
+`ConfigPage.appStartConfigSnapshot` (in `src/renderer/components/pages/ConfigPage.tsx`) is a module-level variable, captured the first time ConfigPage mounts. It survives navigation away and back, but a renderer reload (DevTools Cmd+R, or any future auto-reload) resets it. After reload, the snapshot is re-captured from the freshly-loaded config, which already reflects saved-but-not-applied values — so the "Restart required" indicator silently disappears even though the running main/back processes still hold the old values.
+
+**Trade-offs:**
+- ✅ Cheap: zero plumbing, no new IPC/socket fields
+- ❌ Indicator can lie after a renderer reload
+- ❌ Only experts hit it (DevTools reload), but the failure is silent
+
+**Potential Solutions:**
+1. Backend caches its config at boot (`state.bootConfig`) and ships it via `GET_RENDERER_INIT_DATA`; ConfigPage compares against that.
+2. Main process exposes its boot snapshot via preload.
+
+**Recommendation:** Keep as-is. Renderer reload is an expert-only action and the price is acceptable. Revisit if auto-reload-on-error is ever added.
+
+---
+
 ## Contributing
 
 When adding new code to this project:
