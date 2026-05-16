@@ -183,25 +183,21 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
             {sortedMedia.length > 1 && (
                 <>
                     <div className="game-image-carousel-wheel">
-                        {wheelPosition > 0 && (
-                            <div
-                                className="game-image-carousel-wheel-arrow"
-                                onClick={wheelMoveLeft}
-                            >
-                                <OpenIcon icon="arrow-left" />
-                            </div>
-                        )}
+                        <div
+                            className={`game-image-carousel-wheel-arrow${wheelPosition > 0 ? "" : " game-image-carousel-wheel-arrow--hidden"}`}
+                            onClick={wheelPosition > 0 ? wheelMoveLeft : undefined}
+                        >
+                            <OpenIcon icon="arrow-left" />
+                        </div>
                         <div className="game-image-carousel-wheel-previews">
                             {imagePreviews}
                         </div>
-                        {wheelPosition < sortedMedia.length - IMAGE_COUNT && (
-                            <div
-                                className="game-image-carousel-wheel-arrow"
-                                onClick={wheelMoveRight}
-                            >
-                                <OpenIcon icon="arrow-right" />
-                            </div>
-                        )}
+                        <div
+                            className={`game-image-carousel-wheel-arrow${wheelPosition < sortedMedia.length - IMAGE_COUNT ? "" : " game-image-carousel-wheel-arrow--hidden"}`}
+                            onClick={wheelPosition < sortedMedia.length - IMAGE_COUNT ? wheelMoveRight : undefined}
+                        >
+                            <OpenIcon icon="arrow-right" />
+                        </div>
                     </div>
                     <div className="game-image-carousel-label">
                         {hoveredIndex === null
