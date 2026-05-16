@@ -1,5 +1,5 @@
 import { englishTranslation } from "@renderer/lang/en";
-import { faBorderAll, faCircleNotch, faExclamationCircle, faForward, faList, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
+import { faBorderAll, faCircleNotch, faExclamationCircle, faForward, faList, faPlay, faRepeat, faRotateRight, faStop } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BackIn, VlcState } from "@shared/back/types";
 import { BrowsePageLayout } from "@shared/BrowsePageLayout";
@@ -102,10 +102,16 @@ export class Footer extends React.Component<FooterProps> {
                                 <div className="footer__wrap">
                                     <span
                                         className="simple-button"
-                                        title="Music player failed to connect. Restart the app to retry."
+                                        title="Music player failed to connect."
                                         style={{ opacity: 0.6, cursor: "default", color: "var(--text-error, #e05252)" }}>
                                         <FontAwesomeIcon icon={faExclamationCircle} />
                                     </span>
+                                    <button
+                                        className="simple-button"
+                                        title="Retry music player connection"
+                                        onClick={() => window.External.back.send(BackIn.RETRY_VLC)}>
+                                        <FontAwesomeIcon icon={faRotateRight} />
+                                    </button>
                                 </div>
                             )}
                             {vlcState === "connected" && (

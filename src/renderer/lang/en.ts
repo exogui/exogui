@@ -2,8 +2,6 @@ export const englishTranslation = {
     name: "English",
     config: {
         configHeader: "Config",
-        configDesc:
-			"(You must press 'Save & Restart' for some changes to take effect)",
         preferencesHeader: "Preferences",
         extremeGames: "Extreme Games",
         extremeGamesDesc:
@@ -69,7 +67,6 @@ export const englishTranslation = {
         checkForUpdates: "Check for Updates",
         checkForUpdatesDesc: "Manually check if a new version is available.",
         checkNow: "Check Now",
-        saveAndRestart: "Save and Restart",
     },
     home: {
         updateHeader: "Launcher Update",
@@ -270,9 +267,6 @@ export const englishTranslation = {
         seteXoDOSPathQuestion: "Have you set the path to the {0} at the {1} page?",
         exodosPath: "Retro eXo Projects path",
         config: "Config",
-        noteSaveAndRestart:
-			"Note: You have to press {0} for the change to take effect.",
-        saveAndRestart: "Save & Restart",
         loadingGames: "Loading Games...",
         thereAreNoGames: "There are no games.",
         noGameMatchedDesc: "No game title matched your search.",

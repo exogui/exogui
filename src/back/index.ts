@@ -44,6 +44,7 @@ const state: BackState = {
     secret: createErrorProxy("secret"),
     preferences: createErrorProxy("preferences"),
     config: createErrorProxy("config"),
+    diskExodosPath: createErrorProxy("diskExodosPath"),
     configFolder: createErrorProxy("configFolder"),
     exePath: createErrorProxy("exePath"),
     basePath: createErrorProxy("basePath"),
@@ -121,6 +122,7 @@ async function initialize(message: any, _: any): Promise<void> {
     await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
+    state.diskExodosPath = state.config.exodosPath;
     const exodosPath = state.config.useEmbeddedExodosPath
         ? getEmbeddedExodosPath()
         : state.config.exodosPath;
@@ -223,7 +225,7 @@ async function initialize(message: any, _: any): Promise<void> {
         state.vlcPlayer.onStateChange = (vlcState) => {
             state.socketServer.broadcast(BackOut.VLC_STATE_CHANGED, vlcState);
         };
-        startVlcConnectLoop(state.vlcPlayer);
+        state.vlcRetry = startVlcConnectLoop(state.vlcPlayer);
     }
 
     send(state.socketServer.port);
@@ -273,7 +275,7 @@ async function initializePlaylistManager() {
     state.initEmitter.emit(BackInit.PLAYLISTS);
 }
 
-function startVlcConnectLoop(player: VlcPlayer): void {
+function startVlcConnectLoop(player: VlcPlayer): () => void {
     const MAX_ATTEMPTS = 15;
     let loopRunning = false;
 
@@ -303,6 +305,8 @@ function startVlcConnectLoop(player: VlcPlayer): void {
     };
 
     runLoop();
+
+    return runLoop;
 }
 
 /** Exit the process cleanly. */

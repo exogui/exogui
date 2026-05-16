@@ -3169,26 +3169,36 @@ body {
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-height: 32vh;
+  aspect-ratio: 4 / 3;
   margin-bottom: 0.5rem;
+  overflow: hidden;
 }
 
 .game-image-carousel-wheel {
   width: 100%;
-  max-height: 10vh;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .game-image-carousel-wheel-arrow {
   user-select: none;
-  padding-left: 0.2rem;
-  padding-right: 0.2rem;
-  max-width: 10%;
-  flex-grow: 0;
-  height: 100%;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+  flex: 0 0 auto;
+  align-self: stretch;
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.game-image-carousel-wheel-arrow>.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.game-image-carousel-wheel-arrow--hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .game-image-carousel-wheel-preview {
@@ -3196,8 +3206,15 @@ body {
   cursor: pointer;
   display: flex;
   justify-content: center;
+  align-items: center;
   flex-grow: 1;
   position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-bottom: 3px solid transparent;
+  padding-bottom: 2px;
+  border-radius: 2px;
 }
 
 .game-image-carousel-wheel-preview-overlay {
@@ -3229,26 +3246,18 @@ body {
   margin-bottom: 0.2rem;
 }
 
-.game-image-carousel-selected>img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 32vh;
-}
-
+.game-image-carousel-selected>img,
 .game-image-carousel-selected>video {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 32vh;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .game-image-carousel-wheel-preview img,
 .game-image-carousel-wheel-preview video {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 10vh;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /** Box Viewer 3D */
@@ -3259,6 +3268,7 @@ body {
   user-select: none;
   background: radial-gradient(ellipse at 50% 60%, rgba(60, 65, 80, 0.5) 0%, rgba(15, 15, 20, 0.85) 100%);
   border-radius: 4px;
+  box-sizing: border-box;
   overflow: visible;
 }
 
