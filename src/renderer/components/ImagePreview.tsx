@@ -1,3 +1,4 @@
+import { useGamepadNavigation } from "@renderer/hooks/useGamepadNavigation";
 import { stopMusic } from "@renderer/redux/searchSlice";
 import { getFileServerURL } from "@shared/Util";
 import * as React from "react";
@@ -10,15 +11,30 @@ import {
 } from "./GameImageCarousel";
 
 export type MediaPreviewProps = {
-    /** Media to display. */
-    media: FormattedGameMedia;
+    /** List of media to navigate through. */
+    mediaList: FormattedGameMedia[];
+    /** Index in `mediaList` of the initially displayed media. */
+    initialIndex: number;
     /** Called when the user attempts to cancel/close media preview. */
     onCancel?: () => void;
 };
 
 export function MediaPreview(props: MediaPreviewProps) {
     const [scaleUp, setScaleUp] = React.useState(false);
+    const [index, setIndex] = React.useState(props.initialIndex);
     const dispatch = useDispatch();
+
+    const media = props.mediaList[index] ?? props.mediaList[0];
+
+    const goPrev = React.useCallback(() => {
+        setScaleUp(false);
+        setIndex((i) => (i - 1 + props.mediaList.length) % props.mediaList.length);
+    }, [props.mediaList.length]);
+
+    const goNext = React.useCallback(() => {
+        setScaleUp(false);
+        setIndex((i) => (i + 1) % props.mediaList.length);
+    }, [props.mediaList.length]);
 
     const onClickImage = (event: React.MouseEvent<any>) => {
         setScaleUp(!scaleUp);
@@ -28,24 +44,38 @@ export function MediaPreview(props: MediaPreviewProps) {
     };
 
     React.useEffect(() => {
-        if (props.media.type === FormattedGameMediaType.VIDEO) {
+        if (media.type === FormattedGameMediaType.VIDEO) {
             dispatch(stopMusic());
         }
-    }, [props.media.type, dispatch]);
+    }, [media.type, dispatch]);
 
     const { onCancel } = props;
     React.useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape" && onCancel) {
                 onCancel();
+            } else if (e.key === "ArrowLeft") {
+                goPrev();
+            } else if (e.key === "ArrowRight") {
+                goNext();
             }
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [onCancel]);
+    }, [onCancel, goPrev, goNext]);
+
+    useGamepadNavigation({
+        onNavigate: (direction) => {
+            if (direction === "left") {
+                goPrev();
+            } else if (direction === "right") {
+                goNext();
+            }
+        },
+    });
 
     const renderedMedia = () => {
-        switch (props.media.type) {
+        switch (media.type) {
             case FormattedGameMediaType.IMAGE: {
                 return (
                     <img
@@ -55,7 +85,7 @@ export function MediaPreview(props: MediaPreviewProps) {
                                 ? " image-preview__image--fill"
                                 : " image-preview__image--fit")
                         }
-                        src={`${getFileServerURL()}/${props.media.path}`}
+                        src={`${getFileServerURL()}/${media.path}`}
                         onClick={onClickImage}
                     />
                 );
@@ -71,18 +101,18 @@ export function MediaPreview(props: MediaPreviewProps) {
                                 ? " image-preview__image--fill"
                                 : " image-preview__image--fit")
                         }
-                        src={`${getFileServerURL()}/${props.media.path}`}
+                        src={`${getFileServerURL()}/${media.path}`}
                     />
                 );
             }
             case FormattedGameMediaType.BOX_3D: {
-                if (props.media.interactive && props.media.backPath) {
+                if (media.interactive && media.backPath) {
                     return (
                         <div style={{ width: "100%", height: "100%" }}>
                             <BoxViewer3D
-                                frontImageUrl={`${getFileServerURL()}/${props.media.path}`}
-                                backImageUrl={`${getFileServerURL()}/${props.media.backPath}`}
-                                spinePath={props.media.spinePath ? `${getFileServerURL()}/${props.media.spinePath}` : undefined}
+                                frontImageUrl={`${getFileServerURL()}/${media.path}`}
+                                backImageUrl={`${getFileServerURL()}/${media.backPath}`}
+                                spinePath={media.spinePath ? `${getFileServerURL()}/${media.spinePath}` : undefined}
                                 isFullscreen={true}
                                 interactive={true}
                             />
@@ -97,7 +127,7 @@ export function MediaPreview(props: MediaPreviewProps) {
                                 ? " image-preview__image--fill"
                                 : " image-preview__image--fit")
                         }
-                        src={`${getFileServerURL()}/${props.media.path}`}
+                        src={`${getFileServerURL()}/${media.path}`}
                         onClick={onClickImage}
                     />
                 );
@@ -121,6 +151,24 @@ export function MediaPreview(props: MediaPreviewProps) {
                     ✕
                 </button>
             )}
+            {props.mediaList.length > 1 && (
+                <>
+                    <button
+                        className="image-preview-nav image-preview-nav--prev"
+                        title="Previous"
+                        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                    >
+                        ‹
+                    </button>
+                    <button
+                        className="image-preview-nav image-preview-nav--next"
+                        title="Next"
+                        onClick={(e) => { e.stopPropagation(); goNext(); }}
+                    >
+                        ›
+                    </button>
+                </>
+            )}
             <div
                 className="image-preview-container"
                 style={{ overflowY: scaleUp ? "auto" : "unset" }}
@@ -139,7 +187,7 @@ export function MediaPreview(props: MediaPreviewProps) {
                     </div>
                 </div>
                 <div className="image-preview-label">
-                    {props.media.category}
+                    {media.category}
                 </div>
             </div>
         </BareFloatingContainer>

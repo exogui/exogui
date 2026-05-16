@@ -480,6 +480,38 @@ body {
   border-color: rgba(255, 255, 255, 0.7);
 }
 
+.image-preview-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: white;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview-nav:hover {
+  background: rgba(0, 0, 0, 0.85);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.image-preview-nav--prev {
+  left: 1rem;
+}
+
+.image-preview-nav--next {
+  right: 1rem;
+}
+
 
 /* ------ Main Layout ------ */
 .root {

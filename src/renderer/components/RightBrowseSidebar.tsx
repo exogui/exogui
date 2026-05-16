@@ -43,7 +43,8 @@ export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
 
 type RightBrowseSidebarState = {
     /** If a preview of the current game's selected media. */
-    previewMedia?: FormattedGameMedia;
+    previewMediaList?: FormattedGameMedia[];
+    previewMediaIndex?: number;
     existingAddApps?: IAdditionalApplicationInfo[];
     dynamicAddApps?: IAdditionalApplicationInfo[];
 };
@@ -345,9 +346,10 @@ export class RightBrowseSidebar extends React.Component<
                         </div>
                     )}
                     {/* -- Media Preview -- */}
-                    {this.state.previewMedia ? (
+                    {this.state.previewMediaList && this.state.previewMediaIndex !== undefined ? (
                         <MediaPreview
-                            media={this.state.previewMedia}
+                            mediaList={this.state.previewMediaList}
+                            initialIndex={this.state.previewMediaIndex}
                             onCancel={this.onPreviewMediaClick}
                         />
                     ) : undefined}
@@ -398,11 +400,11 @@ export class RightBrowseSidebar extends React.Component<
         }
     };
 
-    onPreviewMedia = (media: FormattedGameMedia): void => {
-        this.setState({ previewMedia: media });
+    onPreviewMedia = (mediaList: FormattedGameMedia[], index: number): void => {
+        this.setState({ previewMediaList: mediaList, previewMediaIndex: index });
     };
 
     onPreviewMediaClick = (): void => {
-        this.setState({ previewMedia: undefined });
+        this.setState({ previewMediaList: undefined, previewMediaIndex: undefined });
     };
 }

@@ -9,7 +9,7 @@ export type GameImageCarouselProps = {
     media: GameMedia;
     platform: string;
     imgKey: string; // Ensures previous images are always replaced when the selected game changes
-    onPreviewMedia: (media: FormattedGameMedia) => void;
+    onPreviewMedia: (mediaList: FormattedGameMedia[], index: number) => void;
 };
 
 const IMAGE_COUNT = 4;
@@ -141,7 +141,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         key={props.imgKey}
                         className="fill-image cursor"
                         src={`${getFileServerURL()}/${selectedMedia.path}`}
-                        onClick={() => props.onPreviewMedia(selectedMedia)}
+                        onClick={() => props.onPreviewMedia(sortedMedia, selectedMediaIdx)}
                     />
                 );
             case FormattedGameMediaType.VIDEO:
@@ -153,7 +153,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         loop
                         muted
                         src={`${getFileServerURL()}/${selectedMedia.path}`}
-                        onClick={() => props.onPreviewMedia(selectedMedia)}
+                        onClick={() => props.onPreviewMedia(sortedMedia, selectedMediaIdx)}
                     />
                 );
             case FormattedGameMediaType.BOX_3D:
@@ -162,7 +162,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         key={props.imgKey}
                         className={selectedMedia.interactive ? "cursor" : undefined}
                         style={{ width: "100%", height: "100%" }}
-                        onClick={selectedMedia.interactive ? () => props.onPreviewMedia(selectedMedia) : undefined}
+                        onClick={selectedMedia.interactive ? () => props.onPreviewMedia(sortedMedia, selectedMediaIdx) : undefined}
                     >
                         <BoxViewer3D
                             frontImageUrl={`${getFileServerURL()}/${selectedMedia.path}`}
