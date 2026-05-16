@@ -43,6 +43,7 @@ export enum BackIn {
     SET_VOLUME,
     STOP_MUSIC,
     SET_LOOP,
+    RETRY_VLC,
 }
 
 type UnknownCallback = (...args: any[]) => any;
@@ -77,6 +78,7 @@ export type BackInTemplate = SocketTemplate<BackIn, {
     [BackIn.SET_VOLUME]: (volume: number) => void;
     [BackIn.STOP_MUSIC]: () => void;
     [BackIn.SET_LOOP]: (enabled: boolean) => void;
+    [BackIn.RETRY_VLC]: () => void;
 }>;
 
 export enum BackOut {

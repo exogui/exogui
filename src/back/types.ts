@@ -42,6 +42,7 @@ export type BackState = {
     execMappings: ExecMapping[];
     commandMappings: IAppCommandsMappingData;
     vlcPlayer?: VlcPlayer;
+    vlcRetry?: () => void;
 };
 
 export type BackQueryCache = {

@@ -174,6 +174,15 @@ export function registerRequestCallbacks(state: BackState): void {
         }
     });
 
+    state.socketServer.register(BackIn.RETRY_VLC, async () => {
+        try {
+            state.vlcRetry?.();
+        } catch (err) {
+            log("VLC", `${err}`);
+            console.log(err);
+        }
+    });
+
     state.socketServer.register(BackIn.SET_VOLUME, async (event, volume) => {
         try {
             await state.vlcPlayer?.setVol(volume);
