@@ -3169,15 +3169,14 @@ body {
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-height: 32vh;
+  aspect-ratio: 4 / 3;
   margin-bottom: 0.5rem;
 }
 
 .game-image-carousel-wheel {
   width: 100%;
-  max-height: 10vh;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .game-image-carousel-wheel-arrow {
@@ -3196,8 +3195,11 @@ body {
   cursor: pointer;
   display: flex;
   justify-content: center;
+  align-items: center;
   flex-grow: 1;
   position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 
 .game-image-carousel-wheel-preview-overlay {
@@ -3229,26 +3231,18 @@ body {
   margin-bottom: 0.2rem;
 }
 
-.game-image-carousel-selected>img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 32vh;
-}
-
+.game-image-carousel-selected>img,
 .game-image-carousel-selected>video {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 32vh;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .game-image-carousel-wheel-preview img,
 .game-image-carousel-wheel-preview video {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 10vh;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /** Box Viewer 3D */

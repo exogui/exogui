@@ -161,7 +161,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                     <div
                         key={props.imgKey}
                         className={selectedMedia.interactive ? "cursor" : undefined}
-                        style={{ width: "100%", height: "32vh" }}
+                        style={{ width: "100%", height: "100%" }}
                         onClick={selectedMedia.interactive ? () => props.onPreviewMedia(selectedMedia) : undefined}
                     >
                         <BoxViewer3D
