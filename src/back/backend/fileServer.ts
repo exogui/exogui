@@ -1,11 +1,16 @@
 import { IAppConfigData } from "@shared/config/interfaces";
+import * as crypto from "crypto";
 import * as http from "http";
 import * as fs from "fs";
 import { Mime } from "mime";
 import * as path from "path";
+import { PNG } from "pngjs";
+import * as UTIF from "utif";
 import { getFilePathExtension } from "@shared/Util";
 import { LogFunc } from "@back/types";
 import { startFileServer } from "./serverHelper";
+
+const TIFF_EXTS = new Set([".tif", ".tiff"]);
 
 export interface IAssetsPaths {
     exodosPath: string;
@@ -27,8 +32,54 @@ export class FileServer {
 
     constructor(
         private readonly _config: IAppConfigData,
-        private readonly _log: LogFunc
+        private readonly _log: LogFunc,
+        private readonly _cacheFolder: string,
     ) {}
+
+    private _tiffCacheFolder(): string {
+        return path.join(this._cacheFolder, "tiff");
+    }
+
+    private async _resolveTiffCachePath(filePath: string): Promise<string> {
+        const stat = await fs.promises.stat(filePath);
+        const key = crypto.createHash("sha1").update(`${filePath}|${stat.size}|${stat.mtimeMs}`).digest("hex");
+        return path.join(this._tiffCacheFolder(), `${key}.png`);
+    }
+
+    private async _ensureTiffPng(filePath: string): Promise<string> {
+        const cachePath = await this._resolveTiffCachePath(filePath);
+        try {
+            await fs.promises.access(cachePath, fs.constants.R_OK);
+            return cachePath;
+        } catch { /* generate below */ }
+
+        await fs.promises.mkdir(path.dirname(cachePath), { recursive: true });
+        const tmpPath = `${cachePath}.tmp-${process.pid}-${Date.now()}`;
+        await this._convertTiffToPng(filePath, tmpPath);
+        await fs.promises.rename(tmpPath, cachePath);
+        return cachePath;
+    }
+
+    private async _convertTiffToPng(tiffPath: string, pngPath: string): Promise<void> {
+        const buffer = await fs.promises.readFile(tiffPath);
+        const ifds = UTIF.decode(buffer);
+        if (!ifds.length) {
+            throw new Error("TIFF contains no image pages");
+        }
+        const page = ifds[0];
+        UTIF.decodeImage(buffer, page);
+        const rgba = UTIF.toRGBA8(page);
+
+        const png = new PNG({ width: page.width, height: page.height });
+        png.data = Buffer.from(rgba.buffer, rgba.byteOffset, rgba.byteLength);
+
+        await new Promise<void>((resolve, reject) => {
+            const out = fs.createWriteStream(pngPath);
+            out.on("error", reject);
+            out.on("finish", resolve);
+            png.pack().on("error", reject).pipe(out);
+        });
+    }
 
     public async start() {
         console.log(
@@ -157,6 +208,16 @@ export class FileServer {
         filePath: string
     ): void {
         if (req.method === "GET" || req.method === "HEAD") {
+            if (TIFF_EXTS.has(path.extname(filePath).toLowerCase())) {
+                this._ensureTiffPng(filePath)
+                .then((pngPath) => this._serveFile(req, res, pngPath))
+                .catch((err) => {
+                    console.warn(`File server failed to convert TIFF "${filePath}": ${err}`);
+                    res.writeHead(404);
+                    res.end();
+                });
+                return;
+            }
             fs.stat(filePath, (error, stats) => {
                 if (error || (stats && !stats.isFile())) {
                     res.writeHead(404);

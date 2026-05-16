@@ -171,7 +171,7 @@ async function initialize(message: any, _: any): Promise<void> {
         state.initEmitter.emit(BackInit.EXEC);
     });
 
-    state.fileServer = new FileServer(state.config, log);
+    state.fileServer = new FileServer(state.config, log, path.join(state.configFolder, "cache"));
     await state.fileServer.start();
 
     registerRequestCallbacks(state);
