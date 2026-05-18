@@ -1,4 +1,6 @@
 import { getFileServerURL } from "@shared/Util";
+import { faHeart, faMusic } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import * as React from "react";
 import { GridCellProps } from "react-virtualized";
 import { getPlatformIconURL } from "../Util";
@@ -19,6 +21,8 @@ export type GameGridItemProps = Partial<GridCellProps> & {
     isInstalled: boolean;
     /** If the game has background music. */
     hasMusic?: boolean;
+    /** If the game is a favorite. */
+    isFavorite?: boolean;
 };
 
 /** Displays a single game. Meant to be rendered inside a grid. */
@@ -33,6 +37,7 @@ export function GameGridItem(props: GameGridItemProps) {
         isDragged,
         isInstalled,
         hasMusic,
+        isFavorite,
         style,
     } = props;
     // Get the platform icon path
@@ -86,8 +91,11 @@ export function GameGridItem(props: GameGridItemProps) {
                         }`}
                         style={thumbnailStyle}
                     >
-                        {hasMusic && (
-                            <span className="game-grid-item__music-badge">♪</span>
+                        {(hasMusic || isFavorite) && (
+                            <div className="game-grid-item__badges">
+                                {isFavorite && <FontAwesomeIcon icon={faHeart} className="game-grid-item__badge" />}
+                                {hasMusic && <FontAwesomeIcon icon={faMusic} className="game-grid-item__badge" />}
+                            </div>
                         )}
                         <div className="game-grid-item__thumb__icons">
                             {platformIcon ? (
@@ -114,7 +122,7 @@ export function GameGridItem(props: GameGridItemProps) {
                 </div>
             </li>
         );
-    }, [style, className, isDraggable, id, title, platformIcon, thumbnail, isInstalled, hasMusic]);
+    }, [style, className, isDraggable, id, title, platformIcon, thumbnail, isInstalled, hasMusic, isFavorite]);
 }
 
 export namespace GameGridItem {

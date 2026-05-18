@@ -1,5 +1,6 @@
 import { deepCopy, fixSlashes } from "@shared/Util";
 import { BackIn, BackInit, BackOut } from "@shared/back/types";
+import { IAppConfigData } from "@shared/config/interfaces";
 import { overwriteConfigData } from "@shared/config/util";
 import { PreferencesFile } from "@shared/preferences/PreferencesFile";
 import { defaultPreferencesData, overwritePreferenceData } from "@shared/preferences/util";
@@ -70,7 +71,7 @@ export function registerRequestCallbacks(state: BackState): void {
                 ? state.playlistManager.playlists
                 : undefined,
             localeCode: state.localeCode,
-            vlcAvailable: state.vlcPlayer !== undefined
+            vlcState: state.vlcPlayer?.vlcState ?? "idle"
         };
     });
 
@@ -173,6 +174,15 @@ export function registerRequestCallbacks(state: BackState): void {
         }
     });
 
+    state.socketServer.register(BackIn.RETRY_VLC, async () => {
+        try {
+            state.vlcRetry?.();
+        } catch (err) {
+            log("VLC", `${err}`);
+            console.log(err);
+        }
+    });
+
     state.socketServer.register(BackIn.SET_VOLUME, async (event, volume) => {
         try {
             await state.vlcPlayer?.setVol(volume);
@@ -183,17 +193,26 @@ export function registerRequestCallbacks(state: BackState): void {
     });
 
     state.socketServer.register(BackIn.UPDATE_CONFIG, async (event, data) => {
-        const newConfig = deepCopy(state.config);
-        overwriteConfigData(newConfig, data);
+        const candidate = deepCopy(state.config);
+        overwriteConfigData(candidate, data);
+
+        // In embedded mode the runtime `exodosPath` is the resolved absolute path; persisting that
+        // would defeat dynamic resolution if the install ever moves. Save the on-disk form to the
+        // file, but keep the resolved form in runtime state.
+        const fileContent: IAppConfigData = candidate.useEmbeddedExodosPath
+            ? { ...candidate, exodosPath: state.diskExodosPath }
+            : candidate;
 
         try {
             await ConfigFile.saveFile(
                 path.join(state.configFolder, configFilename),
-                newConfig
+                fileContent
             );
         } catch (error) {
             log("Launcher", error?.toString() ?? "");
+            throw error;
         }
+        Object.assign(state.config, candidate);
     });
 
     state.socketServer.register(BackIn.UPDATE_PREFERENCES, async (event, data) => {

@@ -6,6 +6,7 @@ import { ILogEntry } from "./Log/interface";
 import { IAppCommandsMappingData } from "./mappings/interfaces";
 import { IAppPreferencesData } from "./preferences/interfaces";
 import { Theme } from "./ThemeFile";
+import { VlcState } from "./back/types";
 
 /** Recursively set all properties as optional. */
 export type DeepPartial<T> = {
@@ -89,8 +90,8 @@ export interface IMainWindowExternal {
     initialPlaylists?: GamePlaylist[];
     initialLocaleCode: string;
 
-    /** Whether VLC player is available for background music (Windows only). */
-    vlcAvailable: boolean;
+    /** Current VLC player state: unavailable (not supported), connecting (starting up), or ready (RC connected). */
+    vlcState: VlcState;
 
     /** Runtime capabilities detected at startup (read-only). */
     runtime: RuntimeCapabilities;
@@ -186,6 +187,8 @@ export enum UpdaterIPC {
     TEST_CANCELLED = "updater:test-cancelled",
     /** Renderer -> Main: Renderer is ready to receive update notifications */
     RENDERER_READY = "updater:renderer-ready",
+    /** Renderer -> Main: Online-update config (enabled / channel) changed */
+    UPDATE_CONFIG = "updater:update-config",
     /** Main -> Renderer: Update check is in progress */
     UPDATE_CHECKING = "updater:checking",
     /** Main -> Renderer: Update check failed due to network error */
@@ -272,7 +275,7 @@ export interface CompareFilter {
 
 export interface BooleanFilter {
     installed?: boolean;
-    recommended?: boolean;
+    favorite?: boolean;
 }
 
 export type GameFilter = {

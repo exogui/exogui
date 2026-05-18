@@ -290,21 +290,21 @@ body {
 }
 /* Minimize Button */
 .title-bar__button-bar__min {
-  background-image: url('../images/min.png');
+  background-image: url('../../images/min.png');
 }
 .title-bar__button-bar__min:hover {
   background-color: var(--layout__quaternary-background);
 }
 /* Maximize Button */
 .title-bar__button-bar__max {
-  background-image: url('../images/max.png');
+  background-image: url('../../images/max.png');
 }
 .title-bar__button-bar__max:hover {
   background-color: var(--layout__quaternary-background);
 }
 /* Cross Button */
 .title-bar__button-bar__cross {
-  background-image: url('../images/cross.png');
+  background-image: url('../../images/cross.png');
 }
 .title-bar__button-bar__cross:hover {
   background-color: var(--layout__title-bar-cross-color);
@@ -824,7 +824,7 @@ body {
   /* --size: 1rem; */
   /* --zoom: 100%; */
   /* Mask the background color with the FP logo */
-  -webkit-mask: url('../images/logo-solid.svg');
+  -webkit-mask: url('../../images/logo-solid.svg');
   -webkit-mask-size: var(--size);
   -webkit-mask-repeat: no-repeat;
   /* Cool colors yall */

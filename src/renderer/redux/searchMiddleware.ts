@@ -68,6 +68,7 @@ export function addSearchMiddleware() {
                         selectGame({
                             view: viewName,
                             game,
+                            userInitiated: false,
                         })
                     );
                 debounceSearch(state, viewName, view);
@@ -79,32 +80,23 @@ export function addSearchMiddleware() {
 const debounceSearch = debounce(
     (state: RootState, viewName: string, view: ResultsView) => {
         let games = state.gamesState.games;
-        console.debug("Start count " + games.length);
 
-        // Check if we're a special installed games playlist
         if (view.selectedPlaylist) {
             if (view.selectedPlaylist.games.length > 0) {
-                const playlistGameIds = view.selectedPlaylist.games.map(
-                    (g) => g.id
+                const playlistIds = new Set(
+                    view.selectedPlaylist.games.map((g) => g.id)
                 );
-                games = games.filter((g) => playlistGameIds.includes(g.id));
+                games = games.filter((g) => playlistIds.has(g.id));
             }
         } else {
-            // Not in a playlist, treat view name as platform
             games = games.filter((g) => g.platform === viewName);
         }
 
-        console.debug("Results after playlist " + games.length);
-
-        // Narrow by filter
         games = filterGames(games, view.filter);
 
         const orderFn = getOrderFunction(view.orderBy, view.orderReverse);
         games = games.sort(orderFn);
 
-        console.debug(`Final Results: ${games.length}`);
-
-        // Update games in state
         store.dispatch(
             setViewGames({
                 view: viewName,
@@ -256,7 +248,7 @@ const fieldFilterKeys: Array<keyof FieldFilter> = [
 
 const booleanFilterKeys: Array<keyof BooleanFilter> = [
     "installed",
-    "recommended",
+    "favorite",
 ];
 
 const compareFilterKeys: Array<keyof CompareFilter> = [

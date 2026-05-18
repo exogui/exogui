@@ -6,7 +6,7 @@ import {
     stopMusic,
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
-import { openGameConfigDirectory } from "@renderer/util/games";
+import { openGameConfigDirectory, toggleGameFavorite } from "@renderer/util/games";
 import { BackIn } from "@shared/back/types";
 import { BrowsePageLayout } from "@shared/BrowsePageLayout";
 import { IAdditionalApplicationInfo, IGameInfo } from "@shared/game/interfaces";
@@ -172,6 +172,10 @@ class BrowsePage extends React.Component<
     createGameContextMenu(game: IGameInfo) {
         const contextButtons: MenuItemConstructorOptions[] = [
             {
+                label: game.favorite ? "Remove from Favorites" : "Add to Favorites",
+                click: () => { toggleGameFavorite(game); },
+            },
+            {
                 label: "Open Config Folder",
                 enabled: true,
                 click: () => {
@@ -301,6 +305,7 @@ class BrowsePage extends React.Component<
                         onGameLaunch={this.onGameLaunch}
                         onGameLaunchSetup={this.onGameLaunchSetup}
                         onAddAppLaunch={this.onAddAppLaunch}
+                        onFavoriteToggle={this.onFavoriteToggle}
                     />
                 </ResizableSidebar>
             </div>
@@ -395,6 +400,7 @@ class BrowsePage extends React.Component<
             this.props.onSelectGame({
                 view: this.props.gameLibrary,
                 game,
+                userInitiated: true,
             });
         }
     };
@@ -428,6 +434,10 @@ class BrowsePage extends React.Component<
             window.External.back.send(BackIn.LAUNCH_ADDAPP, game, addApp);
         }
     }, 500);
+
+    onFavoriteToggle = (game: IGameInfo): void => {
+        toggleGameFavorite(game);
+    };
 
     onCenterKeyDown = (event: React.KeyboardEvent): void => {
         const target = event.target as HTMLElement;
@@ -479,7 +489,7 @@ class BrowsePage extends React.Component<
         if (this.state.currentPlaylist) {
             // Synchronously show a "open dialog" (this makes the main window "frozen" while this is open)
             const filePaths = window.External.showOpenDialogSync({
-                title: "Select the eXoDOS root directory",
+                title: "Select the Retro eXo Projects root directory",
                 properties: ["openFile"],
             });
             if (filePaths && filePaths.length > 0) {

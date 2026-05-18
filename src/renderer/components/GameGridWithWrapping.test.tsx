@@ -31,7 +31,6 @@ const createMockGame = (id: string, title: string): IGameInfo => ({
     originalDescription: "",
     language: "",
     favorite: false,
-    recommended: false,
     region: "",
     rating: "",
     maxPlayers: 1,

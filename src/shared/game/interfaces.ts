@@ -55,7 +55,6 @@ export interface IPureGameInfo {
     /** The language(s) the game is in */
     language: string;
     favorite: boolean;
-    recommended: boolean;
     region: string;
     rating: string;
     maxPlayers?: number;
@@ -76,6 +75,10 @@ export type GameImagesCollection = {
 
 export type GameVideosCollection = {
     [key: string]: string; // "<game title> (from app path)" - "<FilePath>"
+};
+
+export type GameMusicCollection = {
+    [key: string]: string; // "<game title> (from app path)" - "<relative path>"
 };
 
 /** Represents the meta data for a single Game (including temporary data) */

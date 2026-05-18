@@ -38,9 +38,9 @@ export class PlaylistManager {
             )
             .map((dirent) => dirent.name);
             console.log(`Found ${playlistFiles.length} playlists`);
-            playlistFiles.forEach((pf) =>
+            await Promise.all(playlistFiles.map((pf) =>
                 this._onPlaylistAddOrChange(pf, opts)
-            );
+            ));
             this._initialized = true;
         } catch (error) {
             opts.log({

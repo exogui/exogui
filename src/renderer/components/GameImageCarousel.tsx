@@ -9,7 +9,7 @@ export type GameImageCarouselProps = {
     media: GameMedia;
     platform: string;
     imgKey: string; // Ensures previous images are always replaced when the selected game changes
-    onPreviewMedia: (media: FormattedGameMedia) => void;
+    onPreviewMedia: (mediaList: FormattedGameMedia[], index: number) => void;
 };
 
 const IMAGE_COUNT = 4;
@@ -141,7 +141,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         key={props.imgKey}
                         className="fill-image cursor"
                         src={`${getFileServerURL()}/${selectedMedia.path}`}
-                        onClick={() => props.onPreviewMedia(selectedMedia)}
+                        onClick={() => props.onPreviewMedia(sortedMedia, selectedMediaIdx)}
                     />
                 );
             case FormattedGameMediaType.VIDEO:
@@ -153,7 +153,7 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                         loop
                         muted
                         src={`${getFileServerURL()}/${selectedMedia.path}`}
-                        onClick={() => props.onPreviewMedia(selectedMedia)}
+                        onClick={() => props.onPreviewMedia(sortedMedia, selectedMediaIdx)}
                     />
                 );
             case FormattedGameMediaType.BOX_3D:
@@ -161,8 +161,8 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
                     <div
                         key={props.imgKey}
                         className={selectedMedia.interactive ? "cursor" : undefined}
-                        style={{ width: "100%", height: "32vh" }}
-                        onClick={selectedMedia.interactive ? () => props.onPreviewMedia(selectedMedia) : undefined}
+                        style={{ width: "100%", height: "100%" }}
+                        onClick={selectedMedia.interactive ? () => props.onPreviewMedia(sortedMedia, selectedMediaIdx) : undefined}
                     >
                         <BoxViewer3D
                             frontImageUrl={`${getFileServerURL()}/${selectedMedia.path}`}
@@ -183,25 +183,21 @@ export function GameImageCarousel(props: GameImageCarouselProps) {
             {sortedMedia.length > 1 && (
                 <>
                     <div className="game-image-carousel-wheel">
-                        {wheelPosition > 0 && (
-                            <div
-                                className="game-image-carousel-wheel-arrow"
-                                onClick={wheelMoveLeft}
-                            >
-                                <OpenIcon icon="arrow-left" />
-                            </div>
-                        )}
+                        <div
+                            className={`game-image-carousel-wheel-arrow${wheelPosition > 0 ? "" : " game-image-carousel-wheel-arrow--hidden"}`}
+                            onClick={wheelPosition > 0 ? wheelMoveLeft : undefined}
+                        >
+                            <OpenIcon icon="arrow-left" />
+                        </div>
                         <div className="game-image-carousel-wheel-previews">
                             {imagePreviews}
                         </div>
-                        {wheelPosition < sortedMedia.length - IMAGE_COUNT && (
-                            <div
-                                className="game-image-carousel-wheel-arrow"
-                                onClick={wheelMoveRight}
-                            >
-                                <OpenIcon icon="arrow-right" />
-                            </div>
-                        )}
+                        <div
+                            className={`game-image-carousel-wheel-arrow${wheelPosition < sortedMedia.length - IMAGE_COUNT ? "" : " game-image-carousel-wheel-arrow--hidden"}`}
+                            onClick={wheelPosition < sortedMedia.length - IMAGE_COUNT ? wheelMoveRight : undefined}
+                        >
+                            <OpenIcon icon="arrow-right" />
+                        </div>
                     </div>
                     <div className="game-image-carousel-label">
                         {hoveredIndex === null

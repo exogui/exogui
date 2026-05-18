@@ -2,13 +2,13 @@
 
 **Important: This application requires eXo projects to be pre-patched with the Linux patch. For download and installation instructions, please visit the [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) and the [Linux Patch Wiki](https://wiki.retro-exo.com/index.php/Linux_Patch).**
 
-The launcher for the eXoDOS project.
+The launcher for Retro eXo Projects.
 
 ## Links
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
 -   [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) - Linux setup guide
--   [exogui discord](https://discord.gg/srHzx9HS) - exogui-specific support
+-   [exogui discord](https://discord.gg/yMcZnyUn) - exogui-specific support
 
 ## About
 
@@ -42,7 +42,96 @@ Two macOS builds are produced automatically by the CI workflow:
 
 > ⚠️ **Security notice:** The legacy build uses an older version of Electron (v37) to support macOS 11. Older Electron versions may contain unpatched security vulnerabilities. Use the legacy build only if you cannot upgrade to macOS 12 or later, and avoid using it to browse untrusted content.
 
-If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/srHzx9HS) server. For general eXoDOS support and Linux setup, visit the [eXoDOS Discord](https://www.retro-exo.com/community.html) server.
+If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/yMcZnyUn) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) server.
+
+## Installation
+
+> **Note:** The Linux patch and macOS patch distributed by the Retro eXo Projects already include exogui — no manual installation is needed if you installed via the patch. This section is for manually updating exogui or setting it up without the patch.
+
+exogui must be placed inside an `exogui` subfolder directly within the root of your eXo project. This is where it looks for game data by default (`exodosPath: "../"`).
+
+### Directory layout
+
+```
+eXoDOS/               ← eXo project root (eXoDOS, eXoDREAMM, etc.)
+├── exogui/           ← create this folder and place exogui here
+│   └── <exogui files>
+├── eXo/
+├── Data/
+└── ...
+```
+
+### Examples by platform
+
+**Linux — AppImage**
+
+Download `exogui.AppImage`, place it in the `exogui` subfolder, and make it executable:
+
+```
+eXoDOS/
+└── exogui/
+    └── exogui.AppImage
+```
+
+```bash
+chmod +x exogui.AppImage
+./exogui.AppImage
+```
+
+**Linux — tar.gz**
+
+Extract the archive into the `exogui` subfolder:
+
+```
+eXoDOS/
+└── exogui/
+    ├── exogui
+    └── (other extracted files)
+```
+
+```bash
+tar -xzf exogui.tar.gz -C eXoDOS/exogui/
+./eXoDOS/exogui/exogui
+```
+
+**macOS — .app bundle**
+
+Extract the zip and move `exogui.app` into the `exogui` subfolder:
+
+```
+eXoDOS/
+└── exogui/
+    └── exogui.app
+```
+
+Double-click `exogui.app` to launch, or from Terminal:
+
+```bash
+open eXoDOS/exogui/exogui.app
+```
+
+**Windows — zip**
+
+Extract the zip into the `exogui` subfolder:
+
+```
+eXoDOS\
+└── exogui\
+    ├── exogui.exe
+    └── (other extracted files)
+```
+
+Run `exogui.exe`. The Windows NSIS installer (`.exe` setup file) handles this placement automatically.
+
+### Overriding the eXo project path
+
+If you cannot follow the above layout, open `exogui/config.json` and set `exodosPath` to the absolute path of your eXo project root:
+
+```json
+{
+    "exodosPath": "/path/to/eXoDOS"
+}
+```
 
 ## Development Setup
 

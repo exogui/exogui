@@ -125,7 +125,7 @@ const onInit = (async () => {
 
     // Load initial renderer data from backend
     const { config, preferences, commandMappings, fileServerPort,
-        log, themes, playlists, localeCode, vlcAvailable
+        log, themes, playlists, localeCode, vlcState
     } = await window.External.back.request(BackIn.GET_RENDERER_INIT_DATA);
     window.External.preferences.data = preferences;
     window.External.config = {
@@ -142,7 +142,7 @@ const onInit = (async () => {
     window.External.initialThemes = themes;
     window.External.initialPlaylists = playlists;
     window.External.initialLocaleCode = localeCode;
-    window.External.vlcAvailable = vlcAvailable;
+    window.External.vlcState = vlcState;
     if (window.External.config.data.currentTheme) {
         setTheme(window.External.config.data.currentTheme);
     }

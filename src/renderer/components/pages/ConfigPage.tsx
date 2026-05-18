@@ -4,6 +4,7 @@ import { ipcRenderer } from "electron";
 import { BackIn } from "@shared/back/types";
 import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
+import { RESTART_REQUIRED_CONFIG_KEYS } from "@shared/config/util";
 import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
@@ -24,12 +25,23 @@ export type ConfigPageProps = OwnProps;
 type ConfigPageState = IAppConfigData & {
     isExodosPathValid?: boolean;
     networkExpanded: boolean;
+    saveError?: string;
 };
+
+/** Snapshot of restart-required config values at the time ConfigPage first mounted in this session.
+ *  Used to decide whether the running app diverges from its disk/startup state. */
+let appStartConfigSnapshot: IAppConfigData | null = null;
 
 export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState> {
     constructor(props: ConfigPageProps) {
         super(props);
         const configData = window.External.config.data;
+        if (!appStartConfigSnapshot) {
+            appStartConfigSnapshot = {
+                ...configData,
+                nativePlatforms: [...configData.nativePlatforms],
+            };
+        }
         this.state = {
             ...configData,
             nativePlatforms: [...configData.nativePlatforms],
@@ -38,27 +50,43 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         };
     }
 
+    private static computeRestartRequired(current: IAppConfigData): boolean {
+        if (!appStartConfigSnapshot) return false;
+        return RESTART_REQUIRED_CONFIG_KEYS.some(
+            (key) => !ConfigPage.isConfigValueEqual(appStartConfigSnapshot![key], current[key])
+        );
+    }
+
+    private isDirty(): boolean {
+        const saved = window.External.config.data;
+        return (Object.keys(saved) as (keyof IAppConfigData)[]).some(
+            (key) => !ConfigPage.isConfigValueEqual(this.state[key], saved[key])
+        );
+    }
+
     render() {
         const platformOptions = this.itemizePlatformOptionsMemo(
             this.props.platforms,
             this.state.nativePlatforms,
         );
+        const dirty = this.isDirty();
+        const restartRequired = ConfigPage.computeRestartRequired(this.state);
 
         return (
             <div className="config-page simple-scroll">
                 <div className="config-page__content">
                     <h1 className="config-page__title">Config</h1>
                     <p className="config-page__subtitle">
-                        You must press &apos;Save &amp; Restart&apos; for some changes to take effect.
+                        Press &apos;Save&apos; to apply changes.
                     </p>
 
-                    {/* eXoDOS */}
+                    {/* Retro eXo Projects */}
                     <section className="cfg-section">
-                        <h2 className="cfg-section__header">eXoDOS</h2>
+                        <h2 className="cfg-section__header">Retro eXo Projects</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
-                                <span className="cfg-row__name">eXoDOS Location</span>
-                                <span className="cfg-row__desc">How to locate the eXoDOS folder.</span>
+                                <span className="cfg-row__name">Retro eXo Projects Location</span>
+                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
                             </div>
                             <div className="cfg-row__control">
                                 <select
@@ -74,8 +102,8 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         {!this.state.useEmbeddedExodosPath && (
                             <div className="cfg-row cfg-row--filepath">
                                 <div className="cfg-row__label">
-                                    <span className="cfg-row__name">eXoDOS Path</span>
-                                    <span className="cfg-row__desc">Path to the eXoDOS folder (can be relative).</span>
+                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
+                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
                                 </div>
                                 <div className="cfg-row__control cfg-row__control--wide">
                                     <ConfigExodosPathInput
@@ -282,9 +310,28 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                     </section>
 
                     {/* Footer */}
+                    {this.state.saveError && (
+                        <div className="cfg-note cfg-note--warning">
+                            Failed to save configuration: {this.state.saveError}
+                        </div>
+                    )}
+                    {restartRequired && (
+                        <div className="cfg-note cfg-note--warning">
+                            Some changes require an application restart to take effect.
+                        </div>
+                    )}
                     <div className="cfg-footer">
-                        <button className="simple-button cfg-save-btn" onClick={this.onSaveAndRestartClick}>
-                            Save and Restart
+                        <button
+                            className="simple-button cfg-save-btn"
+                            onClick={() => window.External.restart()}
+                            disabled={dirty || !restartRequired}
+                            style={{ visibility: restartRequired ? "visible" : "hidden" }}
+                            title={restartRequired && dirty ? "Save your pending changes first." : undefined}
+                        >
+                            Restart Now
+                        </button>
+                        <button className="simple-button cfg-save-btn" onClick={this.onSaveClick}>
+                            Save
                         </button>
                     </div>
                 </div>
@@ -377,8 +424,9 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         window.External.back.request(BackIn.UPDATE_CONFIG, { currentTheme: theme });
     };
 
-    onSaveAndRestartClick = (): void => {
-        const configData: IAppConfigData = {
+    onSaveClick = (): void => {
+        // `currentTheme` is intentionally omitted — `applyTheme` persists it inline on selection.
+        const configData: Omit<IAppConfigData, "currentTheme"> = {
             exodosPath: this.state.exodosPath,
             imageFolderPath: this.state.imageFolderPath,
             logoFolderPath: this.state.logoFolderPath,
@@ -391,7 +439,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             backPortMax: this.state.backPortMax,
             imagesPortMin: this.state.imagesPortMin,
             imagesPortMax: this.state.imagesPortMax,
-            currentTheme: this.state.currentTheme,
+            showDeveloperTab: this.state.showDeveloperTab,
             vlcPort: this.state.vlcPort,
             enableOnlineUpdate: this.state.enableOnlineUpdate,
             updateChannel: this.state.updateChannel,
@@ -402,9 +450,29 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         window.External.back
         .request(BackIn.UPDATE_CONFIG, configData)
         .then(() => {
-            window.External.restart();
+            window.External.config.data = {
+                ...window.External.config.data,
+                ...configData,
+                nativePlatforms: [...configData.nativePlatforms],
+            };
+            ipcRenderer.send(UpdaterIPC.UPDATE_CONFIG, {
+                enabled: configData.enableOnlineUpdate,
+                channel: configData.updateChannel,
+            });
+            this.setState({ saveError: undefined });
+        })
+        .catch((err) => {
+            this.setState({ saveError: err?.message ?? String(err) });
         });
     };
+
+    // Assumes IAppConfigData fields are primitives or string[]. Add deep-equal handling if nested objects are ever introduced.
+    private static isConfigValueEqual(a: unknown, b: unknown): boolean {
+        if (Array.isArray(a) && Array.isArray(b)) {
+            return a.length === b.length && a.every((v, i) => v === b[i]);
+        }
+        return a === b;
+    }
 }
 
 function UpdateVersionRow({ onCheckNow }: { onCheckNow: () => void }) {

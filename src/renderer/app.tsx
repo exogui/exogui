@@ -2,7 +2,7 @@ import { app, dialog } from "@electron/remote";
 import { BrowsePageLayout } from "@shared/BrowsePageLayout";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
-import { fixSlashes, getFileServerURL } from "@shared/Util";
+import { getFileServerURL } from "@shared/Util";
 import { BackIn, BackInit, BackOut } from "@shared/back/types";
 import { APP_TITLE } from "@shared/constants";
 import { ExodosBackendInfo, GamePlaylist, WindowIPC, UpdaterIPC } from "@shared/interfaces";
@@ -11,7 +11,6 @@ import { memoizeOne } from "@shared/memoize";
 import { updatePreferencesData } from "@shared/preferences/util";
 import { debounce } from "@shared/utils/debounce";
 import { ipcRenderer } from "electron";
-import * as path from "path";
 import * as React from "react";
 import { ConnectedProps, connect } from "react-redux";
 import { Paths } from "./Paths";
@@ -31,7 +30,7 @@ import {
     setPlaylistsLoaded,
     setExecLoaded,
 } from "./redux/loadingSlice";
-import { stopMusic, playMusic } from "./redux/searchSlice";
+import { stopMusic, setVlcState } from "./redux/searchSlice";
 import {
     showChecking,
     showNetworkError,
@@ -48,7 +47,6 @@ import { ExodosResources, loadExoResources } from "./util/exoResources";
 // so it will just fail silently. Code is left for future.
 
 const mapState = (state: RootState) => ({
-    searchState: state.searchState,
     totalGames: state.gamesState.totalGames,
     libraries: state.gamesState.libraries,
     loadingState: state.loadingState,
@@ -67,7 +65,7 @@ const mapDispatch = {
     showError,
     hideDialog,
     stopMusic,
-    playMusic,
+    setVlcState,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -192,7 +190,7 @@ class App extends React.Component<AppProps, AppState> {
             };
         })();
 
-        this.initializeAsync();
+        this.initializeAsync().catch((err) => console.error("initializeAsync failed:", err));
 
         // Listen for the window to move or resize (and update the preferences when it does)
         ipcRenderer.on(
@@ -231,6 +229,14 @@ class App extends React.Component<AppProps, AppState> {
         });
 
         this.props.initializeLoading();
+        this.props.setVlcState(window.External.vlcState);
+
+        window.External.back.register(
+            BackOut.VLC_STATE_CHANGED,
+            (event, vlcState) => {
+                this.props.setVlcState(vlcState);
+            }
+        );
 
         window.External.back.register(
             BackOut.INIT_EVENT,
@@ -392,16 +398,14 @@ class App extends React.Component<AppProps, AppState> {
         const showContent = allLoaded || (hasError && this.state.errorDismissed);
         const libraryPath =
             getBrowseSubPath(this.props.location.pathname) ??
-            Object.keys(this.props.searchState.views)?.[0] ??
+            this.props.libraries[0] ??
             "";
-        const view = this.props.searchState.views[libraryPath];
         const playlists = this.orderAndFilterPlaylistsMemo(
             this.state.playlists
         );
 
         // Props to set to the router
         const routerProps: AppRouterProps = {
-            gamesTotal: view ? view.games.length : 0,
             playlists: playlists,
             appPaths: this.state.appPaths,
             playlistIconCache: this.state.playlistIconCache,
@@ -474,22 +478,13 @@ class App extends React.Component<AppProps, AppState> {
                                             libraryPath &&
                                             getLibraryItemTitle(libraryPath)
                                         }
-                                        currentCount={view ? view.games.length : 0}
+                                        libraryPath={libraryPath}
                                         onScaleSliderChange={
                                             this.onScaleSliderChange
                                         }
                                         scaleSliderValue={this.state.gameScale}
                                         onLayoutChange={this.onLayoutSelectorChange}
                                         layout={this.state.gameLayout}
-                                        hasMusicPath={!!view?.selectedGame?.musicPath}
-                                        isMusicPlaying={this.props.searchState.isMusicPlaying}
-                                        onPlayMusic={() => {
-                                            const musicPath = view?.selectedGame?.musicPath;
-                                            if (musicPath) {
-                                                this.props.playMusic(path.join(window.External.config.fullExodosPath, fixSlashes(musicPath)));
-                                            }
-                                        }}
-                                        onStopMusic={() => this.props.stopMusic()}
                                     />
                                 )}
                             </>
@@ -587,7 +582,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     orderAndFilterPlaylistsMemo = memoizeOne((playlists: GamePlaylist[]) => {
-        return playlists.sort((a, b) => {
+        return [...playlists].sort((a, b) => {
             if (a.title < b.title) {
                 return -1;
             }

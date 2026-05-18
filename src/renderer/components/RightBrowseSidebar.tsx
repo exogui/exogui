@@ -1,5 +1,5 @@
 import { shell } from "@electron/remote";
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
+import { faFolder, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { englishTranslation } from "@renderer/lang/en";
 import { loadDynamicAddAppsForGame } from "@renderer/util/addApps";
@@ -35,13 +35,16 @@ type OwnProps = {
     onGameLaunchSetup: (gameId: string) => void;
     /** Launch add app */
     onAddAppLaunch: (addApp: IAdditionalApplicationInfo) => void;
+    /** Toggle favorite state for the current game */
+    onFavoriteToggle: (game: IGameInfo) => void;
 };
 
 export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
 
 type RightBrowseSidebarState = {
     /** If a preview of the current game's selected media. */
-    previewMedia?: FormattedGameMedia;
+    previewMediaList?: FormattedGameMedia[];
+    previewMediaIndex?: number;
     existingAddApps?: IAdditionalApplicationInfo[];
     dynamicAddApps?: IAdditionalApplicationInfo[];
 };
@@ -177,6 +180,13 @@ export class RightBrowseSidebar extends React.Component<
                                                         )
                                                     }
                                                 />
+                                            </i>
+                                            <i
+                                                className={`simple-button browse-right-sidebar__favorite-btn${game.favorite ? " browse-right-sidebar__favorite-btn--active" : ""}`}
+                                                title={game.favorite ? "Remove from Favorites" : "Add to Favorites"}
+                                                onClick={() => this.props.onFavoriteToggle(game)}
+                                            >
+                                                <FontAwesomeIcon icon={faHeart} />
                                             </i>
                                         </>
                                     ) : null}
@@ -336,9 +346,10 @@ export class RightBrowseSidebar extends React.Component<
                         </div>
                     )}
                     {/* -- Media Preview -- */}
-                    {this.state.previewMedia ? (
+                    {this.state.previewMediaList && this.state.previewMediaIndex !== undefined ? (
                         <MediaPreview
-                            media={this.state.previewMedia}
+                            mediaList={this.state.previewMediaList}
+                            initialIndex={this.state.previewMediaIndex}
                             onCancel={this.onPreviewMediaClick}
                         />
                     ) : undefined}
@@ -389,11 +400,11 @@ export class RightBrowseSidebar extends React.Component<
         }
     };
 
-    onPreviewMedia = (media: FormattedGameMedia): void => {
-        this.setState({ previewMedia: media });
+    onPreviewMedia = (mediaList: FormattedGameMedia[], index: number): void => {
+        this.setState({ previewMediaList: mediaList, previewMediaIndex: index });
     };
 
     onPreviewMediaClick = (): void => {
-        this.setState({ previewMedia: undefined });
+        this.setState({ previewMediaList: undefined, previewMediaIndex: undefined });
     };
 }

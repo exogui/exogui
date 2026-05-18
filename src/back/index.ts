@@ -44,6 +44,7 @@ const state: BackState = {
     secret: createErrorProxy("secret"),
     preferences: createErrorProxy("preferences"),
     config: createErrorProxy("config"),
+    diskExodosPath: createErrorProxy("diskExodosPath"),
     configFolder: createErrorProxy("configFolder"),
     exePath: createErrorProxy("exePath"),
     basePath: createErrorProxy("basePath"),
@@ -121,6 +122,7 @@ async function initialize(message: any, _: any): Promise<void> {
     await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
+    state.diskExodosPath = state.config.exodosPath;
     const exodosPath = state.config.useEmbeddedExodosPath
         ? getEmbeddedExodosPath()
         : state.config.exodosPath;
@@ -169,7 +171,7 @@ async function initialize(message: any, _: any): Promise<void> {
         state.initEmitter.emit(BackInit.EXEC);
     });
 
-    state.fileServer = new FileServer(state.config, log);
+    state.fileServer = new FileServer(state.config, log, path.join(state.configFolder, "cache"));
     await state.fileServer.start();
 
     registerRequestCallbacks(state);
@@ -199,7 +201,7 @@ async function initialize(message: any, _: any): Promise<void> {
             }
             case "darwin": {
                 state.vlcPlayer = await VlcPlayer.create(
-                    "/Applications/VLC.app/Contents/MacOS/VLC",
+                    "VLC",
                     ["--no-video"],
                     state.config.vlcPort,
                     state.preferences.gameMusicVolume,
@@ -217,6 +219,13 @@ async function initialize(message: any, _: any): Promise<void> {
             content: `${err}`
         });
         console.log(`Error starting VLC server: ${err}`);
+    }
+
+    if (state.vlcPlayer) {
+        state.vlcPlayer.onStateChange = (vlcState) => {
+            state.socketServer.broadcast(BackOut.VLC_STATE_CHANGED, vlcState);
+        };
+        state.vlcRetry = startVlcConnectLoop(state.vlcPlayer);
     }
 
     send(state.socketServer.port);
@@ -256,7 +265,7 @@ async function initializePlaylistManager() {
         });
     };
 
-    state.playlistManager.init({
+    await state.playlistManager.init({
         playlistFolder,
         log,
         onPlaylistAddOrUpdate,
@@ -264,6 +273,40 @@ async function initializePlaylistManager() {
 
     state.init[BackInit.PLAYLISTS] = true;
     state.initEmitter.emit(BackInit.PLAYLISTS);
+}
+
+function startVlcConnectLoop(player: VlcPlayer): () => void {
+    const MAX_ATTEMPTS = 15;
+    let loopRunning = false;
+
+    const runLoop = async () => {
+        if (loopRunning) return;
+        loopRunning = true;
+        let attempts = 0;
+        while (player.isProcessAlive() && player.vlcState !== "connected" && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            try {
+                await player.connect();
+                break;
+            } catch {
+                await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+        loopRunning = false;
+    };
+
+    // Restart the loop each time VLC disconnects mid-session.
+    const prevOnStateChange = player.onStateChange;
+    player.onStateChange = (vlcState) => {
+        prevOnStateChange?.(vlcState);
+        if (vlcState === "failed") {
+            runLoop();
+        }
+    };
+
+    runLoop();
+
+    return runLoop;
 }
 
 /** Exit the process cleanly. */
@@ -274,36 +317,41 @@ export function exit() {
         // Broadcast quit signal to all connected clients (including Main process)
         state.socketServer.broadcast(BackOut.QUIT);
 
-        Promise.all([
-            // Close WebSocket server
-            isErrorProxy(state.server)
-                ? undefined
-                : new Promise<void>((resolve) =>
-                    state.server.close((error) => {
-                        if (error) {
-                            console.warn(
-                                "An error occurred whie closing the WebSocket server.",
-                                error
-                            );
-                        }
-                        resolve();
-                    })
-                ),
-            // Close file server
-            new Promise<void>((resolve) =>
-                state.fileServer?.server.close((error) => {
+        const forceExitTimer = setTimeout(() => {
+            console.warn("exit() timed out after 5s — forcing process.exit()");
+            process.exit(1);
+        }, 5000);
+        forceExitTimer.unref();
+
+        const wsServer = state.socketServer.server;
+        const wsPromise = wsServer
+            ? new Promise<void>((resolve) =>
+                wsServer.close((error) => {
                     if (error) {
-                        console.warn(
-                            "An error occurred whie closing the file server.",
-                            error
-                        );
+                        console.warn("An error occurred whie closing the WebSocket server.", error);
                     }
+                    console.log("exit: WebSocket server closed");
                     resolve();
                 })
-            ),
-            // Quit VLC player
-            state.vlcPlayer?.quit(),
-        ]).then(() => {
+            )
+            : Promise.resolve();
+        const fileServerPromise = state.fileServer
+            ? new Promise<void>((resolve) =>
+                state.fileServer!.server.close((error) => {
+                    if (error) {
+                        console.warn("An error occurred whie closing the file server.", error);
+                    }
+                    console.log("exit: file server closed");
+                    resolve();
+                })
+            )
+            : Promise.resolve();
+        const vlcPromise = state.vlcPlayer?.quit() ?? Promise.resolve();
+
+        console.log("exit: waiting for servers to close...");
+        Promise.all([wsPromise, fileServerPromise, vlcPromise]).then(() => {
+            console.log("exit: all closed, calling process.exit()");
+            clearTimeout(forceExitTimer);
             process.exit();
         });
     }

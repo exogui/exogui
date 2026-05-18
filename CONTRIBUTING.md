@@ -4,7 +4,7 @@ Thanks for your interest in contributing! Here's what you need to know.
 
 ## Community
 
-The primary place for discussion, task coordination, and bug tracking is the [exogui Discord](https://discord.gg/srHzx9HS). If you have questions, want to discuss a feature idea before building it, or need help getting your dev environment set up — that's the place.
+The primary place for discussion, task coordination, and bug tracking is the [exogui Discord](https://discord.gg/yMcZnyUn). If you have questions, want to discuss a feature idea before building it, or need help getting your dev environment set up — that's the place.
 
 GitHub Issues are available as a secondary channel, mainly for users who want to report bugs but prefer not to use Discord.
 

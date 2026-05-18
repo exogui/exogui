@@ -60,7 +60,7 @@ gulp.task("build-back", (done) => {
 gulp.task("build-renderer", async (done) => {
     const config = await loadConfig();
     const rsbuild = await createRsbuild({
-      rsbuildConfig: config.content
+        rsbuildConfig: config.content
     });
     await rsbuild.build();
     done();
@@ -107,6 +107,13 @@ gulp.task("pack", (done) => {
                 win: {
                     icon: "./icons/icon.ico",
                     target: ["nsis", "zip"],
+                },
+                nsis: {
+                    oneClick: false,
+                    allowToChangeInstallationDirectory: false,
+                    perMachine: false,
+                    deleteAppDataOnUninstall: false,
+                    include: "./installer/win/exo-installer.nsh",
                 },
                 mac: {
                     icon: "./icons/icon.icns",
@@ -170,7 +177,7 @@ function createBuildTargets(os, arch) {
                 archFromString(arch),
             );
         case "darwin":
-            return Platform.MAC.createTarget("dmg", archFromString(arch));
+            return Platform.MAC.createTarget(["dmg", "zip"], archFromString(arch));
         case "linux":
             return Platform.LINUX.createTarget(
                 ["AppImage", "tar.gz", "dir"],

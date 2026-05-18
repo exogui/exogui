@@ -5,8 +5,8 @@ import {
     parseAdvancedFilter,
     parseUserInput,
 } from "@renderer/util/search";
-import { deepCopy, fixSlashes } from "@shared/Util";
-import { BackIn } from "@shared/back/types";
+import { fixSlashes } from "@shared/Util";
+import { BackIn, VlcState } from "@shared/back/types";
 import { getOrderFunction } from "@shared/game/GameFilter";
 import { IGameInfo } from "@shared/game/interfaces";
 import { GameFilter, GamePlaylist } from "@shared/interfaces";
@@ -28,7 +28,7 @@ export type ResultsView = {
 
 export type AdvancedFilter = {
     installed?: boolean;
-    recommended?: boolean;
+    favorite?: boolean;
     series: string[];
     developer: string[];
     publisher: string[];
@@ -42,6 +42,7 @@ export type AdvancedFilter = {
 type SearchState = {
     views: Record<string, ResultsView>;
     isMusicPlaying: boolean;
+    vlcState: VlcState;
 };
 
 export type SearchSetTextAction = {
@@ -57,6 +58,7 @@ export type SearchSetViewGamesAction = {
 export type SearchSetGameAction = {
     view: string;
     game?: IGameInfo;
+    userInitiated?: boolean;
 };
 
 export type SearchSetPlaylistAction = {
@@ -91,7 +93,44 @@ export type SearchViewAction = {
 const initialState: SearchState = {
     views: {},
     isMusicPlaying: false,
+    vlcState: "idle",
 };
+
+const MUSIC_PLAY_DELAY_MS = 500;
+let musicPlayTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPendingMusic(): void {
+    if (musicPlayTimer !== null) {
+        clearTimeout(musicPlayTimer);
+        musicPlayTimer = null;
+    }
+}
+
+function playGameMusic(musicPath: string | undefined, isPlaying: boolean): boolean {
+    const autoplay = window.External.preferences.data.gameMusicPlay;
+    cancelPendingMusic();
+    if (musicPath && autoplay) {
+        const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
+        musicPlayTimer = setTimeout(() => {
+            musicPlayTimer = null;
+            try {
+                window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
+            } catch (err) {
+                console.error("Failed to send PLAY_AUDIO_FILE:", err);
+            }
+        }, MUSIC_PLAY_DELAY_MS);
+        return true;
+    } else {
+        if (isPlaying) {
+            try {
+                window.External.back.send(BackIn.STOP_MUSIC);
+            } catch (err) {
+                console.error("Failed to send STOP_MUSIC:", err);
+            }
+        }
+        return false;
+    }
+}
 
 const searchSlice = createSlice({
     name: "search",
@@ -106,7 +145,7 @@ const searchSlice = createSlice({
             for (const view of payload) {
                 if (!state.views[view]) {
                     const installedPref = prefs.browsePageSearchInstalled;
-                    const recommendedPref = prefs.browsePageSearchRecommended;
+                    const favoritePref = prefs.browsePageSearchFavorite;
                     const newView: ResultsView = {
                         games: [],
                         text: "",
@@ -114,7 +153,7 @@ const searchSlice = createSlice({
                         orderReverse: prefs.browsePageSearchOrderReverse ?? "ascending",
                         advancedFilter: {
                             installed: installedPref === null ? undefined : installedPref,
-                            recommended: recommendedPref === null ? undefined : recommendedPref,
+                            favorite: favoritePref === null ? undefined : favoritePref,
                             series: [],
                             developer: [],
                             publisher: [],
@@ -167,10 +206,7 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                const playlist = payload.playlist
-                    ? deepCopy(payload.playlist)
-                    : undefined;
-                view.selectedPlaylist = playlist;
+                view.selectedPlaylist = payload.playlist ?? undefined;
                 view.filter = createFilter(view);
             }
         },
@@ -180,30 +216,31 @@ const searchSlice = createSlice({
         ) {
             const view = state.views[payload.view];
             if (view) {
-                view.selectedGame = payload.game
-                    ? deepCopy(payload.game)
-                    : undefined;
-                const musicPath = view.selectedGame?.musicPath;
-                const autoplay = window.External.preferences.data.gameMusicPlay;
-                if (musicPath && autoplay) {
-                    // Play directly without stopping first — VLC keeps its audio pipeline
-                    // alive via add+next, avoiding the audio device reinit stutter
-                    const fullPath = path.join(window.External.config.fullExodosPath, fixSlashes(musicPath));
-                    window.External.back.send(BackIn.PLAY_AUDIO_FILE, fullPath);
-                    state.isMusicPlaying = true;
-                } else {
-                    window.External.back.send(BackIn.STOP_MUSIC);
-                    state.isMusicPlaying = false;
+                view.selectedGame = payload.game ?? undefined;
+                if (payload.userInitiated !== false) {
+                    state.isMusicPlaying = playGameMusic(view.selectedGame?.musicPath, state.isMusicPlaying);
                 }
             }
         },
         stopMusic(state: SearchState) {
-            window.External.back.send(BackIn.STOP_MUSIC);
+            cancelPendingMusic();
+            try {
+                window.External.back.send(BackIn.STOP_MUSIC);
+            } catch (err) {
+                console.error("Failed to send STOP_MUSIC:", err);
+            }
             state.isMusicPlaying = false;
         },
         playMusic(state: SearchState, { payload }: PayloadAction<string>) {
-            window.External.back.send(BackIn.PLAY_AUDIO_FILE, payload);
-            state.isMusicPlaying = true;
+            try {
+                window.External.back.send(BackIn.PLAY_AUDIO_FILE, payload);
+                state.isMusicPlaying = true;
+            } catch (err) {
+                console.error("Failed to send PLAY_AUDIO_FILE:", err);
+            }
+        },
+        setVlcState(state: SearchState, { payload }: PayloadAction<VlcState>) {
+            state.vlcState = payload;
         },
         forceSearch(
             state: SearchState,
@@ -293,5 +330,6 @@ export const {
     setAdvancedFilter,
     stopMusic,
     playMusic,
+    setVlcState,
 } = searchSlice.actions;
 export default searchSlice.reducer;

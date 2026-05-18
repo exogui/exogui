@@ -53,7 +53,7 @@ export class ConfigExodosPathInput extends React.Component<ConfigExodosPathInput
     onBrowseClick = (): void => {
         // Synchronously show a "open dialog" (this makes the main window "frozen" while this is open)
         const filePaths = window.External.showOpenDialogSync({
-            title: "Select the eXoDOS root directory",
+            title: "Select the Retro eXo Projects root directory",
             properties: ["openDirectory"],
         });
         if (filePaths) {

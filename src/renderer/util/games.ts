@@ -5,8 +5,8 @@ import * as fs from "fs";
 import store from "@renderer/redux/store";
 import { updateGame } from "@renderer/redux/gamesSlice";
 import { IGameCollection, IGameInfo } from "@shared/game/interfaces";
-import { fixSlashes, removeLowestDirectory } from "@shared/Util";
-import { updateInstalledField } from "@renderer/file/PlatformFile";
+import { fixSlashes, removeFileExtension, removeLowestDirectory } from "@shared/Util";
+import { updateFavoriteField, updateInstalledField } from "@renderer/file/PlatformFile";
 
 export function createGamesWatcher(platformCollection: IGameCollection) {
     const firstValidGame = platformCollection.games.find((g) => !!g.rootFolder);
@@ -27,9 +27,7 @@ export function createGamesWatcher(platformCollection: IGameCollection) {
 export function getGameByTitle(title: string) {
     const state = store.getState().gamesState;
     const game = state.games.find((g) => {
-        const gameTitle = path
-        .basename(fixSlashes(g.applicationPath))
-        .split(".")[0];
+        const gameTitle = removeFileExtension(path.basename(fixSlashes(g.applicationPath)));
         return gameTitle === title;
     });
     return game;
@@ -102,6 +100,17 @@ function createWatcher(folder: string): chokidar.FSWatcher {
     .on("error", (error) => console.log(`Watcher error: ${error}`));
 
     return watcher;
+}
+
+export function toggleGameFavorite(game: IGameInfo) {
+    const newValue = !game.favorite;
+    store.dispatch(updateGame({ game: { ...game, favorite: newValue } }));
+    const platformFilePath = path.join(
+        window.External.config.fullExodosPath,
+        window.External.config.data.platformFolderPath,
+        `${game.library}.xml`
+    );
+    updateFavoriteField(platformFilePath, game.id, newValue);
 }
 
 export function openGameConfigDirectory(game: IGameInfo) {

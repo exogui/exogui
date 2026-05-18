@@ -94,6 +94,7 @@ jobs:
             script: release:mac-universal
             artifact-pattern: |
               dist/*.dmg
+              dist/*.zip
               dist/latest-mac.yml
 
     steps:
@@ -153,7 +154,7 @@ jobs:
       - name: Rename artifacts to legacy
         shell: bash
         run: |
-          for f in dist/exogui-*.dmg; do
+          for f in dist/exogui-*.{dmg,zip}; do
             mv "$f" "${f/exogui-/exogui-legacy-}"
           done
 
@@ -164,7 +165,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Legacy-artifacts
-          path: dist/*-legacy-*.dmg
+          path: |
+            dist/*-legacy-*.dmg
+            dist/*-legacy-*.zip
           if-no-files-found: warn
 
   release:

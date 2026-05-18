@@ -40,7 +40,7 @@ const configDataDefaults: IConfigDataDefaults = {
     // Windows
     win32: Object.freeze(
         overwriteConfigData(deepCopy(configDataDefaultBase), {
-            useCustomTitlebar: true,
+            useCustomTitlebar: false,
         })
     ),
     // Linux
@@ -127,3 +127,19 @@ function strArray(array: any): string[] {
         ? (Array.prototype.map.call(array, (v) => str(v)) as string[])
         : [];
 }
+
+/**
+ * Config keys that require an application restart for the change to take effect.
+ * Other keys are applied live (theme, native platforms, online-update settings).
+ */
+export const RESTART_REQUIRED_CONFIG_KEYS: ReadonlyArray<keyof IAppConfigData> = [
+    "useEmbeddedExodosPath",
+    "exodosPath",
+    "useCustomTitlebar",
+    "useSortTitleForOrdering",
+    "backPortMin",
+    "backPortMax",
+    "imagesPortMin",
+    "imagesPortMax",
+    "vlcPort",
+];

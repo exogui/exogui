@@ -1,16 +1,33 @@
 import { ChildProcess, spawn } from "child_process";
 import * as net from "net";
 import { pathToFileURL } from "url";
+import { VlcState } from "@shared/back/types";
+
+const COMMAND_TIMEOUT_MS = 15000;
+const VERBOSE = false;
+
+type QueuedCommand = {
+    command: string;
+    resolve: (value: string) => void;
+    reject: (reason?: any) => void;
+};
+
+type ActiveCommand = QueuedCommand & {
+    timer: ReturnType<typeof setTimeout>;
+};
 
 export class VlcPlayer {
     server: ChildProcess | null = null;
     filepath: string = "";
+    onStateChange?: (state: VlcState) => void;
+    private currentState: VlcState = "idle";
     private socket: net.Socket | null = null;
-    private commandQueue: { command: string; resolve: (value: string) => void; reject: (reason?: any) => void }[] = [];
-    private isProcessingQueue: boolean = false;
     private isSocketConnected: boolean = false;
+    private commandQueue: QueuedCommand[] = [];
+    private activeCommand: ActiveCommand | null = null;
     private loopEnabled: boolean = false;
     private ownsProcess: boolean = false;
+    private connectPromise: Promise<void> | null = null;
 
     private constructor(
         private vlcPath: string,
@@ -18,6 +35,10 @@ export class VlcPlayer {
         private port: number,
         private initialVol: number,
     ) {}
+
+    get vlcState(): VlcState {
+        return this.currentState;
+    }
 
     static async create(vlcPath: string, args: string[], port: number, initialVol: number): Promise<VlcPlayer> {
         const player = new VlcPlayer(vlcPath, args, port, initialVol);
@@ -28,7 +49,7 @@ export class VlcPlayer {
             return player;
         }
 
-        const fullArgs = [...args, "-I", "rc", "--rc-host", `127.0.0.1:${port}`];
+        const fullArgs = [...args, "-I", "rc", "--rc-host", `127.0.0.1:${port}`, "--no-plugins-cache"];
         console.log(`VLC: starting process "${vlcPath}" with args: ${fullArgs.join(" ")}`);
         player.ownsProcess = true;
         player.server = spawn(vlcPath, fullArgs, { windowsHide: true });
@@ -73,40 +94,94 @@ export class VlcPlayer {
     private attachSocket(socket: net.Socket): void {
         this.socket = socket;
         this.isSocketConnected = true;
-        socket.on("data", (d: Buffer) => console.log(`VLC rc: ${d.toString().trimEnd()}`));
-        socket.on("error", (err) => {
-            console.log(`VLC: RC socket error — ${err}`);
-            this.isSocketConnected = false;
-        });
-        socket.on("close", () => {
-            console.log("VLC: RC socket closed");
-            this.isSocketConnected = false;
-        });
+
+        socket.on("data", this.onSocketData);
+        socket.on("error", this.onSocketError);
+        socket.on("close", this.onSocketClose);
+
         const vlcVol = Math.floor(Math.max(0, Math.min(1, this.initialVol)) * 256);
         socket.write(`volume ${vlcVol}\nrepeat ${this.loopEnabled ? "on" : "off"}\n`);
+
+        this.setState("connected");
     }
 
-    private async connectSocket(): Promise<void> {
-        if (this.socket && this.isSocketConnected) {
-            return;
+    private detachSocket(): net.Socket | null {
+        const sock = this.socket;
+        if (sock) {
+            sock.off("data", this.onSocketData);
+            sock.off("error", this.onSocketError);
+            sock.off("close", this.onSocketClose);
+            this.socket = null;
         }
-        if (!this.server) {
+        return sock;
+    }
+
+    private onSocketData = (data: Buffer): void => {
+        if (VERBOSE) console.log(`VLC rc: ${data.toString().trimEnd()}`);
+        if (!this.activeCommand) return;
+        const cmd = this.activeCommand;
+        this.activeCommand = null;
+        clearTimeout(cmd.timer);
+        cmd.resolve(data.toString());
+        this.runNext();
+    };
+
+    private onSocketError = (err: Error): void => {
+        console.log(`VLC: RC socket error — ${err}`);
+        this.failAll(err);
+    };
+
+    private onSocketClose = (): void => {
+        console.log("VLC: RC socket closed");
+        this.failAll(new Error("VLC socket closed"));
+    };
+
+    private setState(state: VlcState): void {
+        if (this.currentState === state) return;
+        this.currentState = state;
+        this.onStateChange?.(state);
+    }
+
+    private failAll(err: any): void {
+        this.isSocketConnected = false;
+        this.setState("failed");
+        const detached = this.detachSocket();
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            const cmd = this.activeCommand;
+            this.activeCommand = null;
+            cmd.reject(err);
+        }
+        const queue = this.commandQueue;
+        this.commandQueue = [];
+        for (const item of queue) {
+            item.reject(err);
+        }
+        if (detached && !detached.destroyed) {
+            detached.destroy();
+        }
+    }
+
+    private runNext(): void {
+        if (this.activeCommand || this.commandQueue.length === 0) return;
+
+        const next = this.commandQueue.shift()!;
+        if (!this.socket || !this.isSocketConnected) {
+            next.reject(new Error("VLC not connected"));
+            this.runNext();
             return;
         }
 
-        console.log(`VLC: connecting to RC socket on port ${this.port}`);
-        return new Promise((resolve, reject) => {
-            const socket = net.connect(this.port, "127.0.0.1", () => {
-                console.log("VLC: RC socket connected");
-                this.attachSocket(socket);
-                resolve();
-            });
-
-            socket.on("error", (err) => {
-                console.log(`VLC: RC socket error — ${err}`);
-                reject(err);
-            });
-        });
+        const active: ActiveCommand = {
+            ...next,
+            timer: setTimeout(() => {
+                if (this.activeCommand !== active) return;
+                console.log(`VLC: command timed out — "${active.command}"`);
+                this.failAll(new Error(`VLC command timeout: ${active.command}`));
+            }, COMMAND_TIMEOUT_MS),
+        };
+        this.activeCommand = active;
+        this.socket.write(next.command + "\n");
     }
 
     private async sendCommand(command: string): Promise<string> {
@@ -117,37 +192,54 @@ export class VlcPlayer {
 
         return new Promise((resolve, reject) => {
             this.commandQueue.push({ command, resolve, reject });
-
-            if (!this.isProcessingQueue) {
-                this.processQueue();
-            }
+            this.runNext();
         });
     }
 
-    private processQueue() {
-        if (this.commandQueue.length === 0) {
-            this.isProcessingQueue = false;
-            return;
+    private connectSocket(): Promise<void> {
+        if (this.isSocketConnected) {
+            return Promise.resolve();
+        }
+        if (!this.server) {
+            return Promise.resolve();
+        }
+        if (this.connectPromise) {
+            return this.connectPromise;
         }
 
-        this.isProcessingQueue = true;
-        const { command, resolve, reject } = this.commandQueue.shift()!;
+        console.log(`VLC: connecting to RC socket on port ${this.port}`);
+        this.setState("connecting");
 
-        this.socket?.write(command + "\n");
+        this.connectPromise = new Promise<void>((resolve, reject) => {
+            const socket = net.connect(this.port, "127.0.0.1");
 
-        const onData = (data: Buffer) => {
-            resolve(data.toString());
-            this.socket?.removeListener("data", onData);
-            this.processQueue();
-        };
+            socket.once("connect", () => {
+                console.log("VLC: RC socket connected");
+                this.attachSocket(socket);
+                resolve();
+            });
 
-        this.socket?.on("data", onData);
-
-        this.socket?.on("error", (err) => {
-            reject(err);
-            this.socket?.removeListener("data", onData);
-            this.processQueue();
+            socket.once("error", (err) => {
+                console.log(`VLC: RC socket error — ${err}`);
+                socket.destroy();
+                reject(err);
+            });
+        }).catch((err) => {
+            this.setState("failed");
+            throw err;
+        }).finally(() => {
+            this.connectPromise = null;
         });
+
+        return this.connectPromise;
+    }
+
+    isProcessAlive(): boolean {
+        return !!this.server && !this.server.killed && this.server.exitCode === null;
+    }
+
+    connect(): Promise<void> {
+        return this.connectSocket();
     }
 
     private async _play() {
@@ -198,18 +290,41 @@ export class VlcPlayer {
     }
 
     async close(): Promise<void> {
-        if (this.socket) {
-            this.socket.end();
-            this.socket = null;
-            this.isSocketConnected = false;
+        const err = new Error("VLC closed by client");
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            this.activeCommand.reject(err);
+            this.activeCommand = null;
+        }
+        for (const item of this.commandQueue) item.reject(err);
+        this.commandQueue = [];
+        const sock = this.detachSocket();
+        this.isSocketConnected = false;
+        if (sock) {
+            sock.end();
         }
     }
 
     async quit(): Promise<void> {
         console.log("VLC: quitting");
-        if (this.ownsProcess && this.socket && this.isSocketConnected) {
-            this.socket.write("shutdown\n");
+
+        // Abort any in-flight stop/play chain so our final command goes in cleanly.
+        if (this.activeCommand) {
+            clearTimeout(this.activeCommand.timer);
+            this.activeCommand.reject(new Error("VLC quit"));
+            this.activeCommand = null;
         }
+        this.commandQueue = [];
+
+        if (this.socket && this.isSocketConnected) {
+            if (this.ownsProcess) {
+                await this.sendCommand("shutdown").catch(() => {});
+            } else {
+                // Attached to an existing VLC: don't shut it down, just stop our music.
+                await this.stop().catch(() => {});
+            }
+        }
+
         await this.close();
         if (this.ownsProcess && this.server && !this.server.killed) {
             this.server.kill();

@@ -144,7 +144,7 @@ describe("getResourcesPath", () => {
     });
 
     describe("macOS production", () => {
-        it("should return parent of .app bundle for macOS", () => {
+        it("should return Contents/ inside .app bundle for macOS", () => {
             Object.defineProperty(process, "platform", { value: "darwin" });
             process.cwd = jest.fn(() => "/");
 
@@ -153,13 +153,11 @@ describe("getResourcesPath", () => {
                 "/Applications/exogui.app/Contents/Resources/app.asar"
             );
 
-            // Should go 4 levels up from exe:
+            // Should go 2 levels up from exe:
             // /Applications/exogui.app/Contents/MacOS/exogui
             // -> /Applications/exogui.app/Contents/MacOS
             // -> /Applications/exogui.app/Contents
-            // -> /Applications/exogui.app
-            // -> /Applications
-            expect(getResourcesPath(app, false)).toBe("/Applications");
+            expect(getResourcesPath(app, false)).toBe("/Applications/exogui.app/Contents");
         });
 
         it("should return correct path for macOS in user Applications folder", () => {
@@ -171,7 +169,7 @@ describe("getResourcesPath", () => {
                 "/Users/john/Applications/exogui.app/Contents/Resources/app.asar"
             );
 
-            expect(getResourcesPath(app, false)).toBe("/Users/john/Applications");
+            expect(getResourcesPath(app, false)).toBe("/Users/john/Applications/exogui.app/Contents");
         });
     });
 

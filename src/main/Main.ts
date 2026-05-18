@@ -29,6 +29,11 @@ import {
 import * as path from "path";
 import * as WebSocket from "ws";
 import { OnlineUpdater } from "./OnlineUpdater";
+import {
+    attachWindowDiagnostics,
+    initRendererDiagnostics,
+    shutdownRendererDiagnostics,
+} from "./RendererDiagnostics";
 import { Init } from "./types";
 import * as Util from "./Util";
 
@@ -40,7 +45,6 @@ type MainState = {
     /** Version of the launcher (timestamp of when it was built). Negative value if not found or not yet loaded. */
     _version: number;
     preferences?: IAppPreferencesData;
-    config?: IAppConfigData;
     socket: SocketClient<WebSocket>;
     backProc?: ChildProcess;
     _sentLocaleCode: boolean;
@@ -53,6 +57,11 @@ type MainState = {
 };
 
 export function main(init: Init): void {
+    const diagnosticsEnabled = !!init.args.diagnostics;
+    /** Startup snapshot of the backend config. Not kept in sync after startup —
+     *  read only by `createMainWindow` (initial + macOS dock-activate) and the
+     *  `OnlineUpdater` constructor, both effectively startup-time. */
+    let startupConfig: IAppConfigData | undefined;
     const state: MainState = {
         window: undefined,
         _installed: undefined,
@@ -61,7 +70,6 @@ export function main(init: Init): void {
         /** Version of the launcher (timestamp of when it was built). Negative value if not found or not yet loaded. */
         _version: -2,
         preferences: undefined,
-        config: undefined,
         socket: new SocketClient(WebSocket),
         backProc: undefined,
         _sentLocaleCode: false,
@@ -106,6 +114,10 @@ export function main(init: Init): void {
         state._installed = false;
         state.mainFolderPath = Util.getMainFolderPath();
         console.log("Main folder: " + state.mainFolderPath);
+
+        if (diagnosticsEnabled) {
+            initRendererDiagnostics(state.mainFolderPath);
+        }
 
         // Start back process
         if (!init.args["connect-remote"]) {
@@ -170,15 +182,15 @@ export function main(init: Init): void {
 
             const mainData = await state.socket.request(BackIn.GET_MAIN_INIT_DATA);
             state.preferences = mainData.preferences;
-            state.config = mainData.config;
+            startupConfig = mainData.config;
 
             // Initialize online updater
             state.onlineUpdater = new OnlineUpdater({
-                enabled: state.config.enableOnlineUpdate,
+                enabled: startupConfig.enableOnlineUpdate,
                 checkOnStartup: true,
                 autoDownload: false,
                 autoInstallOnQuit: false,
-                channel: state.config.updateChannel,
+                channel: startupConfig.updateChannel,
             });
 
             app.whenReady().then(() => {
@@ -186,7 +198,7 @@ export function main(init: Init): void {
                 app.setName("exogui");
 
                 state.socket.send(BackIn.SET_LOCALE, app.getLocale().toLowerCase());
-                const window = createMainWindow();
+                const window = createMainWindow(startupConfig!);
                 state.window = window;
 
                 // Set window reference for online updater
@@ -212,6 +224,13 @@ export function main(init: Init): void {
 
                     ipcMain.on(UpdaterIPC.CHECK_FOR_UPDATES, async () => {
                         await state.onlineUpdater?.checkForUpdates();
+                    });
+
+                    ipcMain.on(UpdaterIPC.UPDATE_CONFIG, (event, data: { enabled?: unknown; channel?: unknown } | undefined) => {
+                        state.onlineUpdater?.updateConfig({
+                            enabled: !!data?.enabled,
+                            channel: data?.channel === "beta" ? "beta" : "stable",
+                        });
                     });
 
                     // Test-only handlers for DeveloperPage
@@ -275,10 +294,22 @@ export function main(init: Init): void {
             state.onlineUpdater.cleanup();
         }
 
+        if (diagnosticsEnabled) {
+            shutdownRendererDiagnostics();
+        }
+
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
             state.socket.send(BackIn.QUIT);
             event.preventDefault();
+            // Backend may die before its BackOut.QUIT message reaches us (race on socket close).
+            // Force quit after a grace period so the main process never hangs.
+            setTimeout(() => {
+                if (!state.isQuitting) {
+                    state.isQuitting = true;
+                    app.quit();
+                }
+            }, 3000);
         }
     }
 
@@ -303,8 +334,8 @@ export function main(init: Init): void {
     function onAppActivate(): void {
         // On OS X it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
-        if (!state.window) {
-            createMainWindow();
+        if (!state.window && startupConfig) {
+            createMainWindow(startupConfig);
         }
     }
 
@@ -320,15 +351,10 @@ export function main(init: Init): void {
         event.returnValue = data;
     }
 
-    function getInitialWindowSize(): IAppPreferencesDataMainWindow {
+    function getInitialWindowSize(config: IAppConfigData): IAppPreferencesDataMainWindow {
         if (!state.preferences) {
             throw new Error(
                 "Preferences must be set before you can open a window."
-            );
-        }
-        if (!state.config) {
-            throw new Error(
-                "Configs must be set before you can open a window."
             );
         }
         if (
@@ -353,7 +379,7 @@ export function main(init: Init): void {
             const mw = state.preferences.mainWindow;
             let width: number = mw.width ? mw.width : defaultSize.width;
             let height: number = mw.height ? mw.height : defaultSize.height;
-            if (mw.width && mw.height && !state.config.useCustomTitlebar) {
+            if (mw.width && mw.height && !config.useCustomTitlebar) {
                 width += 8; // Add the width of the window-grab-things,
                 height += 8; // they are 4 pixels wide each (at least for me @TBubba)
             }
@@ -367,19 +393,14 @@ export function main(init: Init): void {
         }
     }
 
-    function createMainWindow(): BrowserWindow {
+    function createMainWindow(config: IAppConfigData): BrowserWindow {
         if (!state.preferences) {
             throw new Error(
                 "Preferences must be set before you can open a window."
             );
         }
-        if (!state.config) {
-            throw new Error(
-                "Configs must be set before you can open a window."
-            );
-        }
         // Create the browser window.
-        const mw = getInitialWindowSize();
+        const mw = getInitialWindowSize(config);
 
         const iconPath = path.join(__dirname, "../window/images/icon.png");
         const icon = nativeImage.createFromPath(iconPath);
@@ -390,15 +411,21 @@ export function main(init: Init): void {
             y: mw.y,
             width: mw.width,
             height: mw.height,
-            frame: !state.config.useCustomTitlebar,
+            frame: !config.useCustomTitlebar,
             icon: icon,
             webPreferences: {
                 preload: path.resolve(__dirname, "./MainWindowPreload.js"),
                 nodeIntegration: true,
                 contextIsolation: false,
+                additionalArguments: diagnosticsEnabled
+                    ? ["--exogui-diagnostics=true"]
+                    : [],
             },
         });
         remoteMain.enable(window.webContents);
+        if (diagnosticsEnabled) {
+            attachWindowDiagnostics(window);
+        }
         // Remove the menu bar
         window.setMenuBarVisibility(false);
         // and load the index.html of the app.

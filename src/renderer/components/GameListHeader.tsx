@@ -15,6 +15,8 @@ export function GameListHeader() {
                     <Column title="Developer" modifier="developer" />
                     <Column title="Publisher" modifier="publisher" />
                     <Column title="Tags" modifier="tags" />
+                    <Column title="" modifier="note" />
+                    <Column title="" modifier="icons" />
                 </div>
                 <div className="game-list-header__scroll-fill" />
             </div>

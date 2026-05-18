@@ -1,6 +1,7 @@
-import { deepCopy, fixSlashes } from "@shared/Util";
+import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath, removeFileExtension } from "@shared/Util";
 import {
     GameImagesCollection,
+    GameMusicCollection,
     GameVideosCollection,
     IGameInfo,
 } from "@shared/game/interfaces";
@@ -176,16 +177,18 @@ function createImagePath(platformImagePath: string, fileInfo: IFileInfo) {
     );
 }
 
-function getGameTitleIndexFromFilename(filename: string) {
-    const lastIdx = filename.lastIndexOf("-0");
-    if (lastIdx > -1) return filename.slice(0, lastIdx);
-    return null;
+export function getGameTitleIndexFromFilename(filename: string): string | null {
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, "");
+    const nameWithoutNum = nameWithoutExt.replace(/-\d{2,}$/, "");
+    const title = nameWithoutNum.trim();
+    return title || null;
 }
 
-function convertToGameTitleIndex(title: string) {
-    // Remove unnecessary characters and stuff and lowercase
+export function convertToGameTitleIndex(title: string): string {
     return title
-    .replace(/[:;?'"/\\]/g, "_")
+    .replace(/\s*\(\d{4}\)\s*$/, "")
+    .replace(/[^a-zA-Z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
 }
@@ -220,11 +223,8 @@ export function createVideosWatcher(platform: string): chokidar.FSWatcher {
     watcher
     .on("add", (videoPath) => {
         console.debug(`Video ${videoPath} added.`);
-        const relativePath = videoPath.replace(
-            window.External.config.fullExodosPath,
-            ""
-        );
-        const title = relativePath.split("/").pop()?.split(".mp4")[0];
+        const relativePath = getRelativePath(videoPath, window.External.config.fullExodosPath);
+        const title = extractTitleFromMediaPath(videoPath, window.External.config.fullExodosPath);
         if (title) {
             const game = getGameByTitle(title);
             if (game) {
@@ -253,4 +253,68 @@ export function createVideosWatcher(platform: string): chokidar.FSWatcher {
 
 function getPlatformVideosPath(platform: string) {
     return path.join(window.External.config.fullExodosPath, "Videos", platform);
+}
+
+const musicExtensions = new Set([".mp3", ".ogg", ".flac", ".wav", ".mod", ".s3m", ".xm", ".m3u"]);
+
+export function loadPlatformMusic(platform: string): GameMusicCollection {
+    const musicPath = getPlatformMusicPath(platform);
+    const music: GameMusicCollection = {};
+
+    if (fs.existsSync(musicPath)) {
+        const files = fs.readdirSync(musicPath).filter((f) =>
+            musicExtensions.has(path.extname(f).toLowerCase())
+        );
+        for (const f of files) {
+            music[removeFileExtension(f)] = `Music/${platform}/${f}`;
+        }
+    }
+
+    return music;
+}
+
+export function mapGamesMusic(game: IGameInfo, music: GameMusicCollection): void {
+    const gameName = getGameTitleForVideo(game);
+    if (music[gameName]) {
+        game.musicPath = music[gameName];
+    } else if (game.musicPath) {
+        const absolutePath = path.join(window.External.config.fullExodosPath, fixSlashes(game.musicPath));
+        if (!fs.existsSync(absolutePath)) {
+            game.musicPath = "";
+        }
+    }
+}
+
+export function createMusicWatcher(platform: string): chokidar.FSWatcher {
+    const musicPath = getPlatformMusicPath(platform);
+    console.log(`Initializing music watcher for ${platform} path ${musicPath}`);
+
+    const watcher = chokidar.watch(musicPath, {
+        depth: 0,
+        persistent: true,
+        followSymlinks: false,
+        ignoreInitial: true,
+    });
+
+    watcher
+    .on("add", (filePath) => {
+        if (!musicExtensions.has(path.extname(filePath).toLowerCase())) { return; }
+        console.debug(`Music ${filePath} added.`);
+        const relativePath = getRelativePath(filePath, window.External.config.fullExodosPath);
+        const title = extractTitleFromMediaPath(filePath, window.External.config.fullExodosPath);
+        if (title) {
+            const game = getGameByTitle(title);
+            if (game) {
+                console.debug(`Found the game for new music. Updating game ${title}`);
+                store.dispatch(updateGame({ game: { ...game, musicPath: relativePath } }));
+            }
+        }
+    })
+    .on("error", (error) => console.log(`Watcher error: ${error}`));
+
+    return watcher;
+}
+
+function getPlatformMusicPath(platform: string) {
+    return path.join(window.External.config.fullExodosPath, "Music", platform);
 }
