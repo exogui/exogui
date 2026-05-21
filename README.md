@@ -4,6 +4,14 @@
 
 The launcher for Retro eXo Projects.
 
+> 🍎 **macOS users:** exogui binaries are **not signed with an Apple Developer ID and are not notarized.** macOS will block downloaded builds ("exogui is damaged and can't be opened") until you clear the quarantine attribute:
+>
+> ```bash
+> xattr -cr /Applications/exogui.app && open /Applications/exogui.app
+> ```
+>
+> This one-time step is unavoidable without a paid Apple Developer account. See [Troubleshooting](docs/troubleshooting.md#exogui-is-damaged-and-cant-be-opened--app-wont-launch-after-download) for details.
+
 ## Links
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website

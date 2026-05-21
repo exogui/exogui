@@ -45,8 +45,8 @@ jobs:
           git push origin master
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-  sync-develop:
-    name: Sync develop with master
+  sync-downstream:
+    name: Sync beta and develop with master
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -56,14 +56,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PAT }}
 
-      - name: Merge master into develop
+      - name: Merge master into beta and develop
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin develop
-          git checkout develop
-          git merge origin/master --ff-only
-          git push origin develop
+          git fetch origin beta develop
+          for branch in beta develop; do
+            git checkout "$branch"
+            git merge origin/master --ff-only
+            git push origin "$branch"
+          done
 
   build:
     name: Build ${{ matrix.name }}
@@ -114,6 +116,12 @@ jobs:
 
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
+        env:
+          # Release runs in a pull_request (merged) context, where electron-builder
+          # skips ALL macOS signing — including the ad-hoc fallback the universal
+          # build needs to launch on Apple Silicon. Setting this re-enables signing
+          # so the "identity: -" ad-hoc signature is applied. (Ignored on Linux/Windows.)
+          CSC_FOR_PULL_REQUEST: "true"
 
       - name: List dist directory
         shell: bash
@@ -150,6 +158,10 @@ jobs:
 
       - name: Build macOS (Legacy)
         run: npm run release:mac-universal
+        env:
+          # See note above: re-enable signing in pull_request context so the
+          # ad-hoc signature is applied to the legacy macOS build too.
+          CSC_FOR_PULL_REQUEST: "true"
 
       - name: Rename artifacts to legacy
         shell: bash

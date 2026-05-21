@@ -15,7 +15,7 @@ We follow a standard feature branch workflow:
 1. Fork the repo and create a branch off `develop`
 2. Make your changes
 3. Open a PR targeting `develop`
-4. Once reviewed and merged, changes will be included in the next release when an administrator merges `develop` into `master` — the version is bumped automatically at that point
+4. Once reviewed and merged, your changes ride the release promotion flow: `develop → beta → master`. An administrator merges `develop` into `beta` to publish a **beta** release, then `beta` into `master` to publish a **stable** release — the version is bumped automatically at each step.
 
 ## Opening a PR
 
