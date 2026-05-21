@@ -196,27 +196,31 @@ Check the [exogui discord](https://discord.gg/yMcZnyUn) for the latest macOS dev
 *"exogui is damaged and can't be opened. You should move it to the Trash"*, or the app
 silently fails to launch.
 
-**Cause:** exogui is **ad-hoc signed**, not signed with a paid Apple Developer ID, and it is
-**not notarized**. When you download a file, macOS tags it with a quarantine attribute
-(`com.apple.quarantine`). Gatekeeper refuses to launch a quarantined app that lacks a
-Developer ID signature + notarization, regardless of how the app itself is built. This is a
-macOS policy, not a problem with the download — the `.dmg` and `.zip` contain an identical,
-intact app.
+**Cause:** exogui binaries are **not code signed and not notarized** (this requires a paid
+Apple Developer account). Two macOS protections kick in:
 
-**Solution:** Remove the quarantine attribute, then open the app:
+1. When you download a file, macOS tags it with a quarantine attribute
+   (`com.apple.quarantine`), and Gatekeeper blocks launching an unsigned, quarantined app.
+2. On Apple Silicon, the kernel refuses to run code that has no signature at all — so the
+   app must be locally (ad-hoc) signed before it will launch.
+
+This is a macOS policy, not a problem with the download — the `.dmg` and `.zip` contain an
+identical, intact app.
+
+**Solution:** Clear the quarantine attribute, ad-hoc sign the app locally, then open it:
 
 ```bash
 # Adjust the path to wherever you placed exogui.app (e.g. /Applications)
 xattr -cr /Applications/exogui.app
+codesign --force --deep --sign - /Applications/exogui.app
 open /Applications/exogui.app
 ```
 
-`xattr -cr` clears the quarantine attribute recursively. After this, the ad-hoc signature is
-accepted and the app launches normally.
+`xattr -cr` clears the quarantine attribute recursively, and `codesign --sign -` applies a
+free local ad-hoc signature so the app is allowed to run. After this it launches normally.
 
-> **Note:** This manual step is unavoidable without a paid Apple Developer account.
-> Proper Developer ID signing + notarization would let the app open with no extra steps,
-> but ad-hoc signing (which is free) cannot satisfy Gatekeeper for downloaded files.
+> **Note:** These manual steps are unavoidable without a paid Apple Developer account.
+> Proper Developer ID signing + notarization would let the app open with no extra steps.
 
 ---
 
