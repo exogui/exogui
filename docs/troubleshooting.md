@@ -190,6 +190,36 @@ Check the [exogui discord](https://discord.gg/yMcZnyUn) for the latest macOS dev
 
 ---
 
+### "exogui is damaged and can't be opened" / App Won't Launch After Download
+
+**Problem:** After downloading exogui (`.dmg` or `.zip`) and trying to open it, macOS shows
+*"exogui is damaged and can't be opened. You should move it to the Trash"*, or the app
+silently fails to launch.
+
+**Cause:** exogui is **ad-hoc signed**, not signed with a paid Apple Developer ID, and it is
+**not notarized**. When you download a file, macOS tags it with a quarantine attribute
+(`com.apple.quarantine`). Gatekeeper refuses to launch a quarantined app that lacks a
+Developer ID signature + notarization, regardless of how the app itself is built. This is a
+macOS policy, not a problem with the download — the `.dmg` and `.zip` contain an identical,
+intact app.
+
+**Solution:** Remove the quarantine attribute, then open the app:
+
+```bash
+# Adjust the path to wherever you placed exogui.app (e.g. /Applications)
+xattr -cr /Applications/exogui.app
+open /Applications/exogui.app
+```
+
+`xattr -cr` clears the quarantine attribute recursively. After this, the ad-hoc signature is
+accepted and the app launches normally.
+
+> **Note:** This manual step is unavoidable without a paid Apple Developer account.
+> Proper Developer ID signing + notarization would let the app open with no extra steps,
+> but ad-hoc signing (which is free) cannot satisfy Gatekeeper for downloaded files.
+
+---
+
 ## Port Conflicts
 
 **Problem:** Application fails to start with "Port already in use" error.
