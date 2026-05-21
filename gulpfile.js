@@ -117,11 +117,7 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
-                    x64ArchFiles: "**/7za",
-                    // Ad-hoc sign ("-"): no Apple Developer cert needed. Required so
-                    // the universal/arm64 build is runnable on Apple Silicon at all.
-                    // Does NOT satisfy Gatekeeper for downloads (see docs/troubleshooting.md).
-                    identity: "-",
+                    x64ArchFiles: "**/7za"
                 },
             },
             targets: targets,
