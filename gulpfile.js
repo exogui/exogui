@@ -177,7 +177,7 @@ function createBuildTargets(os, arch) {
                 archFromString(arch),
             );
         case "darwin":
-            return Platform.MAC.createTarget(["dmg", "zip"], archFromString(arch));
+            return Platform.MAC.createTarget(["dmg"], archFromString(arch));
         case "linux":
             return Platform.LINUX.createTarget(
                 ["AppImage", "tar.gz", "dir"],
