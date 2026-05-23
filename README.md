@@ -100,7 +100,8 @@ eXoDOS/
 ```
 
 ```bash
-tar -xzf exogui.tar.gz -C eXoDOS/exogui/
+# Replace x64 with arm64 if you're on a 64-bit ARM machine
+tar -xzf exogui.x64.tar.gz -C eXoDOS/exogui/
 ./eXoDOS/exogui/exogui
 ```
 

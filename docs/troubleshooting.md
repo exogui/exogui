@@ -192,7 +192,7 @@ Check the [exogui discord](https://discord.gg/yMcZnyUn) for the latest macOS dev
 
 ### "exogui is damaged and can't be opened" / App Won't Launch After Download
 
-**Problem:** After downloading exogui (`.dmg` or `.zip`) and trying to open it, macOS shows
+**Problem:** After downloading exogui (`.dmg`) and trying to open it, macOS shows
 *"exogui is damaged and can't be opened. You should move it to the Trash"*, or the app
 silently fails to launch.
 
@@ -204,8 +204,7 @@ Apple Developer account). Two macOS protections kick in:
 2. On Apple Silicon, the kernel refuses to run code that has no signature at all — so the
    app must be locally (ad-hoc) signed before it will launch.
 
-This is a macOS policy, not a problem with the download — the `.dmg` and `.zip` contain an
-identical, intact app.
+This is a macOS policy, not a problem with the download.
 
 **Solution:** Clear the quarantine attribute, ad-hoc sign the app locally, then open it:
 
