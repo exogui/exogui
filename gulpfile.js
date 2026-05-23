@@ -1,7 +1,7 @@
 const fs = require("fs-extra");
 const gulp = require("gulp");
 const builder = require("electron-builder");
-const { Platform, archFromString } = require("electron-builder");
+const { Platform, Arch, archFromString } = require("electron-builder");
 const { exec } = require("child_process");
 const { createRsbuild, loadConfig } = require('@rsbuild/core');
 
@@ -102,7 +102,10 @@ gulp.task("pack", (done) => {
                     category: "Game",
                     icon: "./static/icons/",
                     executableArgs: ["--no-sandbox"],
-                    artifactName: "${productName}.${ext}",
+                    artifactName: "${productName}.${arch}.${ext}",
+                },
+                appImage: {
+                    artifactName: "${productName}.${arch}.${ext}",
                 },
                 win: {
                     icon: "./icons/icon.ico",
@@ -117,11 +120,7 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
-                    x64ArchFiles: "**/7za",
-                    // Ad-hoc sign ("-"): no Apple Developer cert needed. Required so
-                    // the universal/arm64 build is runnable on Apple Silicon at all.
-                    // Does NOT satisfy Gatekeeper for downloads (see docs/troubleshooting.md).
-                    identity: "-",
+                    x64ArchFiles: "**/7za"
                 },
             },
             targets: targets,
@@ -181,12 +180,14 @@ function createBuildTargets(os, arch) {
                 archFromString(arch),
             );
         case "darwin":
-            return Platform.MAC.createTarget(["dmg", "zip"], archFromString(arch));
+            return Platform.MAC.createTarget(["dmg"], archFromString(arch));
         case "linux":
-            return Platform.LINUX.createTarget(
-                ["AppImage", "tar.gz", "dir"],
-                archFromString(arch),
-            );
+            return new Map([
+                [Platform.LINUX, new Map([
+                    [Arch.x64, ["AppImage", "tar.gz", "dir"]],
+                    [Arch.arm64, ["AppImage", "tar.gz"]],
+                ])],
+            ]);
     }
 }
 
