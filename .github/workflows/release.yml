@@ -45,8 +45,8 @@ jobs:
           git push origin master
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-  sync-develop:
-    name: Sync develop with master
+  sync-downstream:
+    name: Sync beta and develop with master
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -56,14 +56,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PAT }}
 
-      - name: Merge master into develop
+      - name: Merge master into beta and develop
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin develop
-          git checkout develop
-          git merge origin/master --ff-only
-          git push origin develop
+          git fetch origin beta develop
+          for branch in beta develop; do
+            git checkout "$branch"
+            git merge origin/master --ff-only
+            git push origin "$branch"
+          done
 
   build:
     name: Build ${{ matrix.name }}
@@ -94,7 +96,6 @@ jobs:
             script: release:mac-universal
             artifact-pattern: |
               dist/*.dmg
-              dist/*.zip
               dist/latest-mac.yml
 
     steps:
@@ -154,7 +155,7 @@ jobs:
       - name: Rename artifacts to legacy
         shell: bash
         run: |
-          for f in dist/exogui-*.{dmg,zip}; do
+          for f in dist/exogui-*.dmg; do
             mv "$f" "${f/exogui-/exogui-legacy-}"
           done
 
@@ -167,7 +168,6 @@ jobs:
           name: macOS-Legacy-artifacts
           path: |
             dist/*-legacy-*.dmg
-            dist/*-legacy-*.zip
           if-no-files-found: warn
 
   release:

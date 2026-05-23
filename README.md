@@ -4,6 +4,16 @@
 
 The launcher for Retro eXo Projects.
 
+> 🍎 **macOS users:** exogui binaries are **not code signed and not notarized.** macOS blocks downloaded builds ("exogui is damaged and can't be opened"), and on Apple Silicon the app won't launch until it is locally (ad-hoc) signed. After moving the app into place, run:
+>
+> ```bash
+> xattr -cr /Applications/exogui.app
+> codesign --force --deep --sign - /Applications/exogui.app
+> open /Applications/exogui.app
+> ```
+>
+> These one-time steps are unavoidable without a paid Apple Developer account. See [Troubleshooting](docs/troubleshooting.md#exogui-is-damaged-and-cant-be-opened--app-wont-launch-after-download) for details.
+
 ## Links
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
@@ -90,7 +100,8 @@ eXoDOS/
 ```
 
 ```bash
-tar -xzf exogui.tar.gz -C eXoDOS/exogui/
+# Replace x64 with arm64 if you're on a 64-bit ARM machine
+tar -xzf exogui.x64.tar.gz -C eXoDOS/exogui/
 ./eXoDOS/exogui/exogui
 ```
 

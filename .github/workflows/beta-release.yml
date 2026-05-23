@@ -1,10 +1,10 @@
-name: Develop Release
+name: Beta Release
 
 on:
   pull_request:
     types: [closed]
     branches:
-      - develop
+      - beta
     paths-ignore:
       - '**.md'
       - '.github/workflows/**'
@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: beta
           fetch-depth: 0
           submodules: recursive
           token: ${{ secrets.RELEASE_PAT }}
@@ -44,8 +44,28 @@ jobs:
           npm version "${VERSION}" --no-git-tag-version
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${VERSION}"
-          git push origin develop
+          git push origin beta
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+  sync-develop:
+    name: Sync develop with beta
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: beta
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - name: Merge beta into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin develop
+          git checkout develop
+          git merge origin/beta --ff-only
+          git push origin develop
 
   build:
     name: Build ${{ matrix.name }}
@@ -76,13 +96,12 @@ jobs:
             script: release:mac-universal
             artifact-pattern: |
               dist/*.dmg
-              dist/*.zip
               dist/beta-mac.yml
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: beta
           submodules: recursive
 
       - name: Setup Node.js
@@ -122,7 +141,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: beta
           submodules: recursive
 
       - name: Setup Node.js
@@ -143,7 +162,7 @@ jobs:
       - name: Rename artifacts to legacy
         shell: bash
         run: |
-          for f in dist/exogui-*.{dmg,zip}; do
+          for f in dist/exogui-*.dmg; do
             mv "$f" "${f/exogui-/exogui-legacy-}"
           done
 
@@ -156,7 +175,6 @@ jobs:
           name: macOS-Legacy-artifacts
           path: |
             dist/*-legacy-*.dmg
-            dist/*-legacy-*.zip
           if-no-files-found: warn
 
   release:
@@ -166,7 +184,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: beta
           fetch-depth: 0
 
       - name: Download all artifacts
