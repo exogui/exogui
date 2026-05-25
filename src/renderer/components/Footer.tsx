@@ -1,5 +1,5 @@
 import { englishTranslation } from "@renderer/lang/en";
-import { faBorderAll, faCircleNotch, faExclamationCircle, faForward, faList, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons";
+import { faBorderAll, faCircleNotch, faExclamationCircle, faForward, faList, faPlay, faRepeat, faStop, faVolumeLow, faVolumeHigh, faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BackIn, VlcState } from "@shared/back/types";
 import { BrowsePageLayout } from "@shared/BrowsePageLayout";
@@ -140,16 +140,16 @@ export class Footer extends React.Component<FooterProps> {
                                     <div className="footer__wrap footer__scale-slider">
                                         <div className="footer__scale-slider__inner">
                                             <div className="footer__scale-slider__icon footer__scale-slider__icon--left simple-center">
-                                                <div>🔈</div>
+                                                <FontAwesomeIcon icon={faVolumeLow} />
                                             </div>
                                             <div className="footer__scale-slider__icon footer__scale-slider__icon--center simple-center" />
                                             <div className="footer__scale-slider__icon footer__scale-slider__icon--right simple-center">
-                                                <div>🔊</div>
+                                                <FontAwesomeIcon icon={faVolumeHigh} />
                                             </div>
                                             <input
                                                 type="range"
                                                 className="footer__scale-slider__input hidden-slider"
-                                                value={window.External.preferences.data.gameMusicVolume * 100}
+                                                value={Math.round(window.External.preferences.data.gameMusicVolume * 100)}
                                                 min={0}
                                                 max={100}
                                                 onChange={this.onVolumeSliderChange}
@@ -203,11 +203,11 @@ export class Footer extends React.Component<FooterProps> {
                             <div className="footer__wrap footer__scale-slider">
                                 <div className="footer__scale-slider__inner">
                                     <div className="footer__scale-slider__icon footer__scale-slider__icon--left simple-center">
-                                        <div>-</div>
+                                        <FontAwesomeIcon icon={faMinus} />
                                     </div>
                                     <div className="footer__scale-slider__icon footer__scale-slider__icon--center simple-center" />
                                     <div className="footer__scale-slider__icon footer__scale-slider__icon--right simple-center">
-                                        <div>+</div>
+                                        <FontAwesomeIcon icon={faPlus} />
                                     </div>
                                     <input
                                         type="range"
