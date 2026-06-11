@@ -96,6 +96,9 @@ gulp.task("pack", (done) => {
                 asar: true,
                 generateUpdatesFilesForAllChannels: true,
                 publish: createPublishInfo(),
+                toolsets: {
+                    appimage: "1.0.2",
+                },
                 linux: {
                     publish: "github",
                     target: ["AppImage", "tar.gz", "dir"],
