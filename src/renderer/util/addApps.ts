@@ -61,7 +61,7 @@ function loadAddAppsDirectory(game: IGameInfo, addAppsDir: string) {
         });
 
         const filteredFiles = files.filter((f) => {
-            const extension = f.name.split(".")?.[1]?.toLowerCase() ?? "";
+            const extension = path.extname(f.name).slice(1).toLowerCase();
             return extension && f.isFile() && (process.platform === "win32" || allowedExtensions.has(extension));
         });
         console.debug(`[addApps] ${game.title} - ${addAppsDir}: found ${filteredFiles.length} file(s) in "${absolutePathForAddApps}" (allowed extensions: ${[...allowedExtensions].join(", ")})`);
