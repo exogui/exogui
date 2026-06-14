@@ -214,10 +214,14 @@ export type IBackProcessInfo = {
 export type GamePlaylist = GamePlaylistContent & {
     /** Filename of the playlist (unique for each playlist). */
     filename: string;
+    /** Name of the platform (library) this playlist belongs to, if any (from Parents.xml). */
+    library?: string;
 };
 
 /** Data contained inside a Playlist file. */
 export type GamePlaylistContent = {
+    /** Unique id of the playlist (used to associate it with a platform via Parents.xml). */
+    playlistId: string;
     /** Game entries in the playlist. */
     games: GamePlaylistEntry[];
     /** Title of the playlist. */

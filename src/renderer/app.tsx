@@ -401,7 +401,8 @@ class App extends React.Component<AppProps, AppState> {
             this.props.libraries[0] ??
             "";
         const playlists = this.orderAndFilterPlaylistsMemo(
-            this.state.playlists
+            this.state.playlists,
+            libraryPath
         );
 
         // Props to set to the router
@@ -581,17 +582,21 @@ class App extends React.Component<AppProps, AppState> {
         });
     }
 
-    orderAndFilterPlaylistsMemo = memoizeOne((playlists: GamePlaylist[]) => {
-        return [...playlists].sort((a, b) => {
-            if (a.title < b.title) {
-                return -1;
-            }
-            if (a.title > b.title) {
-                return 1;
-            }
-            return 0;
-        });
-    });
+    orderAndFilterPlaylistsMemo = memoizeOne(
+        (playlists: GamePlaylist[], libraryPath: string) => {
+            return [...playlists]
+            .filter((p) => !p.library || p.library === libraryPath)
+            .sort((a, b) => {
+                if (a.title < b.title) {
+                    return -1;
+                }
+                if (a.title > b.title) {
+                    return 1;
+                }
+                return 0;
+            });
+        }
+    );
 
     private unmountBeforeClose = (): void => {
         this.setState({ stopRender: true });
