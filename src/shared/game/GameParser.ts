@@ -18,7 +18,8 @@ export class GameParser {
         data: IRawPlatformFile,
         filename: string,
         exodosPath: string,
-        useSortTitle: boolean = true
+        useSortTitle: boolean = true,
+        installable: boolean = true
     ): IGameCollection {
         const collection: IGameCollection = {
             games: [],
@@ -45,7 +46,8 @@ export class GameParser {
                     games[i],
                     filename,
                     exodosPath,
-                    useSortTitle
+                    useSortTitle,
+                    installable
                 );
                 if (games[i].ManualPath) {
                     collection.addApps.push({
@@ -74,7 +76,8 @@ export class GameParser {
         data: Partial<IRawGameInfo>,
         library: string,
         exodosPath: string,
-        useSortTitle: boolean = true
+        useSortTitle: boolean = true,
+        installable: boolean = true
     ): IGameInfo {
         const title = data.Title
             ? this.convertTheInTitle(data.Title.toString())
@@ -120,13 +123,23 @@ export class GameParser {
         };
 
         /**
-         * XML application path refers to a different folder, but we can predict the real name based on the final segment
+         * Non-installable platforms (e.g. MS-DOS Books, Magazines) ship their content
+         * statically and are always present. Their RootFolder values are decorated and
+         * don't reliably match the on-disk folder, so a filesystem check would mark them
+         * installed at random. Treat every game on such platforms as installed.
+         *
+         * For installable platforms the XML application path refers to a different folder,
+         * but we can predict the real name based on the final segment
          *
          * e.g
          * gamesPath: eXo/eXoDOS/1Ton
          * xml root: eXo/eXoDOS/!dos/1Ton
          * Capture dirname `1Ton` and compare that instead
          *  */
+        if (!installable) {
+            game.installed = true;
+            return game;
+        }
         const parts = fixSlashes(game.rootFolder).split("/").filter((word) => word[0] != "!");
         const gameDataPath = path.join(exodosPath, parts.join("/"));
         game.installed = fs.existsSync(gameDataPath);
