@@ -52,10 +52,7 @@ const thumbnailPreference = [
 
 // / Search for the medias for the game in the images and videos collection and fill this info to the game metadata object
 function getGameTitleForVideo(game: IGameInfo) {
-    const gameTitle = path
-    .basename(fixSlashes(game.applicationPath))
-    .split(".")[0];
-    return gameTitle;
+    return removeFileExtension(path.basename(fixSlashes(game.applicationPath)));
 }
 
 export function mapGamesMedia(

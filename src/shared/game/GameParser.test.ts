@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { GameParser, generateGameOrderTitle } from "./GameParser";
 
 jest.mock("fs", () => ({
@@ -102,6 +103,36 @@ describe("GameParser.parseRawGame - favorite field", () => {
     it("defaults game.favorite to false when Favorite is absent", () => {
         const game = GameParser.parseRawGame(minimalRawGame, "MS-DOS", "/exo");
         expect(game.favorite).toBe(false);
+    });
+});
+
+describe("GameParser.parseRawGame - installed field", () => {
+    it("marks games installed for non-installable platforms regardless of folder existence", () => {
+        // fs.existsSync is mocked to false; the decorated Books RootFolder never matches disk
+        const game = GameParser.parseRawGame(
+            { ...minimalRawGame, RootFolder: "Books\\[1994] PC Game Programming Explorer (Dave Roberts)" },
+            "MS-DOS Books",
+            "/exo",
+            true,
+            false
+        );
+        expect(game.installed).toBe(true);
+    });
+
+    it("uses folder existence for installable platforms (missing folder)", () => {
+        const game = GameParser.parseRawGame(minimalRawGame, "MS-DOS", "/exo", true, true);
+        expect(game.installed).toBe(false);
+    });
+
+    it("uses folder existence for installable platforms (folder present)", () => {
+        (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+        const game = GameParser.parseRawGame(minimalRawGame, "MS-DOS", "/exo", true, true);
+        expect(game.installed).toBe(true);
+    });
+
+    it("installable defaults to true (folder-based detection)", () => {
+        const game = GameParser.parseRawGame(minimalRawGame, "MS-DOS", "/exo");
+        expect(game.installed).toBe(false);
     });
 });
 
