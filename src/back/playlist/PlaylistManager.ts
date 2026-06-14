@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
+import { ParentsFile } from "./ParentsFile";
 import { PlaylistFile } from "./PlaylistFile";
 import { LogFunc } from "@back/types";
 import { GamePlaylist } from "@shared/interfaces";
@@ -8,12 +9,14 @@ import { GamePlaylist } from "@shared/interfaces";
 export type PlaylistUpdatedFunc = (playlist: GamePlaylist) => void;
 export interface PlaylistManagerOpts {
     playlistFolder: string;
+    parentsFilePath: string;
     log: LogFunc;
     onPlaylistAddOrUpdate: PlaylistUpdatedFunc;
 }
 
 export class PlaylistManager {
     private _initialized = false;
+    private _playlistPlatformMap: Map<string, string> = new Map();
 
     public readonly playlists: GamePlaylist[] = [];
 
@@ -25,6 +28,8 @@ export class PlaylistManager {
 
         console.log("Loading playlists...");
         try {
+            this._playlistPlatformMap =
+                await ParentsFile.readPlaylistPlatformMap(opts.parentsFilePath);
             const playlistFiles = (
                 await fs.promises.readdir(opts.playlistFolder, {
                     withFileTypes: true,
@@ -69,6 +74,7 @@ export class PlaylistManager {
             playlist = {
                 ...data,
                 filename,
+                library: this._playlistPlatformMap.get(data.playlistId),
             };
         } catch (error) {
             opts.log({
