@@ -8,7 +8,7 @@
     "commandsMapping": [
         {
             "extensions": ["avi", "flac", "mp3", "mp4", "wav"],
-            "command": "flatpak run com.retro_exo.mpv --force-window",
+	    "command": "flatpak run com.retro_exo.mpv --force-window --autofit=66%",
             "includeFilename": true,
             "includeArgs": false
         },
