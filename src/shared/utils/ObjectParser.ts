@@ -308,7 +308,7 @@ function createStack(
     label: string | number | symbol
 ): string[] {
     const newStack = stack.slice();
-    newStack.push(label + "");
+    newStack.push(String(label));
     return newStack;
 }
 

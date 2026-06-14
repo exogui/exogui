@@ -40,6 +40,7 @@ export namespace PlaylistFile {
         onError?: (error: string) => void
     ): GamePlaylistContent {
         const playlist: GamePlaylistContent = {
+            playlistId: "",
             games: [],
             title: "",
             description: "",
@@ -59,6 +60,7 @@ export namespace PlaylistFile {
                 : [data.PlaylistFilter]
             : [];
         const intermediatePlaylistFormat = {
+            playlistId: playlistInfo.PlaylistId,
             title: playlistInfo.Name,
             description: playlistInfo.Notes,
             author: "",
@@ -89,6 +91,7 @@ export namespace PlaylistFile {
                         `Error while converting Playlist: ${e.toString()}`
                     )),
         });
+        parser.prop("playlistId", (v) => (playlist.playlistId = str(v)), true);
         parser.prop("title", (v) => (playlist.title = str(v)));
         parser.prop("description", (v) => (playlist.description = str(v)));
         parser.prop("author", (v) => (playlist.author = str(v)));
