@@ -4,8 +4,8 @@ jest.mock("@renderer/redux/gamesSlice", () => ({ updateGame: jest.fn() }));
 jest.mock("chokidar", () => ({ watch: jest.fn(() => ({ on: jest.fn() })) }));
 
 import * as fs from "fs";
-import { GameMusicCollection, IGameInfo } from "@shared/game/interfaces";
-import { convertToGameTitleIndex, getGameTitleIndexFromFilename, mapGamesMusic } from "./media";
+import { GameMusicCollection, GameVideosCollection, IGameInfo } from "@shared/game/interfaces";
+import { convertToGameTitleIndex, getGameTitleIndexFromFilename, mapGamesMedia, mapGamesMusic } from "./media";
 
 function makeGame(applicationPath: string): IGameInfo {
     return {
@@ -93,6 +93,47 @@ describe("mapGamesMusic", () => {
         mapGamesMusic(game, {});
         expect(game.musicPath).toBe("Music\\MS-DOS\\S.T.O.R.M. (1996).mp3");
         jest.restoreAllMocks();
+    });
+});
+
+describe("mapGamesMedia video matching", () => {
+    beforeAll(() => {
+        (window as any).External = { config: { fullExodosPath: "/test" } };
+    });
+
+    afterAll(() => {
+        delete (window as any).External;
+    });
+
+    // Mirrors how loadPlatformVideos keys the collection: filename without ".mp4" -> encoded filename
+    function videosFor(...filenames: string[]): GameVideosCollection {
+        const videos: GameVideosCollection = {};
+        for (const f of filenames) {
+            videos[f.split(".mp4")[0]] = encodeURIComponent(f);
+        }
+        return videos;
+    }
+
+    it("sets video when bat basename matches", () => {
+        const game = makeGame("eXo\\eXoDOS\\!dos\\quake\\Quake (1996).bat");
+        game.platform = "MS-DOS";
+        const videos = videosFor("Quake (1996).mp4");
+        mapGamesMedia(game, {}, videos);
+        expect(game.media.video).toBe(
+            `Videos/MS-DOS/${encodeURIComponent("Quake (1996).mp4")}`
+        );
+    });
+
+    it("sets video when filename contains a period mid-name (e.g. 'Vs.')", () => {
+        const game = makeGame(
+            "eXo\\eXoDREAMM\\!DREAMM\\Star Wars - X-Wing Vs. TIE Fighter Gold (2000)\\Star Wars - X-Wing Vs. TIE Fighter Gold (2000).bat"
+        );
+        game.platform = "DREAMM";
+        const videos = videosFor("Star Wars - X-Wing Vs. TIE Fighter Gold (2000).mp4");
+        mapGamesMedia(game, {}, videos);
+        expect(game.media.video).toBe(
+            `Videos/DREAMM/${encodeURIComponent("Star Wars - X-Wing Vs. TIE Fighter Gold (2000).mp4")}`
+        );
     });
 });
 
