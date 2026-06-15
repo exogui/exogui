@@ -94,6 +94,13 @@ gulp.task("pack", (done) => {
                 extraFiles: copyFiles, // Files to copy to the build folder
                 compression: "store", // Only used if a compressed target (like 7z, nsis, dmg etc)
                 asar: true,
+                // sharp/libvips native binaries (.node + libvips .so/.dylib) must
+                // live on disk so dlopen can resolve them — they cannot be loaded
+                // from inside the asar archive.
+                asarUnpack: [
+                    "**/node_modules/sharp/**",
+                    "**/node_modules/@img/**",
+                ],
                 generateUpdatesFilesForAllChannels: true,
                 publish: createPublishInfo(),
                 toolsets: {
@@ -189,13 +196,16 @@ function createBuildTargets(os, arch) {
             );
         case "darwin":
             return Platform.MAC.createTarget(["dmg"], archFromString(arch));
-        case "linux":
-            return new Map([
-                [Platform.LINUX, new Map([
-                    [Arch.x64, ["AppImage", "tar.gz", "dir"]],
-                    [Arch.arm64, ["AppImage", "tar.gz"]],
-                ])],
-            ]);
+        case "linux": {
+            // Build the requested arch only (each is built on a native runner so
+            // its arch-specific sharp/libvips binaries get installed correctly).
+            const linuxArch = archFromString(arch);
+            const targets =
+                linuxArch === Arch.x64
+                    ? ["AppImage", "tar.gz", "dir"]
+                    : ["AppImage", "tar.gz"];
+            return Platform.LINUX.createTarget(targets, linuxArch);
+        }
     }
 }
 

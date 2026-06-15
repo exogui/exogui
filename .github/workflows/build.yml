@@ -90,7 +90,7 @@ jobs:
           retention-days: 7
 
   build-linux:
-    name: Build Linux
+    name: Build Linux (x64)
     if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
     runs-on: ubuntu-latest
     steps:
@@ -109,11 +109,39 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Linux-artifacts
+          name: Linux-x64-artifacts
           path: |
             dist/*.tar.gz
             dist/*.AppImage
             dist/latest-linux.yml
+          if-no-files-found: warn
+          retention-days: 7
+
+  build-linux-arm64:
+    name: Build Linux (arm64)
+    if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run release:linux-arm64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux-arm64-artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.AppImage
+            dist/latest-linux-arm64.yml
           if-no-files-found: warn
           retention-days: 7
 

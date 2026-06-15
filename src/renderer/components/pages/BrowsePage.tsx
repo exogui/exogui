@@ -1,8 +1,10 @@
 import { englishTranslation } from "@renderer/lang/en";
 import {
+    AdvancedFilter,
     forceSearch,
     selectGame,
     selectPlaylist,
+    setAdvancedFilter,
     stopMusic,
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
@@ -73,6 +75,7 @@ const mapDispatch = {
     onSelectGame: selectGame,
     forceSearch: forceSearch,
     onStopMusic: stopMusic,
+    onSetAdvancedFilter: setAdvancedFilter,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -306,6 +309,7 @@ class BrowsePage extends React.Component<
                         onGameLaunchSetup={this.onGameLaunchSetup}
                         onAddAppLaunch={this.onAddAppLaunch}
                         onFavoriteToggle={this.onFavoriteToggle}
+                        onSearchField={this.onSearchField}
                     />
                 </ResizableSidebar>
             </div>
@@ -402,6 +406,28 @@ class BrowsePage extends React.Component<
                 game,
                 userInitiated: true,
             });
+        }
+    };
+
+    onSearchField = (field: keyof AdvancedFilter, value: string): void => {
+        const view = this.props.searchState.views[this.props.gameLibrary];
+        if (!view) {
+            return;
+        }
+        const values = (
+            field === "releaseYear"
+                ? [value.split("-")[0]]
+                : value.split(";").map((s) => s.trim())
+        ).filter((s) => s.length > 0);
+        if (values.length === 0) {
+            return;
+        }
+        this.props.onSetAdvancedFilter({
+            view: this.props.gameLibrary,
+            filter: { ...view.advancedFilter, [field]: values },
+        });
+        if (!this.props.preferencesData.browsePageFiltersExpanded) {
+            updatePreferencesData({ browsePageFiltersExpanded: true });
         }
     };
 
