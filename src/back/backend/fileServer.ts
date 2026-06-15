@@ -4,8 +4,6 @@ import * as http from "http";
 import * as fs from "fs";
 import { Mime } from "mime";
 import * as path from "path";
-import { PNG } from "pngjs";
-import * as UTIF from "utif";
 import { getFilePathExtension } from "@shared/Util";
 import { LogFunc } from "@back/types";
 import { startFileServer } from "./serverHelper";
@@ -150,24 +148,9 @@ export class FileServer {
     }
 
     private async _convertTiffToPng(tiffPath: string, pngPath: string): Promise<void> {
-        const buffer = await fs.promises.readFile(tiffPath);
-        const ifds = UTIF.decode(buffer);
-        if (!ifds.length) {
-            throw new Error("TIFF contains no image pages");
-        }
-        const page = ifds[0];
-        UTIF.decodeImage(buffer, page);
-        const rgba = UTIF.toRGBA8(page);
-
-        const png = new PNG({ width: page.width, height: page.height });
-        png.data = Buffer.from(rgba.buffer, rgba.byteOffset, rgba.byteLength);
-
-        await new Promise<void>((resolve, reject) => {
-            const out = fs.createWriteStream(pngPath);
-            out.on("error", reject);
-            out.on("finish", resolve);
-            png.pack().on("error", reject).pipe(out);
-        });
+        await sharp(tiffPath, { failOn: "none", limitInputPixels: false })
+        .png()
+        .toFile(pngPath);
     }
 
     public async start() {

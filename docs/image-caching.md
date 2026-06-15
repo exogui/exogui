@@ -55,8 +55,8 @@ To request a thumbnail at a different size (e.g. for HiDPI), change
 ## TIFF conversion
 
 Chromium cannot render TIFF images. Any request for a `.tif`/`.tiff` file is
-converted to PNG (via `utif` + `pngjs`) and cached, then the PNG is served. This
-applies to full-resolution TIFF requests and predates the thumbnail cache.
+converted to PNG (via `sharp`, the same library used for thumbnails) and cached,
+then the PNG is served. This applies to full-resolution TIFF requests.
 
 ## Cache location and invalidation
 
