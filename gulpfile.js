@@ -123,7 +123,12 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
-                    x64ArchFiles: "**/7za"
+                    // sharp ships per-arch native binaries (@img/sharp-* .node and
+                    // libvips .dylibs). They are identical across the x64 and arm64
+                    // sub-builds, so allow them through the universal merge instead
+                    // of failing on them (both arches' binaries ship in the app and
+                    // sharp loads the right one at runtime).
+                    x64ArchFiles: "**/{7za,@img/**}"
                 },
             },
             targets: targets,
