@@ -1451,6 +1451,10 @@ body {
   white-space: pre;
 }
 
+.browse-right-sidebar--edit-disabled .browse-right-sidebar__searchable {
+  cursor: pointer;
+}
+
 .browse-right-sidebar--edit-disabled .browse-right-sidebar__row--one-line> :last-child {
   flex: 1 1 auto;
   text-overflow: ellipsis;
