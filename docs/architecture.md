@@ -446,7 +446,9 @@ This serves:
 - Game logos (`logoFolderPath`)
 - Videos, manuals, etc.
 
-The renderer accesses these via standard `<img>` tags and video players.
+The renderer accesses these via standard `<img>` tags and video players. Grid
+thumbnails and TIFF images are downscaled/converted and cached on disk — see
+[image-caching.md](image-caching.md).
 
 ---
 
