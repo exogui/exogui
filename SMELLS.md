@@ -70,7 +70,10 @@ Symptoms were: scrolling, keyboard navigation, and **window resizing** sluggish 
 
 **Residual trade-offs / follow-ups:**
 - **First-view warm-up:** generation is lazy and one-time — ~0.1 s typical, up to ~5 s for the 195 MP scans (partly USB-NTFS read). The cell stays blank during generation (libvips runs on libuv's threadpool, so it doesn't block the server); every later launch reads the cached ~40 KB file instantly. A background pre-warm pass could hide this but adds LaunchBox-style complexity — deliberately not done.
-- **Packaging:** `sharp`'s native `.node` modules are auto-unpacked from the asar by electron-builder, so no `asarUnpack` config was needed. The macOS **universal** build did require allowing sharp's per-arch binaries through the `@electron/universal` merge — handled via `mac.x64ArchFiles: "**/{7za,@img/**}"` in `gulpfile.js`. Cross-arch builds (e.g. linux-arm64 from an x64 runner) still rely on `@electron/rebuild` installing the target's `@img/sharp-*` binary; verify each release target actually launches.
+- **Packaging:** `sharp`/libvips needs two pieces of electron-builder config in `gulpfile.js`:
+  1. `asarUnpack: ["**/node_modules/sharp/**", "**/node_modules/@img/**"]` — the native `.node` and the libvips `.so`/`.dylib` must live on disk; they cannot be `dlopen`-ed from inside the asar (the AppImage failed at runtime with `ERR_DLOPEN_FAILED: libvips-cpp.so... cannot open shared object file` without this).
+  2. `mac.x64ArchFiles: "**/{7za,@img/**}"` — lets sharp's per-arch binaries pass the macOS universal (`@electron/universal`) merge.
+  Cross-arch builds (e.g. linux-arm64 from an x64 runner) also rely on `@electron/rebuild` installing the target's `@img/sharp-*` binary; verify each release target actually launches.
 - Adds a native dependency (`sharp`/libvips) → see the GLib-GObject-CRITICAL smell below.
 
 **Alternatives that were considered:** (2) in-memory cache only — re-pays the expensive decode every session, doesn't fix slow-on-every-start; (3) switch to `<img decoding="async" loading="lazy">` — moves decode off the main thread but doesn't shrink the bitmaps, so doesn't fix OOM (only a complement); (4) offline pre-generation (LaunchBox's approach) — lowest runtime cost but the most complexity.
