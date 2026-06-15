@@ -113,9 +113,17 @@ export function getGameTitleScreenshotUrl(
     )}-01.png`;
 }
 
+/**
+ * Max edge (px) requested for grid/random-games thumbnails. The file server
+ * downscales and caches to fit this box, so the renderer never decodes the
+ * full-resolution source. Sized to stay crisp at standard DPI across all grid
+ * zoom levels (largest cell is ~476px tall). See SMELLS.md.
+ */
+export const GRID_THUMBNAIL_MAX_EDGE = 512;
+
 export function getGameThumbnailUrl(thumbnailPath: string): string {
     if (!thumbnailPath) return "";
-    return `${getFileServerURL()}/${thumbnailPath}`;
+    return `${getFileServerURL()}/${thumbnailPath}?w=${GRID_THUMBNAIL_MAX_EDGE}`;
 }
 
 export function getPlatformIconURL(platform: string): string {

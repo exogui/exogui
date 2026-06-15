@@ -49,6 +49,63 @@ All CSS lives in `core.css` (2756 lines). Update system added 477 lines for Upda
 
 ---
 
+## Grid thumbnails decode full-resolution source images (perf / OOM) — RESOLVED
+**Priority:** Resolved (was High)
+**Severity:** High (was: could OOM-crash the renderer to a white screen)
+**Effort:** Medium
+
+**Status:** Fixed via a persistent thumbnail cache in the file server. Kept here for context and the residual follow-ups below.
+
+**Original issue:**
+`GameGridItem` (`src/renderer/components/GameGridItem.tsx`) set each grid cell's cover as a CSS `background-image` pointing straight at the full-resolution source file. There was no thumbnailing/resize step — the grid downscaled to a ~150px tile with CSS, but the browser still fetched the whole multi-MB file and **decoded the full-resolution JPEG into an uncompressed bitmap** first.
+
+Tolerable for most platforms, pathological for image-heavy "document" platforms. Measured on eXoIF `Images/IF Magazines/Box - Front` (600-DPI magazine cover scans): 312 files, ~873 MB total, **avg 2.8 MB, max 20 MB**, dimensions up to **194 megapixels** → roughly **66 MB (typical) to ~775 MB (worst) of decoded bitmap per image**. Interactive Fiction covers average ~339 KB, which is why IF Magazines was dramatically the worst.
+
+Symptoms were: scrolling, keyboard navigation, and **window resizing** sluggish (each remounts/re-rasterizes cells → re-fetch from the slow eXoDOS data drive + giant decode); list view unaffected (no covers); under enough simultaneous visible cells the decoded-bitmap + GPU-texture memory ballooned into the GBs and the renderer/GPU process OOM-crashed to a **white screen**. Game *selection* was fine (single carousel decode). Profiling confirmed the playlist sidebar and search were NOT involved (sub-ms) — the original "it's the playlists" hypothesis was a red herring.
+
+**What was done (solution 1 below):**
+- `fileServer.ts`: `_ensureThumbnail(filePath, maxEdge)` serves a downscaled, persistently-cached JPEG on `?w=N` requests. Decodes with `sharp` (libvips **shrink-on-load**, so the full-res bitmap is never materialized — no OOM even on the 195 MP scans), writes `<configFolder>/cache/thumbs/<sha1(path|size|mtime|w)>.jpg`, dedupes concurrent generations via an in-flight map, and falls back to the original image on error. Mirrors the existing `_ensureTiffPng` cache.
+- `Util.ts`: `getGameThumbnailUrl()` appends `?w=512` (`GRID_THUMBNAIL_MAX_EDGE`), so the grid + RandomGames request thumbnails; the right-sidebar carousel/preview still request full-res.
+- Result: covers drop from multi-MB / 66–775 MB decoded to **~40 KB / ~0.7 MB decoded**.
+
+**Residual trade-offs / follow-ups:**
+- **First-view warm-up:** generation is lazy and one-time — ~0.1 s typical, up to ~5 s for the 195 MP scans (partly USB-NTFS read). The cell stays blank during generation (libvips runs on libuv's threadpool, so it doesn't block the server); every later launch reads the cached ~40 KB file instantly. A background pre-warm pass could hide this but adds LaunchBox-style complexity — deliberately not done.
+- **⚠️ Packaging not yet wired:** `sharp` ships native binaries that must be `asarUnpack`-ed in the electron-builder config (`gulpfile.js`), and cross-platform releases need each target's `@img/sharp-*` binary present. Dev (`npm run start`) works; **`npm run release` needs this before the next packaged release.**
+- Adds a native dependency (`sharp`/libvips) → see the GLib-GObject-CRITICAL smell below.
+
+**Alternatives that were considered:** (2) in-memory cache only — re-pays the expensive decode every session, doesn't fix slow-on-every-start; (3) switch to `<img decoding="async" loading="lazy">` — moves decode off the main thread but doesn't shrink the bitmaps, so doesn't fix OOM (only a complement); (4) offline pre-generation (LaunchBox's approach) — lowest runtime cost but the most complexity.
+
+---
+
+## sharp/libvips emits GLib-GObject-CRITICAL log spam in the Electron backend
+**Priority:** Low
+**Severity:** Low (cosmetic)
+**Effort:** Low (to suppress) / High (to truly fix)
+
+**Issue:**
+With the thumbnail cache (above), every image `sharp` transforms in the forked backend process emits a burst of:
+```
+GLib-GObject-CRITICAL **: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+GLib-GObject-CRITICAL **: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+```
+to the backend's stderr (visible only when running from a terminal; the backend is `fork`ed with `silent: false` in `Main.ts`, so its stderr is inherited).
+
+**Cause:** the classic "two glib instances in one process" symptom — `sharp`'s prebuilt binary bundles its own libvips+glib, and the Electron-forked backend already has a glib in its address space. libvips `ref`/`unref` on its `VipsImage`/operation objects trips the `G_IS_OBJECT` type check against the *other* glib instance. The real refcounting is handled by the correct instance, so **output is correct and the process exits cleanly** — it's spurious, non-fatal noise (`CRITICAL` is GLib's name for a *recoverable* assertion).
+
+**Trade-offs:**
+- ✅ Functionally harmless: thumbnails generate correctly, no crash/leak observed
+- ✅ Invisible to end users (packaged builds have no terminal)
+- ❌ Clutters the terminal during development
+
+**Potential Solutions:**
+1. **Ignore it (current choice).** Cosmetic; not seen by end users.
+2. **Filter the backend child's stderr:** in `Main.ts` fork with `silent: true`, forward stdout, and forward stderr line-by-line except lines matching `GLib-GObject-CRITICAL`. ~10 lines, localized, no sharp/packaging impact.
+3. **Eliminate the duplicate glib** by building `sharp` against a system libvips (single glib instance). The "proper" fix, but reintroduces the native-dependency/packaging complexity we are otherwise avoiding.
+
+**Recommendation:** Ignore (1) for now — it's cosmetic and end users never see it. Revisit only if actual crashes/hangs ever occur *during* image processing (not just these log lines), in which case (3) becomes warranted.
+
+---
+
 ## Contributing
 
 When adding new code to this project:
