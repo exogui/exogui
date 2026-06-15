@@ -75,13 +75,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Linux
+          - name: Linux x64
             runner: ubuntu-latest
             script: release:linux
             artifact-pattern: |
               dist/*.tar.gz
               dist/*.AppImage
               dist/beta-linux.yml
+
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+            script: release:linux-arm64
+            artifact-pattern: |
+              dist/*.tar.gz
+              dist/*.AppImage
+              dist/beta-linux-arm64.yml
 
           - name: Windows
             runner: windows-latest
@@ -119,9 +127,10 @@ jobs:
       - name: Generate beta channel yml files
         shell: bash
         run: |
-          [ -f dist/latest-linux.yml ] && cp dist/latest-linux.yml dist/beta-linux.yml || true
-          [ -f dist/latest-mac.yml ]   && cp dist/latest-mac.yml   dist/beta-mac.yml   || true
-          [ -f dist/latest.yml ]       && cp dist/latest.yml       dist/beta.yml       || true
+          [ -f dist/latest-linux.yml ]       && cp dist/latest-linux.yml       dist/beta-linux.yml       || true
+          [ -f dist/latest-linux-arm64.yml ] && cp dist/latest-linux-arm64.yml dist/beta-linux-arm64.yml || true
+          [ -f dist/latest-mac.yml ]         && cp dist/latest-mac.yml         dist/beta-mac.yml         || true
+          [ -f dist/latest.yml ]             && cp dist/latest.yml             dist/beta.yml             || true
 
       - name: List dist directory
         shell: bash
