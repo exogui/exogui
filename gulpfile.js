@@ -196,13 +196,16 @@ function createBuildTargets(os, arch) {
             );
         case "darwin":
             return Platform.MAC.createTarget(["dmg"], archFromString(arch));
-        case "linux":
-            return new Map([
-                [Platform.LINUX, new Map([
-                    [Arch.x64, ["AppImage", "tar.gz", "dir"]],
-                    [Arch.arm64, ["AppImage", "tar.gz"]],
-                ])],
-            ]);
+        case "linux": {
+            // Build the requested arch only (each is built on a native runner so
+            // its arch-specific sharp/libvips binaries get installed correctly).
+            const linuxArch = archFromString(arch);
+            const targets =
+                linuxArch === Arch.x64
+                    ? ["AppImage", "tar.gz", "dir"]
+                    : ["AppImage", "tar.gz"];
+            return Platform.LINUX.createTarget(targets, linuxArch);
+        }
     }
 }
 
