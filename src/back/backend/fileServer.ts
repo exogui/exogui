@@ -10,7 +10,32 @@ import { getFilePathExtension } from "@shared/Util";
 import { LogFunc } from "@back/types";
 import { startFileServer } from "./serverHelper";
 
+// sharp is a CommonJS module whose export is the function itself. The backend
+// SWC build uses `noInterop`, so a default `import` would compile to a
+// `.default` access that is undefined at runtime — require it directly.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const sharp: typeof import("sharp").default = require("sharp");
+
 const TIFF_EXTS = new Set([".tif", ".tiff"]);
+
+/** Source formats we will downscale into cached thumbnails on `?w=` requests. */
+const THUMBNAIL_EXTS = new Set([
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+    ".avif",
+]);
+
+/** Upper bound on a requested thumbnail edge, to bound cache/work. */
+const MAX_THUMBNAIL_EDGE = 2048;
+
+/** JPEG quality for generated thumbnails. */
+const THUMBNAIL_QUALITY = 80;
 
 export interface IAssetsPaths {
     exodosPath: string;
@@ -60,6 +85,70 @@ export class FileServer {
         return cachePath;
     }
 
+    /** In-flight thumbnail generations, keyed by cache path, to dedupe concurrent requests. */
+    private _thumbInFlight: Map<string, Promise<string>> = new Map();
+
+    private _thumbsCacheFolder(): string {
+        return path.join(this._cacheFolder, "thumbs");
+    }
+
+    private async _resolveThumbCachePath(
+        filePath: string,
+        maxEdge: number
+    ): Promise<string> {
+        const stat = await fs.promises.stat(filePath);
+        const key = crypto
+        .createHash("sha1")
+        .update(`${filePath}|${stat.size}|${stat.mtimeMs}|${maxEdge}`)
+        .digest("hex");
+        return path.join(this._thumbsCacheFolder(), `${key}.jpg`);
+    }
+
+    /**
+     * Return a path to a cached JPEG thumbnail of `filePath` fitting within
+     * `maxEdge`x`maxEdge`, generating it (once) if missing. sharp decodes with
+     * shrink-on-load, so the full-resolution bitmap is never materialized.
+     */
+    private async _ensureThumbnail(
+        filePath: string,
+        maxEdge: number
+    ): Promise<string> {
+        const cachePath = await this._resolveThumbCachePath(filePath, maxEdge);
+        try {
+            await fs.promises.access(cachePath, fs.constants.R_OK);
+            return cachePath;
+        } catch {
+            /* generate below */
+        }
+
+        const inFlight = this._thumbInFlight.get(cachePath);
+        if (inFlight) {
+            return inFlight;
+        }
+
+        const task = (async () => {
+            await fs.promises.mkdir(path.dirname(cachePath), {
+                recursive: true,
+            });
+            const tmpPath = `${cachePath}.tmp-${process.pid}-${Date.now()}`;
+            await sharp(filePath, { failOn: "none", limitInputPixels: false })
+            .rotate()
+            .resize({
+                width: maxEdge,
+                height: maxEdge,
+                fit: "inside",
+                withoutEnlargement: true,
+            })
+            .jpeg({ quality: THUMBNAIL_QUALITY, mozjpeg: true })
+            .toFile(tmpPath);
+            await fs.promises.rename(tmpPath, cachePath);
+            return cachePath;
+        })().finally(() => this._thumbInFlight.delete(cachePath));
+
+        this._thumbInFlight.set(cachePath, task);
+        return task;
+    }
+
     private async _convertTiffToPng(tiffPath: string, pngPath: string): Promise<void> {
         const buffer = await fs.promises.readFile(tiffPath);
         const ifds = UTIF.decode(buffer);
@@ -101,9 +190,20 @@ export class FileServer {
         try {
             let urlPath = decodeURIComponent(req.url || "");
 
-            // Remove the get parameters
+            // Parse and remove the get parameters. `w` requests a downscaled
+            // thumbnail (used by the game grid) instead of the full-res image.
+            let thumbWidth: number | undefined;
             const qIndex = urlPath.indexOf("?");
             if (qIndex >= 0) {
+                const w = new URLSearchParams(
+                    urlPath.substring(qIndex + 1)
+                ).get("w");
+                if (w) {
+                    const parsed = parseInt(w, 10);
+                    if (Number.isFinite(parsed) && parsed > 0) {
+                        thumbWidth = Math.min(parsed, MAX_THUMBNAIL_EDGE);
+                    }
+                }
                 urlPath = urlPath.substr(0, qIndex);
             }
 
@@ -132,7 +232,7 @@ export class FileServer {
                             urlPath.substr(index + 1)
                         );
                         if (filePath.startsWith(imageFolder)) {
-                            this._serveFile(req, res, filePath);
+                            this._serveFile(req, res, filePath, thumbWidth);
                         }
                     }
                     break;
@@ -205,10 +305,22 @@ export class FileServer {
     private _serveFile(
         req: http.IncomingMessage,
         res: http.ServerResponse,
-        filePath: string
+        filePath: string,
+        thumbWidth?: number
     ): void {
         if (req.method === "GET" || req.method === "HEAD") {
-            if (TIFF_EXTS.has(path.extname(filePath).toLowerCase())) {
+            const ext = path.extname(filePath).toLowerCase();
+            if (thumbWidth && THUMBNAIL_EXTS.has(ext)) {
+                this._ensureThumbnail(filePath, thumbWidth)
+                .then((thumbPath) => this._serveFile(req, res, thumbPath))
+                .catch((err) => {
+                    console.warn(`File server failed to create thumbnail "${filePath}": ${err}`);
+                    // Degrade to the original image so the UI still shows something
+                    this._serveFile(req, res, filePath);
+                });
+                return;
+            }
+            if (TIFF_EXTS.has(ext)) {
                 this._ensureTiffPng(filePath)
                 .then((pngPath) => this._serveFile(req, res, pngPath))
                 .catch((err) => {
