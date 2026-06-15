@@ -6,6 +6,7 @@ import {
     setSearchText,
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
+import { PreferencesContext } from "../context/PreferencesContext";
 import { updatePreferencesData } from "@shared/preferences/util";
 import { faCheck, faFilter, faFilterCircleXmark, faHeart, faLaptop, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -29,14 +30,11 @@ export type SearchBarProps = {
 export function SearchBar(props: SearchBarProps) {
     const { searchState } = useSelector((state: RootState) => state);
     const dispatch = useDispatch();
-    const [expanded, setExpanded] = React.useState(
-        window.External.preferences.data.browsePageFiltersExpanded
-    );
+    const preferences = React.useContext(PreferencesContext);
+    const expanded = preferences.browsePageFiltersExpanded;
 
     const onToggleExpanded = () => {
-        const next = !expanded;
-        setExpanded(next);
-        updatePreferencesData({ browsePageFiltersExpanded: next });
+        updatePreferencesData({ browsePageFiltersExpanded: !expanded });
     };
     const view = searchState.views[props.view];
 

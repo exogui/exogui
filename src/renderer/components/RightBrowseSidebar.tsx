@@ -2,6 +2,7 @@ import { shell } from "@electron/remote";
 import { faFolder, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { englishTranslation } from "@renderer/lang/en";
+import { AdvancedFilter } from "@renderer/redux/searchSlice";
 import { loadDynamicAddAppsForGame } from "@renderer/util/addApps";
 import { openGameConfigDirectory } from "@renderer/util/games";
 import { fixSlashes } from "@shared/Util";
@@ -14,7 +15,6 @@ import * as path from "path";
 import * as React from "react";
 import { getGameImagePath, openContextMenu } from "../Util";
 import { WithPreferencesProps } from "../containers/withPreferences";
-import { DropdownInputField } from "./DropdownInputField";
 import { FormattedGameMedia, GameImageCarousel } from "./GameImageCarousel";
 import { MediaPreview } from "./ImagePreview";
 import { InputField } from "./InputField";
@@ -37,6 +37,8 @@ type OwnProps = {
     onAddAppLaunch: (addApp: IAdditionalApplicationInfo) => void;
     /** Toggle favorite state for the current game */
     onFavoriteToggle: (game: IGameInfo) => void;
+    /** Apply a metadata field value as an advanced filter in the current view */
+    onSearchField: (field: keyof AdvancedFilter, value: string) => void;
 };
 
 export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
@@ -95,6 +97,16 @@ export class RightBrowseSidebar extends React.Component<
         );
 
         this.setState({ dynamicAddApps });
+    };
+
+    wrapOnFieldClick = (
+        field: keyof AdvancedFilter,
+        value: string
+    ): (() => void) | undefined => {
+        if (!value) {
+            return undefined;
+        }
+        return () => this.props.onSearchField(field, value);
     };
 
     componentDidMount(): void {
@@ -209,15 +221,14 @@ export class RightBrowseSidebar extends React.Component<
                     <div className="browse-right-sidebar__section">
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.tags}: </p>
-                            <DropdownInputField
+                            <InputField
                                 text={game.genre}
                                 placeholder={strings.noTags}
                                 className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.genre = text;
-                                    this.forceUpdate();
-                                }}
+                                onClick={this.wrapOnFieldClick(
+                                    "genre",
+                                    game.genre
+                                )}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
@@ -226,6 +237,10 @@ export class RightBrowseSidebar extends React.Component<
                                 text={game.series}
                                 placeholder={strings.noSeries}
                                 className="browse-right-sidebar__searchable"
+                                onClick={this.wrapOnFieldClick(
+                                    "series",
+                                    game.series
+                                )}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
@@ -234,6 +249,10 @@ export class RightBrowseSidebar extends React.Component<
                                 text={game.developer}
                                 placeholder={strings.noDeveloper}
                                 className="browse-right-sidebar__searchable"
+                                onClick={this.wrapOnFieldClick(
+                                    "developer",
+                                    game.developer
+                                )}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
@@ -242,6 +261,10 @@ export class RightBrowseSidebar extends React.Component<
                                 text={game.publisher}
                                 placeholder={strings.noPublisher}
                                 className="browse-right-sidebar__searchable"
+                                onClick={this.wrapOnFieldClick(
+                                    "publisher",
+                                    game.publisher
+                                )}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
@@ -249,33 +272,25 @@ export class RightBrowseSidebar extends React.Component<
                             <InputField
                                 text={game.source}
                                 placeholder={strings.noSource}
-                                className="browse-right-sidebar__searchable"
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.platform}: </p>
-                            <DropdownInputField
+                            <InputField
                                 text={game.platform}
                                 placeholder={strings.noPlatform}
-                                className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.platform = text;
-                                    this.forceUpdate();
-                                }}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.playMode}: </p>
-                            <DropdownInputField
+                            <InputField
                                 text={game.playMode}
                                 placeholder={strings.noPlayMode}
                                 className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.playMode = text;
-                                    this.forceUpdate();
-                                }}
+                                onClick={this.wrapOnFieldClick(
+                                    "playMode",
+                                    game.playMode
+                                )}
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
@@ -286,6 +301,10 @@ export class RightBrowseSidebar extends React.Component<
                                 .toString()}
                                 placeholder={strings.noReleaseDate}
                                 className="browse-right-sidebar__searchable"
+                                onClick={this.wrapOnFieldClick(
+                                    "releaseYear",
+                                    game.releaseYear
+                                )}
                             />
                         </div>
                     </div>
