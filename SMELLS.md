@@ -49,42 +49,13 @@ All CSS lives in `core.css` (2756 lines). Update system added 477 lines for Upda
 
 ---
 
-## Grid thumbnails decode full-resolution source images (perf / OOM) — RESOLVED
-**Priority:** Resolved (was High)
-**Severity:** High (was: could OOM-crash the renderer to a white screen)
-**Effort:** Medium
-
-**Status:** Fixed via a persistent thumbnail cache in the file server. Kept here for context and the residual follow-ups below.
-
-**Original issue:**
-`GameGridItem` (`src/renderer/components/GameGridItem.tsx`) set each grid cell's cover as a CSS `background-image` pointing straight at the full-resolution source file. There was no thumbnailing/resize step — the grid downscaled to a ~150px tile with CSS, but the browser still fetched the whole multi-MB file and **decoded the full-resolution JPEG into an uncompressed bitmap** first.
-
-Tolerable for most platforms, pathological for image-heavy "document" platforms. Measured on eXoIF `Images/IF Magazines/Box - Front` (600-DPI magazine cover scans): 312 files, ~873 MB total, **avg 2.8 MB, max 20 MB**, dimensions up to **194 megapixels** → roughly **66 MB (typical) to ~775 MB (worst) of decoded bitmap per image**. Interactive Fiction covers average ~339 KB, which is why IF Magazines was dramatically the worst.
-
-Symptoms were: scrolling, keyboard navigation, and **window resizing** sluggish (each remounts/re-rasterizes cells → re-fetch from the slow eXoDOS data drive + giant decode); list view unaffected (no covers); under enough simultaneous visible cells the decoded-bitmap + GPU-texture memory ballooned into the GBs and the renderer/GPU process OOM-crashed to a **white screen**. Game *selection* was fine (single carousel decode). Profiling confirmed the playlist sidebar and search were NOT involved (sub-ms) — the original "it's the playlists" hypothesis was a red herring.
-
-**What was done (solution 1 below):**
-- `fileServer.ts`: `_ensureThumbnail(filePath, maxEdge)` serves a downscaled, persistently-cached JPEG on `?w=N` requests. Decodes with `sharp` (libvips **shrink-on-load**, so the full-res bitmap is never materialized — no OOM even on the 195 MP scans), writes `<configFolder>/cache/thumbs/<sha1(path|size|mtime|w)>.jpg`, dedupes concurrent generations via an in-flight map, and falls back to the original image on error. Mirrors the existing `_ensureTiffPng` cache.
-- `Util.ts`: `getGameThumbnailUrl()` appends `?w=512` (`GRID_THUMBNAIL_MAX_EDGE`), so the grid + RandomGames request thumbnails; the right-sidebar carousel/preview still request full-res.
-- Result: covers drop from multi-MB / 66–775 MB decoded to **~40 KB / ~0.7 MB decoded**.
-
-**Residual trade-offs / follow-ups:**
-- **First-view warm-up:** generation is lazy and one-time — ~0.1 s typical, up to ~5 s for the 195 MP scans (partly USB-NTFS read). The cell stays blank during generation (libvips runs on libuv's threadpool, so it doesn't block the server); every later launch reads the cached ~40 KB file instantly. A background pre-warm pass could hide this but adds LaunchBox-style complexity — deliberately not done.
-- **Packaging:** `sharp`/libvips needs `asarUnpack: ["**/node_modules/sharp/**", "**/node_modules/@img/**"]` in `gulpfile.js` — the native `.node` and the libvips `.so`/`.dylib` must live on disk; they cannot be `dlopen`-ed from inside the asar (the AppImage failed at runtime with `ERR_DLOPEN_FAILED: libvips-cpp.so... cannot open shared object file` without this).
-  Every release target builds on a native runner (Linux x64, Linux arm64, macOS arm64, macOS Intel x64), so `npm ci` installs the correct per-arch `@img/sharp-*` binary directly — no cross-arch install or `@electron/universal` merge handling is needed. Verify each release target actually launches after a sharp/Electron bump. See also the macOS Intel runner sunset below.
-- Adds a native dependency (`sharp`/libvips) → see the GLib-GObject-CRITICAL smell below.
-
-**Alternatives that were considered:** (2) in-memory cache only — re-pays the expensive decode every session, doesn't fix slow-on-every-start; (3) switch to `<img decoding="async" loading="lazy">` — moves decode off the main thread but doesn't shrink the bitmaps, so doesn't fix OOM (only a complement); (4) offline pre-generation (LaunchBox's approach) — lowest runtime cost but the most complexity.
-
----
-
 ## sharp/libvips emits GLib-GObject-CRITICAL log spam in the Electron backend
 **Priority:** Low
 **Severity:** Low (cosmetic)
 **Effort:** Low (to suppress) / High (to truly fix)
 
 **Issue:**
-With the thumbnail cache (above), every image `sharp` transforms in the forked backend process emits a burst of:
+With the thumbnail cache, every image `sharp` transforms in the forked backend process emits a burst of:
 ```
 GLib-GObject-CRITICAL **: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
 GLib-GObject-CRITICAL **: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
@@ -113,7 +84,7 @@ to the backend's stderr (visible only when running from a terminal; the backend 
 **Effort:** Low (to drop Intel) / High (to keep Intel without a native runner)
 
 **Issue:**
-The macOS Intel (x64) build — shipped as the **legacy** Electron 37 build — runs on GitHub's `macos-15-intel` runner (`build-legacy-mac` in `release.yml` / `beta-release.yml` / `build.yml`). It is built natively (rather than cross-compiled / universal) specifically so `npm ci` installs the correct `@img/sharp-darwin-x64` binary; the previous universal-from-arm64 build shipped no x64 sharp and crashed on Intel Macs with `Could not load the "sharp" module using the darwin-x64 runtime`.
+The macOS Intel (x64) build — shipped as the **legacy** Electron 37 build — runs on GitHub's `macos-15-intel` runner (the `macOS (Legacy)` matrix entry in `release.yml` / `build.yml`, and the `build-legacy-mac` job in `beta-release.yml`). It is built natively (rather than cross-compiled / universal) specifically so `npm ci` installs the correct `@img/sharp-darwin-x64` binary; the previous universal-from-arm64 build shipped no x64 sharp and crashed on Intel Macs with `Could not load the "sharp" module using the darwin-x64 runtime`.
 
 `macos-15-intel` is GitHub's **last** Intel macOS runner and is scheduled for removal **~August 2027**, after which no GitHub-hosted x86_64 macOS runner exists. The Apple Silicon (arm64) build on `macos-latest` is unaffected.
 
