@@ -19,9 +19,28 @@ permissions:
 
 jobs:
   build-macos:
-    name: Build macOS
+    name: Build ${{ matrix.name }}
     if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            runner: macos-latest
+            script: release:mac-arm64
+            artifact-name: macOS-artifacts
+            artifact-pattern: |
+              dist/*.dmg
+              dist/latest-mac.yml
+
+          - name: macOS (Legacy)
+            runner: macos-15-intel
+            script: release:mac-x64
+            electron-version: '37'
+            legacy: true
+            artifact-name: macOS-Legacy-artifacts
+            artifact-pattern: dist/*-x86.dmg
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,53 +58,25 @@ jobs:
           printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
           chmod +x /usr/local/bin/codesign
 
-      - run: npm run release:mac-arm64
+      - name: Install legacy Electron
+        if: matrix.electron-version
+        run: npm install electron@${{ matrix.electron-version }} --save-dev
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macOS-artifacts
-          path: |
-            dist/*.dmg
-            dist/latest-mac.yml
-          if-no-files-found: warn
-          retention-days: 7
+      - run: npm run ${{ matrix.script }}
 
-  build-macos-legacy:
-    name: Build macOS (Legacy)
-    if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Disable code signing
+      - name: Rename x86 artifacts
+        if: matrix.legacy
         run: |
-          printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
-          chmod +x /usr/local/bin/codesign
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - run: npm run release:mac-x64
-
-      - name: Rename artifacts to legacy
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
+          for f in dist/*.dmg; do
+            base="${f%.dmg}"
+            base="${base%-x64}"
+            mv "$f" "${base}-x86.dmg"
           done
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macOS-Legacy-artifacts
-          path: dist/*-legacy-*.dmg
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
           retention-days: 7
 
