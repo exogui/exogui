@@ -1455,11 +1455,27 @@ body {
   cursor: pointer;
 }
 
+.browse-right-sidebar--edit-disabled .browse-right-sidebar__searchable--active {
+  color: var(--layout__browse-right-sidebar-searchable-hover);
+  font-weight: bold;
+}
+
+.browse-right-sidebar__searchable-separator {
+  cursor: default;
+}
+
 .browse-right-sidebar--edit-disabled .browse-right-sidebar__row--one-line> :last-child {
   flex: 1 1 auto;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.browse-right-sidebar--edit-disabled .browse-right-sidebar__row--one-line> .browse-right-sidebar__searchable-values:last-child {
+  text-overflow: clip;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .browse-right-sidebar__row--one-line>.input-dropdown {

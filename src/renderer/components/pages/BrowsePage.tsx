@@ -305,6 +305,7 @@ class BrowsePage extends React.Component<
                         currentAddApps={selectedAddApps}
                         currentPlaylistNotes={this.state.currentPlaylistNotes}
                         gamePlaylistEntry={gamePlaylistEntry}
+                        advancedFilter={view?.advancedFilter}
                         onGameLaunch={this.onGameLaunch}
                         onGameLaunchSetup={this.onGameLaunchSetup}
                         onAddAppLaunch={this.onAddAppLaunch}
@@ -414,17 +415,17 @@ class BrowsePage extends React.Component<
         if (!view) {
             return;
         }
-        const values = (
-            field === "releaseYear"
-                ? [value.split("-")[0]]
-                : value.split(";").map((s) => s.trim())
-        ).filter((s) => s.length > 0);
-        if (values.length === 0) {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
             return;
         }
+        const currentValues = view.advancedFilter[field] as string[];
+        const newValues = currentValues.includes(trimmedValue)
+            ? currentValues.filter((v) => v !== trimmedValue)
+            : [...currentValues, trimmedValue];
         this.props.onSetAdvancedFilter({
             view: this.props.gameLibrary,
-            filter: { ...view.advancedFilter, [field]: values },
+            filter: { ...view.advancedFilter, [field]: newValues },
         });
         if (!this.props.preferencesData.browsePageFiltersExpanded) {
             updatePreferencesData({ browsePageFiltersExpanded: true });

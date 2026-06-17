@@ -37,11 +37,25 @@ type OwnProps = {
     onAddAppLaunch: (addApp: IAdditionalApplicationInfo) => void;
     /** Toggle favorite state for the current game */
     onFavoriteToggle: (game: IGameInfo) => void;
-    /** Apply a metadata field value as an advanced filter in the current view */
+    /** Toggle a single metadata field value as an advanced filter in the current view */
     onSearchField: (field: keyof AdvancedFilter, value: string) => void;
+    /** Currently active advanced filter (used to highlight selected values) */
+    advancedFilter?: AdvancedFilter;
 };
 
 export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
+
+/** Split a ";"-separated metadata field into unique, trimmed values. */
+function splitFieldValues(raw: string): string[] {
+    const values: string[] = [];
+    for (const part of (raw ?? "").split(";")) {
+        const trimmed = part.trim();
+        if (trimmed.length > 0 && !values.includes(trimmed)) {
+            values.push(trimmed);
+        }
+    }
+    return values;
+}
 
 type RightBrowseSidebarState = {
     /** If a preview of the current game's selected media. */
@@ -99,14 +113,47 @@ export class RightBrowseSidebar extends React.Component<
         this.setState({ dynamicAddApps });
     };
 
-    wrapOnFieldClick = (
+    renderSearchableRow = (
+        label: string,
+        placeholder: string,
         field: keyof AdvancedFilter,
-        value: string
-    ): (() => void) | undefined => {
-        if (!value) {
-            return undefined;
-        }
-        return () => this.props.onSearchField(field, value);
+        values: string[]
+    ): React.ReactNode => {
+        const selected = (this.props.advancedFilter?.[field] as string[]) ?? [];
+        return (
+            <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
+                <p>{label}: </p>
+                {values.length > 0 ? (
+                    <p className="input-field browse-right-sidebar__searchable-values">
+                        {values.map((value, index) => (
+                            <React.Fragment key={value}>
+                                {index > 0 ? (
+                                    <span className="browse-right-sidebar__searchable-separator">
+                                        ;{" "}
+                                    </span>
+                                ) : null}
+                                <span
+                                    className={`browse-right-sidebar__searchable${
+                                        selected.includes(value)
+                                            ? " browse-right-sidebar__searchable--active"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        this.props.onSearchField(field, value)
+                                    }
+                                >
+                                    {value}
+                                </span>
+                            </React.Fragment>
+                        ))}
+                    </p>
+                ) : (
+                    <p className="input-field simple-disabled-text">
+                        {placeholder}
+                    </p>
+                )}
+            </div>
+        );
     };
 
     componentDidMount(): void {
@@ -143,6 +190,7 @@ export class RightBrowseSidebar extends React.Component<
                     ? strings.play
                     : strings.install
                 : strings.open;
+            const releaseYear = (game.releaseYear ?? "").split("-")[0].trim();
             return (
                 <div
                     className={
@@ -219,54 +267,30 @@ export class RightBrowseSidebar extends React.Component<
 
                     {/* -- Most Fields -- */}
                     <div className="browse-right-sidebar__section">
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.tags}: </p>
-                            <InputField
-                                text={game.genre}
-                                placeholder={strings.noTags}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "genre",
-                                    game.genre
-                                )}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.series}: </p>
-                            <InputField
-                                text={game.series}
-                                placeholder={strings.noSeries}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "series",
-                                    game.series
-                                )}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.developer}: </p>
-                            <InputField
-                                text={game.developer}
-                                placeholder={strings.noDeveloper}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "developer",
-                                    game.developer
-                                )}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.publisher}: </p>
-                            <InputField
-                                text={game.publisher}
-                                placeholder={strings.noPublisher}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "publisher",
-                                    game.publisher
-                                )}
-                            />
-                        </div>
+                        {this.renderSearchableRow(
+                            strings.genre,
+                            strings.noGenre,
+                            "genre",
+                            splitFieldValues(game.genre)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.series,
+                            strings.noSeries,
+                            "series",
+                            splitFieldValues(game.series)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.developer,
+                            strings.noDeveloper,
+                            "developer",
+                            splitFieldValues(game.developer)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.publisher,
+                            strings.noPublisher,
+                            "publisher",
+                            splitFieldValues(game.publisher)
+                        )}
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.source}: </p>
                             <InputField
@@ -281,32 +305,18 @@ export class RightBrowseSidebar extends React.Component<
                                 placeholder={strings.noPlatform}
                             />
                         </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.playMode}: </p>
-                            <InputField
-                                text={game.playMode}
-                                placeholder={strings.noPlayMode}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "playMode",
-                                    game.playMode
-                                )}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.releaseYear}: </p>
-                            <InputField
-                                text={new Date(game.releaseYear)
-                                .getFullYear()
-                                .toString()}
-                                placeholder={strings.noReleaseDate}
-                                className="browse-right-sidebar__searchable"
-                                onClick={this.wrapOnFieldClick(
-                                    "releaseYear",
-                                    game.releaseYear
-                                )}
-                            />
-                        </div>
+                        {this.renderSearchableRow(
+                            strings.playMode,
+                            strings.noPlayMode,
+                            "playMode",
+                            splitFieldValues(game.playMode)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.releaseYear,
+                            strings.noReleaseDate,
+                            "releaseYear",
+                            releaseYear ? [releaseYear] : []
+                        )}
                     </div>
                     {/* -- Playlist Game Entry Notes -- */}
                     {gamePlaylistEntry ? (
