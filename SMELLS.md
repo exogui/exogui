@@ -70,10 +70,8 @@ Symptoms were: scrolling, keyboard navigation, and **window resizing** sluggish 
 
 **Residual trade-offs / follow-ups:**
 - **First-view warm-up:** generation is lazy and one-time — ~0.1 s typical, up to ~5 s for the 195 MP scans (partly USB-NTFS read). The cell stays blank during generation (libvips runs on libuv's threadpool, so it doesn't block the server); every later launch reads the cached ~40 KB file instantly. A background pre-warm pass could hide this but adds LaunchBox-style complexity — deliberately not done.
-- **Packaging:** `sharp`/libvips needs two pieces of electron-builder config in `gulpfile.js`:
-  1. `asarUnpack: ["**/node_modules/sharp/**", "**/node_modules/@img/**"]` — the native `.node` and the libvips `.so`/`.dylib` must live on disk; they cannot be `dlopen`-ed from inside the asar (the AppImage failed at runtime with `ERR_DLOPEN_FAILED: libvips-cpp.so... cannot open shared object file` without this).
-  2. `mac.x64ArchFiles: "**/{7za,@img/**}"` — lets sharp's per-arch binaries pass the macOS universal (`@electron/universal`) merge.
-  Cross-arch builds (e.g. linux-arm64 from an x64 runner) also rely on `@electron/rebuild` installing the target's `@img/sharp-*` binary; verify each release target actually launches.
+- **Packaging:** `sharp`/libvips needs `asarUnpack: ["**/node_modules/sharp/**", "**/node_modules/@img/**"]` in `gulpfile.js` — the native `.node` and the libvips `.so`/`.dylib` must live on disk; they cannot be `dlopen`-ed from inside the asar (the AppImage failed at runtime with `ERR_DLOPEN_FAILED: libvips-cpp.so... cannot open shared object file` without this).
+  Every release target builds on a native runner (Linux x64, Linux arm64, macOS arm64, macOS Intel x64), so `npm ci` installs the correct per-arch `@img/sharp-*` binary directly — no cross-arch install or `@electron/universal` merge handling is needed. Verify each release target actually launches after a sharp/Electron bump. See also the macOS Intel runner sunset below.
 - Adds a native dependency (`sharp`/libvips) → see the GLib-GObject-CRITICAL smell below.
 
 **Alternatives that were considered:** (2) in-memory cache only — re-pays the expensive decode every session, doesn't fix slow-on-every-start; (3) switch to `<img decoding="async" loading="lazy">` — moves decode off the main thread but doesn't shrink the bitmaps, so doesn't fix OOM (only a complement); (4) offline pre-generation (LaunchBox's approach) — lowest runtime cost but the most complexity.
@@ -106,6 +104,31 @@ to the backend's stderr (visible only when running from a terminal; the backend 
 3. **Eliminate the duplicate glib** by building `sharp` against a system libvips (single glib instance). The "proper" fix, but reintroduces the native-dependency/packaging complexity we are otherwise avoiding.
 
 **Recommendation:** Ignore (1) for now — it's cosmetic and end users never see it. Revisit only if actual crashes/hangs ever occur *during* image processing (not just these log lines), in which case (3) becomes warranted.
+
+---
+
+## macOS Intel build depends on the soon-to-be-retired `macos-15-intel` runner
+**Priority:** Medium
+**Severity:** Medium (release will break for Intel Macs when the runner is removed)
+**Effort:** Low (to drop Intel) / High (to keep Intel without a native runner)
+
+**Issue:**
+The macOS Intel (x64) build — shipped as the **legacy** Electron 37 build — runs on GitHub's `macos-15-intel` runner (`build-legacy-mac` in `release.yml` / `beta-release.yml` / `build.yml`). It is built natively (rather than cross-compiled / universal) specifically so `npm ci` installs the correct `@img/sharp-darwin-x64` binary; the previous universal-from-arm64 build shipped no x64 sharp and crashed on Intel Macs with `Could not load the "sharp" module using the darwin-x64 runtime`.
+
+`macos-15-intel` is GitHub's **last** Intel macOS runner and is scheduled for removal **~August 2027**, after which no GitHub-hosted x86_64 macOS runner exists. The Apple Silicon (arm64) build on `macos-latest` is unaffected.
+
+**Trade-offs:**
+- ✅ Native build → correct per-arch sharp/libvips with zero cross-arch hacks (no `@electron/universal` merge, no `x64ArchFiles`)
+- ✅ Matches the Linux per-arch native-runner pattern
+- ❌ Time-bombed: the Intel job will fail once `macos-15-intel` is retired
+- ❌ Two separate `.dmg`s (arm64 + Intel) instead of one universal download
+
+**Potential Solutions (when the runner is removed):**
+1. **Drop Intel macOS support** — Apple-Silicon-only, matching Apple's own x86_64 EOL. Simplest.
+2. **Cross-build a universal app on arm64 again** — requires re-introducing both-arch `@img/sharp-*` into `node_modules` (npm prunes the other arch on each `npm install`, so this needs a temp-prefix-install-and-copy step) plus the `@electron/universal` merge config.
+3. **Self-hosted Intel Mac runner.**
+
+**Recommendation:** Leave as-is until `macos-15-intel` is actually retired; reassess Intel demand then and most likely take (1).
 
 ---
 
