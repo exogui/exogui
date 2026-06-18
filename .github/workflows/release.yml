@@ -106,12 +106,18 @@ jobs:
               dist/*.dmg
               dist/latest-mac.yml
 
-          - name: macOS (Legacy)
+          - name: macOS x86
+            runner: macos-latest
+            script: release:mac-x64
+            arch-suffix: x86
+            artifact-pattern: dist/*-x86.dmg
+
+          - name: macOS x86_legacy
             runner: macos-15-intel
             script: release:mac-x64
             electron-version: '37'
-            legacy: true
-            artifact-pattern: dist/*-x86.dmg
+            arch-suffix: x86_legacy
+            artifact-pattern: dist/*-x86_legacy.dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -135,14 +141,14 @@ jobs:
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
 
-      - name: Rename x86 artifacts
-        if: matrix.legacy
+      - name: Rename macOS x64 dmg
+        if: matrix.arch-suffix
         shell: bash
         run: |
           for f in dist/*.dmg; do
             base="${f%.dmg}"
             base="${base%-x64}"
-            mv "$f" "${base}-x86.dmg"
+            mv "$f" "${base}-${{ matrix.arch-suffix }}.dmg"
           done
 
       - name: List dist directory

@@ -106,6 +106,19 @@ jobs:
               dist/*.dmg
               dist/beta-mac.yml
 
+          - name: macOS x86
+            runner: macos-latest
+            script: release:mac-x64
+            arch-suffix: x86
+            artifact-pattern: dist/*-x86.dmg
+
+          - name: macOS x86_legacy
+            runner: macos-15-intel
+            script: release:mac-x64
+            electron-version: '37'
+            arch-suffix: x86_legacy
+            artifact-pattern: dist/*-x86_legacy.dmg
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,8 +134,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install legacy Electron
+        if: matrix.electron-version
+        run: npm install electron@${{ matrix.electron-version }} --save-dev
+
       - name: Build ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
+
+      - name: Rename macOS x64 dmg
+        if: matrix.arch-suffix
+        shell: bash
+        run: |
+          for f in dist/*.dmg; do
+            base="${f%.dmg}"
+            base="${base%-x64}"
+            mv "$f" "${base}-${{ matrix.arch-suffix }}.dmg"
+          done
 
       - name: Generate beta channel yml files
         shell: bash
@@ -143,52 +170,9 @@ jobs:
           path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
 
-  build-legacy-mac:
-    name: Build macOS (Legacy)
-    needs: prepare
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: beta
-          submodules: recursive
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - name: Build macOS (Legacy)
-        run: npm run release:mac-x64
-
-      - name: Rename artifacts to legacy
-        shell: bash
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
-          done
-
-      - name: List dist directory
-        run: ls -la dist/ || true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS-Legacy-artifacts
-          path: |
-            dist/*-legacy-*.dmg
-          if-no-files-found: warn
-
   release:
     name: Create Beta Release
-    needs: [prepare, build, build-legacy-mac]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
