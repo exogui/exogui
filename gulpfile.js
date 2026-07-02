@@ -130,17 +130,24 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
+                    // Both arch builds ship the full set of sharp/libvips @img
+                    // binaries (arm64 + x64), so every native Mach-O is byte
+                    // identical across them. Tell @electron/universal to keep
+                    // them as-is instead of failing the merge — sharp selects
+                    // the right one at runtime via process.arch.
+                    x64ArchFiles: "**/node_modules/@img/**",
                 },
             },
             targets: targets,
         })
         .then(() => {
             console.log("Pack - Done!");
+            done();
         })
         .catch((error) => {
             console.log("Pack - Error!", error);
-        })
-        .then(done);
+            done(error);
+        });
 });
 
 /* ------ Meta Tasks ------*/
