@@ -7,8 +7,13 @@ on:
       - beta
     paths-ignore:
       - '**.md'
-      - '.github/workflows/**'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build & package only — draft release, no version bump/push'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -16,7 +21,10 @@ permissions:
 jobs:
   prepare:
     name: Bump Beta Version
-    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'skip-release')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-release'))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -35,6 +43,8 @@ jobs:
 
       - name: Bump beta version
         id: version
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -42,14 +52,19 @@ jobs:
           BUMPED=$(node -p "const v='${BASE}'.split('.'); v[2]=parseInt(v[2])+1; v.join('.')")
           VERSION="${BUMPED}-beta"
           npm version "${VERSION}" --no-git-tag-version
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${VERSION}"
-          git push origin beta
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run — skipping commit & push of ${VERSION}"
+          else
+            git add package.json package-lock.json
+            git commit -m "chore: bump version to ${VERSION}"
+            git push origin beta
+          fi
 
   sync-develop:
     name: Sync develop with beta
     needs: prepare
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,18 +108,26 @@ jobs:
 
           - name: Windows
             runner: windows-latest
-            script: release:win32
+            script: release:windows
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
               dist/beta.yml
 
-          - name: macOS arm64
+          - name: macOS universal
             runner: macos-latest
-            script: release:mac-arm64
+            script: release:mac-universal
+            mac-universal: true
             artifact-pattern: |
               dist/*.dmg
               dist/beta-mac.yml
+
+          - name: macOS x86_legacy
+            runner: macos-15-intel
+            script: release:mac-x64
+            electron-version: '37'
+            arch-suffix: x86_legacy
+            artifact-pattern: dist/*-x86_legacy.dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -112,17 +135,13 @@ jobs:
           ref: beta
           submodules: recursive
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build ${{ matrix.name }}
-        run: npm run ${{ matrix.script }}
+        uses: ./.github/actions/build-app
+        with:
+          script: ${{ matrix.script }}
+          electron-version: ${{ matrix.electron-version }}
+          mac-universal: ${{ matrix.mac-universal }}
+          arch-suffix: ${{ matrix.arch-suffix }}
 
       - name: Generate beta channel yml files
         shell: bash
@@ -143,52 +162,9 @@ jobs:
           path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
 
-  build-legacy-mac:
-    name: Build macOS (Legacy)
-    needs: prepare
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: beta
-          submodules: recursive
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - name: Build macOS (Legacy)
-        run: npm run release:mac-x64
-
-      - name: Rename artifacts to legacy
-        shell: bash
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
-          done
-
-      - name: List dist directory
-        run: ls -la dist/ || true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS-Legacy-artifacts
-          path: |
-            dist/*-legacy-*.dmg
-          if-no-files-found: warn
-
   release:
     name: Create Beta Release
-    needs: [prepare, build, build-legacy-mac]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -228,7 +204,7 @@ jobs:
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: v${{ needs.prepare.outputs.version }}
-          draft: false
+          draft: ${{ inputs.dry_run == true }}
           prerelease: true
           files: |
             artifacts/**/*

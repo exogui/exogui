@@ -26,9 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: macOS
+          - name: macOS Universal
             runner: macos-latest
-            script: release:mac-arm64
+            script: release:mac-universal
+            mac-universal: true
             artifact-name: macOS-artifacts
             artifact-pattern: |
               dist/*.dmg
@@ -38,40 +39,23 @@ jobs:
             runner: macos-15-intel
             script: release:mac-x64
             electron-version: '37'
-            legacy: true
+            arch-suffix: x86_legacy
             artifact-name: macOS-Legacy-artifacts
-            artifact-pattern: dist/*-x86.dmg
+            artifact-pattern: dist/*-x86_legacy.dmg
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build ${{ matrix.name }}
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Disable code signing
-        run: |
-          printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
-          chmod +x /usr/local/bin/codesign
-
-      - name: Install legacy Electron
-        if: matrix.electron-version
-        run: npm install electron@${{ matrix.electron-version }} --save-dev
-
-      - run: npm run ${{ matrix.script }}
-
-      - name: Rename x86 artifacts
-        if: matrix.legacy
-        run: |
-          for f in dist/*.dmg; do
-            base="${f%.dmg}"
-            base="${base%-x64}"
-            mv "$f" "${base}-x86.dmg"
-          done
+          script: ${{ matrix.script }}
+          electron-version: ${{ matrix.electron-version }}
+          mac-universal: ${{ matrix.mac-universal }}
+          arch-suffix: ${{ matrix.arch-suffix }}
+          disable-codesign: 'true'
 
       - uses: actions/upload-artifact@v4
         with:
@@ -89,14 +73,11 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build Linux (x64)
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - run: npm run release:linux
+          script: release:linux
 
       - uses: actions/upload-artifact@v4
         with:
@@ -117,14 +98,11 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build Linux (arm64)
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - run: npm run release:linux-arm64
+          script: release:linux-arm64
 
       - uses: actions/upload-artifact@v4
         with:
@@ -145,14 +123,11 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build Windows
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - run: npm run release:win32
+          script: release:windows
 
       - uses: actions/upload-artifact@v4
         with:

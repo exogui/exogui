@@ -7,8 +7,13 @@ on:
       - master
     paths-ignore:
       - '**.md'
-      - '.github/workflows/**'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build & package only — draft release, no version bump/push'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -16,7 +21,10 @@ permissions:
 jobs:
   prepare:
     name: Bump Version
-    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'skip-release')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-release'))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump.outputs.version }}
@@ -35,19 +43,26 @@ jobs:
 
       - name: Strip beta suffix for stable release
         id: bump
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           VERSION=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
           npm version "${VERSION}" --no-git-tag-version
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${VERSION}"
-          git push origin master
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run — skipping commit & push of ${VERSION}"
+          else
+            git add package.json package-lock.json
+            git commit -m "chore: bump version to ${VERSION}"
+            git push origin master
+          fi
 
   sync-downstream:
     name: Sync beta and develop with master
     needs: prepare
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,25 +108,26 @@ jobs:
 
           - name: Windows
             runner: windows-latest
-            script: release:win32
+            script: release:windows
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
               dist/latest.yml
 
-          - name: macOS arm64
+          - name: macOS universal
             runner: macos-latest
-            script: release:mac-arm64
+            script: release:mac-universal
+            mac-universal: true
             artifact-pattern: |
               dist/*.dmg
               dist/latest-mac.yml
 
-          - name: macOS (Legacy)
+          - name: macOS x86_legacy
             runner: macos-15-intel
             script: release:mac-x64
             electron-version: '37'
-            legacy: true
-            artifact-pattern: dist/*-x86.dmg
+            arch-suffix: x86_legacy
+            artifact-pattern: dist/*-x86_legacy.dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -119,31 +135,13 @@ jobs:
           ref: master
           submodules: recursive
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install legacy Electron
-        if: matrix.electron-version
-        run: npm install electron@${{ matrix.electron-version }} --save-dev
-
       - name: Build ${{ matrix.name }}
-        run: npm run ${{ matrix.script }}
-
-      - name: Rename x86 artifacts
-        if: matrix.legacy
-        shell: bash
-        run: |
-          for f in dist/*.dmg; do
-            base="${f%.dmg}"
-            base="${base%-x64}"
-            mv "$f" "${base}-x86.dmg"
-          done
+        uses: ./.github/actions/build-app
+        with:
+          script: ${{ matrix.script }}
+          electron-version: ${{ matrix.electron-version }}
+          mac-universal: ${{ matrix.mac-universal }}
+          arch-suffix: ${{ matrix.arch-suffix }}
 
       - name: List dist directory
         shell: bash
@@ -196,7 +194,7 @@ jobs:
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: v${{ needs.prepare.outputs.version }}
-          draft: false
+          draft: ${{ inputs.dry_run == true }}
           prerelease: false
           files: |
             artifacts/**/*
