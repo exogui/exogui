@@ -1338,6 +1338,70 @@ body {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Quick-search overlay (shows the text typed to jump-to-game) */
+.quick-search-overlay {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  max-width: calc(100% - 3rem);
+  padding: 0.6rem 1rem;
+  background: var(--layout__background-faded, rgba(0, 0, 0, 0.85));
+  color: var(--layout__highlighted-text-color, #ffffff);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  user-select: none;
+  animation: quick-search-overlay-in 0.12s ease-out;
+}
+
+.quick-search-overlay__text {
+  font-size: 2rem;
+  line-height: 1.2;
+  text-transform: lowercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-search-overlay__caret {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 2rem;
+  margin-left: 2px;
+  background: currentColor;
+  animation: quick-search-caret-blink 1s step-end infinite;
+}
+
+.quick-search-overlay--no-match {
+  color: #fa8072;
+}
+
+@keyframes quick-search-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes quick-search-caret-blink {
+  from,
+  to {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .game-browser__center-inner {
