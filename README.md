@@ -196,9 +196,11 @@ npm run start
 #### Platform-Specific Packaging
 
 -   `npm run pack:linux` - Package for Linux (x64)
--   `npm run pack:win32` - Package for Windows (ia32)
+-   `npm run pack:linux-arm64` - Package for Linux (arm64)
+-   `npm run pack:windows` - Package for Windows (x64)
 -   `npm run pack:mac-arm64` - Package for macOS (Apple Silicon)
 -   `npm run pack:mac-x64` - Package for macOS (Intel)
+-   `npm run pack:mac-universal` - Package for macOS (universal arm64 + x64)
 -   `npm run pack:all` - Package for all platforms
 
 Use `release:*` variants (e.g., `npm run release:linux`) to build and package in production mode.

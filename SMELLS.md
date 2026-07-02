@@ -78,28 +78,29 @@ to the backend's stderr (visible only when running from a terminal; the backend 
 
 ---
 
-## macOS Intel build depends on the soon-to-be-retired `macos-15-intel` runner
-**Priority:** Medium
-**Severity:** Medium (release will break for Intel Macs when the runner is removed)
-**Effort:** Low (to drop Intel) / High (to keep Intel without a native runner)
+## macOS legacy build depends on the soon-to-be-retired `macos-15-intel` runner
+**Priority:** Low
+**Severity:** Low (only the legacy Electron 37 build breaks when the runner is removed; modern macOS is unaffected)
+**Effort:** Low (to drop the legacy build)
 
 **Issue:**
-The macOS Intel (x64) build — shipped as the **legacy** Electron 37 build — runs on GitHub's `macos-15-intel` runner (the `macOS (Legacy)` matrix entry in `release.yml` / `build.yml`, and the `build-legacy-mac` job in `beta-release.yml`). It is built natively (rather than cross-compiled / universal) specifically so `npm ci` installs the correct `@img/sharp-darwin-x64` binary; the previous universal-from-arm64 build shipped no x64 sharp and crashed on Intel Macs with `Could not load the "sharp" module using the darwin-x64 runtime`.
+Modern macOS ships as a **single universal `.dmg`** (arm64 + x64), built on `macos-latest` (arm64) via the `macOS universal` matrix entry in `release.yml` / `beta-release.yml` / `build.yml`. Because `npm ci` on the arm64 runner installs only `@img/sharp-darwin-arm64`, a dedicated **"Add x64 sharp binaries for universal macOS build"** step temp-prefix-installs `@img/sharp-darwin-x64` + `@img/sharp-libvips-darwin-x64` (`npm install --prefix … --os=darwin --cpu=x64`) and copies them into `node_modules/@img` before packing. Both arch packages then live at distinct paths, so both universal slices carry identical unpacked `node_modules`, `@electron/universal` merges cleanly (no `x64ArchFiles` needed), and sharp's loader picks the right binary at runtime per slice.
 
-`macos-15-intel` is GitHub's **last** Intel macOS runner and is scheduled for removal **~August 2027**, after which no GitHub-hosted x86_64 macOS runner exists. The Apple Silicon (arm64) build on `macos-latest` is unaffected.
+Separately, a **legacy** Electron 37 x64 build (`macOS x86_legacy` matrix entry) still runs natively on GitHub's `macos-15-intel` runner to support **older macOS versions** that Electron 39 dropped. That is an OS-version concern, orthogonal to CPU arch — the universal build already covers modern Intel Macs.
+
+`macos-15-intel` is GitHub's **last** Intel macOS runner and is scheduled for removal **~August 2027**, after which no GitHub-hosted x86_64 macOS runner exists. Only the legacy build depends on it; the universal build on `macos-latest` is unaffected.
 
 **Trade-offs:**
-- ✅ Native build → correct per-arch sharp/libvips with zero cross-arch hacks (no `@electron/universal` merge, no `x64ArchFiles`)
-- ✅ Matches the Linux per-arch native-runner pattern
-- ❌ Time-bombed: the Intel job will fail once `macos-15-intel` is retired
-- ❌ Two separate `.dmg`s (arm64 + Intel) instead of one universal download
+- ✅ One universal download for all modern Macs (arm64 + Intel) instead of two separate `.dmg`s
+- ✅ Correct per-arch sharp/libvips in both slices via the both-arch install
+- ❌ Legacy build is time-bombed: the `macOS x86_legacy` job will fail once `macos-15-intel` is retired
+- ❌ Universal `.dmg` is larger (bundles both Electron slices + both sharp arches)
 
 **Potential Solutions (when the runner is removed):**
-1. **Drop Intel macOS support** — Apple-Silicon-only, matching Apple's own x86_64 EOL. Simplest.
-2. **Cross-build a universal app on arm64 again** — requires re-introducing both-arch `@img/sharp-*` into `node_modules` (npm prunes the other arch on each `npm install`, so this needs a temp-prefix-install-and-copy step) plus the `@electron/universal` merge config.
-3. **Self-hosted Intel Mac runner.**
+1. **Drop the legacy build** — modern Intel Macs stay covered by the universal build; only pre-Electron-39 macOS versions lose support. Simplest.
+2. **Self-hosted Intel Mac runner** — only if old-macOS support must continue.
 
-**Recommendation:** Leave as-is until `macos-15-intel` is actually retired; reassess Intel demand then and most likely take (1).
+**Recommendation:** Leave as-is until `macos-15-intel` is actually retired; then most likely take (1), since the universal build already serves all current-macOS Intel users.
 
 ---
 
