@@ -58,7 +58,10 @@ runs:
         SHARP_VER=$(node -p "require('./node_modules/sharp/package.json').version")
         VIPS_VER=$(node -p "require('./node_modules/sharp/package.json').optionalDependencies['@img/sharp-libvips-darwin-x64']")
         tmp=$(mktemp -d)
-        npm install --prefix "$tmp" --no-save --os=darwin --cpu=x64 \
+        # --force bypasses the EBADPLATFORM check: npm validates an explicitly
+        # named package against the host platform (arm64), and --os/--cpu only
+        # filter transitive optional deps, not the named root packages.
+        npm install --prefix "$tmp" --no-save --force --os=darwin --cpu=x64 \
           "@img/sharp-darwin-x64@${SHARP_VER}" "@img/sharp-libvips-darwin-x64@${VIPS_VER}"
         mkdir -p node_modules/@img
         cp -R "$tmp/node_modules/@img/." node_modules/@img/
