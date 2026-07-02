@@ -130,12 +130,13 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
-                    // Both arch builds ship the full set of sharp/libvips @img
-                    // binaries (arm64 + x64), so every native Mach-O is byte
-                    // identical across them. Tell @electron/universal to keep
-                    // them as-is instead of failing the merge — sharp selects
-                    // the right one at runtime via process.arch.
-                    x64ArchFiles: "**/node_modules/@img/**",
+                    // These native binaries are byte identical across the x64
+                    // and arm64 builds, so @electron/universal would fail the
+                    // merge without an explicit allowance:
+                    //  - @img: both arch builds ship the full set of sharp/
+                    //    libvips binaries; sharp picks the right one at runtime.
+                    //  - 7zip-bin: a single (non-fat) 7za binary shared by both.
+                    x64ArchFiles: "**/{node_modules/@img,extern/7zip-bin}/**",
                 },
             },
             targets: targets,
