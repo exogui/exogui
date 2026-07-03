@@ -52,7 +52,7 @@ Two macOS builds are produced automatically by the CI workflow, each built nativ
 
 > ⚠️ **Security notice:** The legacy (Intel) build uses an older version of Electron (v37). Older Electron versions may contain unpatched security vulnerabilities, so avoid using it to browse untrusted content.
 
-If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/3Z75KnHHjY) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) server.
+If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/3Z75KnHHjY) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/37FYaUZ) server.
 
 ## Installation
 

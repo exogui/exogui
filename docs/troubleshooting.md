@@ -269,7 +269,7 @@ If you continue to experience issues:
 2. **Search or ask on Discord:**
 
     - [exogui discord](https://discord.gg/3Z75KnHHjY) - exogui-specific issues
-    - [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) - General Retro eXo Projects support
+    - [Retro eXo Projects Discord](https://discord.gg/37FYaUZ) - General Retro eXo Projects support
 
 3. **Report bugs:**
     - Check [GitHub Issues](https://github.com/exogui/exogui-launcher/issues)
