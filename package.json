@@ -24,6 +24,7 @@
         "pack:windows": "npx cross-env PACK_PLATFORM=win32 PACK_ARCH=x64 npx gulp pack",
         "pack:mac-arm64": "npx cross-env PACK_PLATFORM=darwin PACK_ARCH=arm64 npx gulp pack",
         "pack:mac-x64": "npx cross-env PACK_PLATFORM=darwin PACK_ARCH=x64 npx gulp pack",
+        "pack:mac-legacy": "npx cross-env PACK_PLATFORM=darwin PACK_ARCH=x64 PACK_LEGACY=true npx gulp pack",
         "pack:mac-universal": "npx cross-env PACK_PLATFORM=darwin PACK_ARCH=universal npx gulp pack",
         "pack:all": "npx cross-env PACK_PLATFORM=all PACK_ARCH=all npx gulp pack",
         "release": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack\"",
@@ -32,6 +33,7 @@
         "release:windows": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:windows\"",
         "release:mac-arm64": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:mac-arm64\"",
         "release:mac-x64": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:mac-x64\"",
+        "release:mac-legacy": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:mac-legacy\"",
         "release:mac-universal": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:mac-universal\"",
         "release:all": "npx cross-env-shell NODE_ENV=production \"npm run build && npm run pack:all\"",
         "publish": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack\"",
@@ -39,6 +41,7 @@
         "publish:windows": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:windows\"",
         "publish:mac-arm64": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:mac-arm64\"",
         "publish:mac-x64": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:mac-x64\"",
+        "publish:mac-legacy": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:mac-legacy\"",
         "publish:mac-universal": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:mac-universal\"",
         "publish:all": "npx cross-env-shell NODE_ENV=production PUBLISH=true \"npm run build && npm run pack:all\"",
         "download-fonts": "node scripts/download-fonts.js"
