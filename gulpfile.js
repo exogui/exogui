@@ -80,12 +80,15 @@ gulp.task("pack", (done) => {
         process.env.PACK_ARCH,
     );
     const copyFiles = getCopyFiles();
+    const isLegacy = process.env.PACK_LEGACY === "true";
+    const productName = isLegacy ? "exogui-legacy" : "exogui";
+    const appId = isLegacy ? "com.exo.exogui.legacy" : "com.exo.exogui";
     builder
         .build({
             publish: process.env.PUBLISH ? "always" : "never",
             config: {
-                appId: "com.exo.exogui",
-                productName: "exogui",
+                appId,
+                productName,
                 directories: {
                     buildResources: "./static/",
                     output: "./dist/",

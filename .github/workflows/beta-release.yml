@@ -124,10 +124,9 @@ jobs:
 
           - name: macOS x86_legacy
             runner: macos-15-intel
-            script: release:mac-x64
+            script: release:mac-legacy
             electron-version: '37'
-            arch-suffix: x86_legacy
-            artifact-pattern: dist/*-x86_legacy.dmg
+            artifact-pattern: dist/exogui-legacy-*.dmg
 
     steps:
       - uses: actions/checkout@v4

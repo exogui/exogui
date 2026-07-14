@@ -186,7 +186,7 @@ After installing fonts, restart exogui for the changes to take effect.
 -   Some features may be incomplete or non-functional
 
 **Status:**
-Check the [exogui discord](https://discord.gg/yMcZnyUn) for the latest macOS development updates.
+Check the [exogui discord](https://discord.gg/3Z75KnHHjY) for the latest macOS development updates.
 
 ---
 
@@ -268,8 +268,8 @@ If you continue to experience issues:
 
 2. **Search or ask on Discord:**
 
-    - [exogui discord](https://discord.gg/yMcZnyUn) - exogui-specific issues
-    - [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) - General Retro eXo Projects support
+    - [exogui discord](https://discord.gg/3Z75KnHHjY) - exogui-specific issues
+    - [Retro eXo Projects Discord](https://discord.gg/37FYaUZ) - General Retro eXo Projects support
 
 3. **Report bugs:**
     - Check [GitHub Issues](https://github.com/exogui/exogui-launcher/issues)

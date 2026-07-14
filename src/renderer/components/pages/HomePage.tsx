@@ -171,7 +171,7 @@ export function HomePage(props: HomePageProps) {
                 </div>
                 <div className="home-page__subheader">
                     {link("Website", "https://www.retro-exo.com")}|
-                    {link("Discord", "https://discord.gg/yMcZnyUn")}
+                    {link("Discord", "https://discord.gg/3Z75KnHHjY")}
                 </div>
             </div>
             {/* Logo */}
