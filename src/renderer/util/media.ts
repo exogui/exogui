@@ -1,5 +1,7 @@
 import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath, removeFileExtension } from "@shared/Util";
 import {
+    CategoryImageIndex,
+    GameImages,
     GameImagesCollection,
     GameMusicCollection,
     GameVideosCollection,
@@ -55,12 +57,7 @@ function getGameTitleForVideo(game: IGameInfo) {
     return removeFileExtension(path.basename(fixSlashes(game.applicationPath)));
 }
 
-export function mapGamesMedia(
-    game: IGameInfo,
-    images: GameImagesCollection,
-    videos: GameVideosCollection
-) {
-    // Load videos
+export function mapGameVideo(game: IGameInfo, videos: GameVideosCollection) {
     const gameName = getGameTitleForVideo(game);
     try {
         if (videos[gameName]) {
@@ -69,50 +66,145 @@ export function mapGamesMedia(
     } catch {
         // Ignore, files don't exist if path isn't forming
     }
+}
 
-    const possibleTitles = [game.title, `${game.title}.${game.id}`];
-    const formattedGameTitles = possibleTitles.map((t) =>
-        convertToGameTitleIndex(t)
-    ) as [string, string];
+/**
+ * Assigns every game its images out of the platform's image collection.
+ *
+ * Works on the whole platform at once because the loose fallback has to know which files
+ * another game already claimed by exact name, and which loose keys more than one game
+ * answers to. eXoDOS disambiguates same-titled games by appending the game's GUID to the
+ * image filename ("Creation-01.png" vs "Creation.408653ba-...-01.png"), so a game that has
+ * any GUID-named image is never allowed to fall back to the bare title - those files
+ * belong to its same-named sibling.
+ */
+export function assignGameImages(
+    games: IGameInfo[],
+    images: GameImagesCollection
+) {
+    const categories = Object.keys(images);
+    const claimed = new Set<string>();
+    const looseKeyOwners = countLooseKeyOwners(games);
+    const pendingCategories = new Map<IGameInfo, string[]>();
 
-    // Load all images
-    for (const category of Object.keys(images)) {
-        const imagesForGame = getImagesFromCollection(
-            images,
-            category,
-            formattedGameTitles
-        );
-        if (imagesForGame) {
-            game.media.images[category] = imagesForGame;
+    for (const game of games) {
+        const qualified = `${game.title}.${game.id}`;
+        const keys = [sanitizeTitleForFilename(qualified)];
+        if (!hasImagesForKey(images, categories, keys[0])) {
+            keys.push(sanitizeTitleForFilename(game.title));
+        }
+
+        const pending: string[] = [];
+        for (const category of categories) {
+            const found = findPreciseImages(images[category], keys);
+            if (found) {
+                assignCategoryImages(game, category, found, claimed);
+            } else {
+                pending.push(category);
+            }
+        }
+        pendingCategories.set(game, pending);
+    }
+
+    for (const game of games) {
+        const qualified = `${game.title}.${game.id}`;
+        const keys = [
+            convertToGameTitleIndexKeepingYear(qualified),
+            convertToGameTitleIndex(qualified),
+            convertToGameTitleIndexKeepingYear(game.title),
+            convertToGameTitleIndex(game.title),
+        ].filter((key) => key && looseKeyOwners.get(key) === 1);
+
+        for (const category of pendingCategories.get(game) ?? []) {
+            const found = findLooseImages(images, category, keys, claimed);
+            if (found) {
+                assignCategoryImages(game, category, found, claimed);
+            }
         }
     }
 
-    // Load thumbnail path
-    for (const preference of thumbnailPreference) {
-        const imagesForGame = getImagesFromCollection(
-            images,
-            preference,
-            formattedGameTitles
-        );
-        if (imagesForGame?.[0]) {
-            game.thumbnailPath = `Images/${game.platform}/${fixSlashes(
-                imagesForGame[0]
-            )}`;
-            return;
+    for (const game of games) {
+        for (const preference of thumbnailPreference) {
+            const thumbnail = game.media.images[preference]?.[0];
+            if (thumbnail) {
+                game.thumbnailPath = `Images/${game.platform}/${fixSlashes(
+                    thumbnail
+                )}`;
+                break;
+            }
         }
     }
 }
 
-function getImagesFromCollection(
+function assignCategoryImages(
+    game: IGameInfo,
+    category: string,
+    imagePaths: string[],
+    claimed: Set<string>
+) {
+    game.media.images[category] = imagePaths;
+    for (const imagePath of imagePaths) {
+        claimed.add(`${category}/${imagePath}`);
+    }
+}
+
+function countLooseKeyOwners(games: IGameInfo[]): Map<string, number> {
+    const owners = new Map<string, Set<string>>();
+    for (const game of games) {
+        for (const title of [game.title, `${game.title}.${game.id}`]) {
+            const keys = [
+                convertToGameTitleIndexKeepingYear(title),
+                convertToGameTitleIndex(title),
+            ];
+            for (const key of new Set(keys)) {
+                if (!key) continue;
+                const gameIds = owners.get(key) ?? new Set<string>();
+                gameIds.add(game.id);
+                owners.set(key, gameIds);
+            }
+        }
+    }
+    return new Map(
+        [...owners].map(([key, gameIds]) => [key, gameIds.size])
+    );
+}
+
+function hasImagesForKey(
+    images: GameImagesCollection,
+    categories: string[],
+    key: string
+): boolean {
+    return categories.some(
+        (category) =>
+            images[category].exact[key] ||
+            images[category].insensitive[key.toUpperCase()]
+    );
+}
+
+function findPreciseImages(
+    index: CategoryImageIndex,
+    keys: string[]
+): string[] | null {
+    for (const key of keys) {
+        const found = index.exact[key] ?? index.insensitive[key.toUpperCase()];
+        if (found) return found;
+    }
+    return null;
+}
+
+function findLooseImages(
     images: GameImagesCollection,
     category: string,
-    formattedGameTitles: [string, string]
-) {
-    const imagesForGame =
-        images?.[category]?.[formattedGameTitles[0]] ??
-        images?.[category]?.[formattedGameTitles[1]] ??
-        null;
-    return imagesForGame;
+    keys: string[],
+    claimed: Set<string>
+): string[] | null {
+    for (const key of keys) {
+        const found = images[category].loose[key]?.filter(
+            (imagePath) => !claimed.has(`${category}/${imagePath}`)
+        );
+        if (found?.length) return found;
+    }
+    return null;
 }
 
 // Finds a list of all game images, returned in a map where the key is the type of image, and the value is an array of filenames
@@ -131,27 +223,18 @@ export async function loadPlatformImages(
             withFileTypes: true,
         });
         for (const dir of rootFolders.filter((f) => f.isDirectory())) {
-            collection[dir.name] = {}; // Initialize the image category
+            const index = createCategoryImageIndex();
+            collection[dir.name] = index;
 
             const folderPath = path.join(platformImagesPath, dir.name);
 
             for (const fileInfo of walkSync(folderPath)) {
                 try {
-                    const rawTitleFromFilename = getGameTitleIndexFromFilename(
-                        fileInfo.filename
+                    indexImage(
+                        index,
+                        fileInfo.filename,
+                        createImagePath(platformImagesPath, fileInfo)
                     );
-
-                    if (!rawTitleFromFilename) continue;
-                    const titleIndex =
-                        convertToGameTitleIndex(rawTitleFromFilename);
-                    if (!collection?.[dir.name]?.[titleIndex]) {
-                        collection[dir.name][titleIndex] = [];
-                    }
-                    const imagePath = createImagePath(
-                        platformImagesPath,
-                        fileInfo
-                    );
-                    collection[dir.name][titleIndex].push(imagePath);
                 } catch (err) {
                     console.error(
                         `Error while processing ${fileInfo.filename} file. Skipping. Error: ${err}`
@@ -174,6 +257,39 @@ function createImagePath(platformImagePath: string, fileInfo: IFileInfo) {
     );
 }
 
+export function createCategoryImageIndex(): CategoryImageIndex {
+    return { exact: {}, insensitive: {}, loose: {} };
+}
+
+export function indexImage(
+    index: CategoryImageIndex,
+    filename: string,
+    imagePath: string
+) {
+    const titleFromFilename = getGameTitleIndexFromFilename(filename);
+    if (!titleFromFilename) return;
+
+    const sanitized = sanitizeTitleForFilename(titleFromFilename);
+    pushImage(index.exact, sanitized, imagePath);
+    pushImage(index.insensitive, sanitized.toUpperCase(), imagePath);
+
+    const looseKeys = new Set([
+        convertToGameTitleIndexKeepingYear(titleFromFilename),
+        convertToGameTitleIndex(titleFromFilename),
+    ]);
+    for (const looseKey of looseKeys) {
+        pushImage(index.loose, looseKey, imagePath);
+    }
+}
+
+function pushImage(index: GameImages, key: string, imagePath: string) {
+    if (!key) return;
+    if (!index[key]) {
+        index[key] = [];
+    }
+    index[key].push(imagePath);
+}
+
 export function getGameTitleIndexFromFilename(filename: string): string | null {
     const nameWithoutExt = filename.replace(/\.[^.]+$/, "");
     const nameWithoutNum = nameWithoutExt.replace(/-\d{2,}$/, "");
@@ -181,13 +297,27 @@ export function getGameTitleIndexFromFilename(filename: string): string | null {
     return title || null;
 }
 
-export function convertToGameTitleIndex(title: string): string {
+// Mirrors how LaunchBox writes image filenames: characters Windows forbids in a filename
+// (plus the apostrophe) become an underscore, everything else is kept verbatim.
+export function sanitizeTitleForFilename(title: string): string {
     return title
-    .replace(/\s*\(\d{4}\)\s*$/, "")
+    .replace(/[\\/:*?"<>|']/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function convertToGameTitleIndexKeepingYear(title: string): string {
+    return title
     .replace(/[^a-zA-Z0-9 ]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
+}
+
+export function convertToGameTitleIndex(title: string): string {
+    return convertToGameTitleIndexKeepingYear(
+        title.replace(/\s*\(\d{4}\)\s*$/, "")
+    );
 }
 
 export function* walkSync(dir: string): IterableIterator<IFileInfo> {
