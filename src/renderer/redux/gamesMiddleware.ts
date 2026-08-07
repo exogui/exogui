@@ -17,12 +17,13 @@ import { initializeViews } from "./searchSlice";
 import { IGameCollection } from "@shared/game/interfaces";
 import { GameCollection } from "@shared/game/GameCollection";
 import {
+    assignGameImages,
     createMusicWatcher,
     createVideosWatcher,
     loadPlatformImages,
     loadPlatformMusic,
     loadPlatformVideos,
-    mapGamesMedia,
+    mapGameVideo,
     mapGamesMusic,
 } from "@renderer/util/media";
 import { createManualsWatcher } from "@renderer/util/addApps";
@@ -173,8 +174,9 @@ async function loadPlatform(platform: string, platformsPath: string, installable
             console.log(`[PERF] ${platform} - Parse games (${platformCollection.games.length} games): ${Date.now() - parseGamesStart}ms`);
 
             const mapMediaStart = Date.now();
+            assignGameImages(platformCollection.games, images);
             for (const game of platformCollection.games) {
-                mapGamesMedia(game, images, videos);
+                mapGameVideo(game, videos);
                 mapGamesMusic(game, music);
             }
             console.log(`[PERF] ${platform} - Map media: ${Date.now() - mapMediaStart}ms`);
