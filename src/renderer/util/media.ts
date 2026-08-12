@@ -71,12 +71,11 @@ export function mapGameVideo(game: IGameInfo, videos: GameVideosCollection) {
 /**
  * Assigns every game its images out of the platform's image collection.
  *
- * Works on the whole platform at once because the loose fallback has to know which files
- * another game already claimed by exact name, and which loose keys more than one game
- * answers to. eXoDOS disambiguates same-titled games by appending the game's GUID to the
- * image filename ("Creation-01.png" vs "Creation.408653ba-...-01.png"), so a game that has
- * any GUID-named image is never allowed to fall back to the bare title - those files
- * belong to its same-named sibling.
+ * Works on the whole platform at once because matching a file needs to know what the other
+ * games are called: eXoDOS disambiguates same-titled games by appending the game's GUID to
+ * the image filename ("Creation-01.png" vs "Creation.408653ba-...-01.png"), but only in the
+ * categories where a clash actually needed resolving, so ownership of a bare-named file is
+ * decided per category rather than once per game.
  */
 export function assignGameImages(
     games: IGameInfo[],
@@ -85,18 +84,22 @@ export function assignGameImages(
     const categories = Object.keys(images);
     const claimed = new Set<string>();
     const looseKeyOwners = countLooseKeyOwners(games);
+    const sameTitledGames = groupBySanitizedTitle(games);
     const pendingCategories = new Map<IGameInfo, string[]>();
 
     for (const game of games) {
-        const qualified = `${game.title}.${game.id}`;
-        const keys = [sanitizeTitleForFilename(qualified)];
-        if (!hasImagesForKey(images, categories, keys[0])) {
-            keys.push(sanitizeTitleForFilename(game.title));
-        }
+        const guidKey = sanitizeTitleForFilename(`${game.title}.${game.id}`);
+        const siblings =
+            sameTitledGames.get(
+                sanitizeTitleForFilename(game.title).toUpperCase()
+            ) ?? [];
 
         const pending: string[] = [];
         for (const category of categories) {
-            const found = findPreciseImages(images[category], keys);
+            const index = images[category];
+            const found =
+                findPreciseImages(index, guidKey) ??
+                findBareTitleImages(game, siblings, index);
             if (found) {
                 assignCategoryImages(game, category, found, claimed);
             } else {
@@ -169,27 +172,55 @@ function countLooseKeyOwners(games: IGameInfo[]): Map<string, number> {
     );
 }
 
-function hasImagesForKey(
-    images: GameImagesCollection,
-    categories: string[],
-    key: string
-): boolean {
-    return categories.some(
-        (category) =>
-            images[category].exact[key] ||
-            images[category].insensitive[key.toUpperCase()]
+function groupBySanitizedTitle(games: IGameInfo[]): Map<string, IGameInfo[]> {
+    const groups = new Map<string, IGameInfo[]>();
+    for (const game of games) {
+        const key = sanitizeTitleForFilename(game.title).toUpperCase();
+        const group = groups.get(key) ?? [];
+        group.push(game);
+        groups.set(key, group);
+    }
+    return groups;
+}
+
+/**
+ * The bare-named files of a category belong to whichever same-titled game was left
+ * un-renamed there. Only claim them when no sibling that is also bare-named in this
+ * category would resolve to the same files - otherwise ownership is a coin flip and the
+ * files are better left out than shown under two games.
+ */
+function findBareTitleImages(
+    game: IGameInfo,
+    siblings: IGameInfo[],
+    index: CategoryImageIndex
+): string[] | null {
+    const own = findPreciseImages(
+        index,
+        sanitizeTitleForFilename(game.title)
     );
+    if (!own) return null;
+
+    for (const sibling of siblings) {
+        if (sibling === game) continue;
+        const siblingGuidKey = sanitizeTitleForFilename(
+            `${sibling.title}.${sibling.id}`
+        );
+        if (findPreciseImages(index, siblingGuidKey)) continue;
+
+        const theirs = findPreciseImages(
+            index,
+            sanitizeTitleForFilename(sibling.title)
+        );
+        if (theirs?.some((imagePath) => own.includes(imagePath))) return null;
+    }
+    return own;
 }
 
 function findPreciseImages(
     index: CategoryImageIndex,
-    keys: string[]
+    key: string
 ): string[] | null {
-    for (const key of keys) {
-        const found = index.exact[key] ?? index.insensitive[key.toUpperCase()];
-        if (found) return found;
-    }
-    return null;
+    return index.exact[key] ?? index.insensitive[key.toUpperCase()] ?? null;
 }
 
 function findLooseImages(
