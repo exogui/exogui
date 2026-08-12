@@ -1,6 +1,7 @@
 import { promises as fsPromises } from "fs";
 import * as fs from "fs";
 import * as path from "path";
+import { removeFileExtension } from "@shared/Util";
 
 // extensions need to have a dot and be lowercase
 const ExodosResourcesTypeExtensions = {
@@ -87,8 +88,8 @@ const mapToExoResource = (filepath: string): ExodosResource => {
     };
 };
 
-const getLabel = (filename: string) => {
-    const strippedFilename = filename.split(".")[0].split("/").pop();
+export const getLabel = (filename: string) => {
+    const strippedFilename = removeFileExtension(path.basename(filename));
     return (
         labelMapping[strippedFilename as keyof typeof labelMapping] ??
         strippedFilename ??

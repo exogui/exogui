@@ -69,8 +69,15 @@ export type GameMedia = {
     video: string;
 };
 
+/** The three lookup indexes an image category is keyed by, from strictest to loosest. */
+export type CategoryImageIndex = {
+    exact: GameImages; // LaunchBox-sanitized filename stem, case preserved
+    insensitive: GameImages; // same, uppercased
+    loose: GameImages; // punctuation stripped, keyed both with and without a trailing (Year)
+};
+
 export type GameImagesCollection = {
-    [key: string]: GameImages; // "Box - Front" - "<GameTitle>" - "<FilePath>"
+    [key: string]: CategoryImageIndex; // "Box - Front" - index - "<GameTitle>" - "<FilePath>"
 };
 
 export type GameVideosCollection = {

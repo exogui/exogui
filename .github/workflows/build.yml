@@ -19,78 +19,52 @@ permissions:
 
 jobs:
   build-macos:
-    name: Build macOS
+    name: Build ${{ matrix.name }}
     if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Universal
+            runner: macos-latest
+            script: release:mac-universal
+            mac-universal: true
+            artifact-name: macOS-artifacts
+            artifact-pattern: |
+              dist/*.dmg
+              dist/latest-mac.yml
+
+          - name: macOS (Legacy)
+            runner: macos-15-intel
+            script: release:mac-legacy
+            electron-version: '37'
+            artifact-name: macOS-Legacy-artifacts
+            artifact-pattern: dist/exogui-legacy-*.dmg
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build ${{ matrix.name }}
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Disable code signing
-        run: |
-          printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
-          chmod +x /usr/local/bin/codesign
-
-      - run: npm run release:mac-universal
+          script: ${{ matrix.script }}
+          electron-version: ${{ matrix.electron-version }}
+          mac-universal: ${{ matrix.mac-universal }}
+          arch-suffix: ${{ matrix.arch-suffix }}
+          disable-codesign: 'true'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macOS-artifacts
-          path: |
-            dist/*.dmg
-            dist/latest-mac.yml
-          if-no-files-found: warn
-          retention-days: 7
-
-  build-macos-legacy:
-    name: Build macOS (Legacy)
-    if: ${{ github.event.inputs.platform == 'macOS' || github.event.inputs.platform == 'All' }}
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Disable code signing
-        run: |
-          printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
-          chmod +x /usr/local/bin/codesign
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - run: npm run release:mac-universal
-
-      - name: Rename artifacts to legacy
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
-          done
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macOS-Legacy-artifacts
-          path: dist/*-legacy-*.dmg
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
           retention-days: 7
 
   build-linux:
-    name: Build Linux
+    name: Build Linux (x64)
     if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
     runs-on: ubuntu-latest
     steps:
@@ -98,22 +72,44 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build Linux (x64)
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - run: npm run release:linux
+          script: release:linux
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Linux-artifacts
+          name: Linux-x64-artifacts
           path: |
             dist/*.tar.gz
             dist/*.AppImage
             dist/latest-linux.yml
+          if-no-files-found: warn
+          retention-days: 7
+
+  build-linux-arm64:
+    name: Build Linux (arm64)
+    if: ${{ github.event.inputs.platform == 'Linux' || github.event.inputs.platform == 'All' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build Linux (arm64)
+        uses: ./.github/actions/build-app
+        with:
+          node-version: '20'
+          script: release:linux-arm64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux-arm64-artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.AppImage
+            dist/latest-linux-arm64.yml
           if-no-files-found: warn
           retention-days: 7
 
@@ -126,14 +122,11 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v4
+      - name: Build Windows
+        uses: ./.github/actions/build-app
         with:
           node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - run: npm run release:win32
+          script: release:windows
 
       - uses: actions/upload-artifact@v4
         with:

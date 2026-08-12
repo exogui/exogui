@@ -1,8 +1,10 @@
 import { englishTranslation } from "@renderer/lang/en";
 import {
+    AdvancedFilter,
     forceSearch,
     selectGame,
     selectPlaylist,
+    setAdvancedFilter,
     stopMusic,
 } from "@renderer/redux/searchSlice";
 import { RootState } from "@renderer/redux/store";
@@ -73,6 +75,7 @@ const mapDispatch = {
     onSelectGame: selectGame,
     forceSearch: forceSearch,
     onStopMusic: stopMusic,
+    onSetAdvancedFilter: setAdvancedFilter,
 };
 
 const connector = connect(mapState, mapDispatch);
@@ -82,7 +85,7 @@ type ConnectedBrowsePageProps = BrowsePageProps &
     ConnectedProps<typeof connector>;
 
 /** Page displaying the games and playlists. */
-class BrowsePage extends React.Component<
+export class BrowsePage extends React.Component<
     ConnectedBrowsePageProps,
     BrowsePageState
 > {
@@ -90,7 +93,9 @@ class BrowsePage extends React.Component<
     gameGridOrListRef: HTMLDivElement | null = null;
     /** A timestamp of the previous the the quick search string was updated */
     _prevQuickSearchUpdate: number = 0;
-    gameBrowserRef: React.RefObject<HTMLDivElement> = React.createRef();
+    /** Timeout that hides the quick search overlay after typing stops. */
+    _quickSearchOverlayTimeout: ReturnType<typeof setTimeout> | undefined;
+    gameBrowserRef: React.RefObject<HTMLDivElement | null> = React.createRef();
     /** The "setState" function but bound to this instance. */
     boundSetState = this.setState.bind(this);
 
@@ -123,12 +128,19 @@ class BrowsePage extends React.Component<
         });
     }
 
+    componentWillUnmount() {
+        if (this._quickSearchOverlayTimeout) {
+            clearTimeout(this._quickSearchOverlayTimeout);
+        }
+    }
+
     componentDidUpdate(prevProps: ConnectedBrowsePageProps, prevState: BrowsePageState) {
         const prevView = prevProps.searchState.views[prevProps.gameLibrary];
         const currentView = this.props.searchState.views[this.props.gameLibrary];
 
         if (prevProps.gameLibrary !== this.props.gameLibrary) {
             this.props.onStopMusic();
+            this.updateQuickSearch("");
             const view = this.props.searchState.views[this.props.gameLibrary];
             if (view && view.games.length === 0) {
                 // No games found, force a search incase it hasn't tried to load yet
@@ -188,9 +200,14 @@ class BrowsePage extends React.Component<
 
     render() {
         const { searchState, gameLibrary } = this.props;
-        const { draggedGameId } = this.state;
+        const { draggedGameId, quickSearch } = this.state;
         const view = searchState.views[gameLibrary];
         const order = this.props.order || BrowsePage.defaultOrder;
+
+        // A quick search only "matches" when a game title starts with the typed text.
+        const quickSearchMatched =
+            !!quickSearch &&
+            !!view?.selectedGame?.orderTitle.startsWith(quickSearch.toLowerCase());
 
         // Find selected game
         const selectedGame = view?.selectedGame;
@@ -288,6 +305,20 @@ class BrowsePage extends React.Component<
                             );
                         }
                     })()}
+                    {quickSearch !== "" && (
+                        <div
+                            className={`quick-search-overlay${
+                                quickSearchMatched
+                                    ? ""
+                                    : " quick-search-overlay--no-match"
+                            }`}
+                        >
+                            <div className="quick-search-overlay__text">
+                                {quickSearch}
+                            </div>
+                            <div className="quick-search-overlay__caret" />
+                        </div>
+                    )}
                 </div>
                 <ResizableSidebar
                     hide={this.props.preferencesData.browsePageShowRightSidebar}
@@ -302,10 +333,12 @@ class BrowsePage extends React.Component<
                         currentAddApps={selectedAddApps}
                         currentPlaylistNotes={this.state.currentPlaylistNotes}
                         gamePlaylistEntry={gamePlaylistEntry}
+                        advancedFilter={view?.advancedFilter}
                         onGameLaunch={this.onGameLaunch}
                         onGameLaunchSetup={this.onGameLaunchSetup}
                         onAddAppLaunch={this.onAddAppLaunch}
                         onFavoriteToggle={this.onFavoriteToggle}
+                        onSearchField={this.onSearchField}
                     />
                 </ResizableSidebar>
             </div>
@@ -405,6 +438,28 @@ class BrowsePage extends React.Component<
         }
     };
 
+    onSearchField = (field: keyof AdvancedFilter, value: string): void => {
+        const view = this.props.searchState.views[this.props.gameLibrary];
+        if (!view) {
+            return;
+        }
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
+            return;
+        }
+        const currentValues = view.advancedFilter[field] as string[];
+        const newValues = currentValues.includes(trimmedValue)
+            ? currentValues.filter((v) => v !== trimmedValue)
+            : [...currentValues, trimmedValue];
+        this.props.onSetAdvancedFilter({
+            view: this.props.gameLibrary,
+            filter: { ...view.advancedFilter, [field]: newValues },
+        });
+        if (!this.props.preferencesData.browsePageFiltersExpanded) {
+            updatePreferencesData({ browsePageFiltersExpanded: true });
+        }
+    };
+
     onGamepadSelect = (): void => {
         const view = this.props.searchState.views[this.props.gameLibrary];
         if (view?.selectedGame) {
@@ -452,7 +507,7 @@ class BrowsePage extends React.Component<
                 const timedOut = updateTime.call(this);
                 let newString: string = timedOut ? "" : this.state.quickSearch;
                 newString = newString.substr(0, newString.length - 1);
-                this.setState({ quickSearch: newString });
+                this.updateQuickSearch(newString);
             } else if (key.length === 1) {
                 // (Single character - add it to the search string)
                 const timedOut = updateTime.call(this);
@@ -461,7 +516,7 @@ class BrowsePage extends React.Component<
                     return;
                 }
                 event.preventDefault();
-                this.setState({ quickSearch: currentSearch + key });
+                this.updateQuickSearch(currentSearch + key);
             }
         }
 
@@ -474,6 +529,23 @@ class BrowsePage extends React.Component<
             this._prevQuickSearchUpdate = now;
             return timedOut;
         }
+    };
+
+    /**
+     * Update the quick search string and (re)start the timer that hides the
+     * overlay once the user stops typing.
+     */
+    updateQuickSearch = (quickSearch: string): void => {
+        if (this._quickSearchOverlayTimeout) {
+            clearTimeout(this._quickSearchOverlayTimeout);
+            this._quickSearchOverlayTimeout = undefined;
+        }
+        if (quickSearch) {
+            this._quickSearchOverlayTimeout = setTimeout(() => {
+                this.setState({ quickSearch: "" });
+            }, BrowsePage.quickSearchTimeout);
+        }
+        this.setState({ quickSearch });
     };
 
     onPlaylistClick = (playlist: GamePlaylist, selected: boolean): void => {

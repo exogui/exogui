@@ -7,8 +7,13 @@ on:
       - master
     paths-ignore:
       - '**.md'
-      - '.github/workflows/**'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build & package only — draft release, no version bump/push'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -16,7 +21,10 @@ permissions:
 jobs:
   prepare:
     name: Bump Version
-    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'skip-release')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-release'))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump.outputs.version }}
@@ -35,19 +43,26 @@ jobs:
 
       - name: Strip beta suffix for stable release
         id: bump
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           VERSION=$(node -p "require('./package.json').version.replace(/-.*$/, '')")
           npm version "${VERSION}" --no-git-tag-version
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${VERSION}"
-          git push origin master
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run — skipping commit & push of ${VERSION}"
+          else
+            git add package.json package-lock.json
+            git commit -m "chore: bump version to ${VERSION}"
+            git push origin master
+          fi
 
   sync-downstream:
     name: Sync beta and develop with master
     needs: prepare
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +90,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Linux
+          - name: Linux x64
             runner: ubuntu-latest
             script: release:linux
             artifact-pattern: |
@@ -83,20 +98,35 @@ jobs:
               dist/*.AppImage
               dist/latest-linux.yml
 
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+            script: release:linux-arm64
+            artifact-pattern: |
+              dist/*.tar.gz
+              dist/*.AppImage
+              dist/latest-linux-arm64.yml
+
           - name: Windows
             runner: windows-latest
-            script: release:win32
+            script: release:windows
             artifact-pattern: |
               dist/*.exe
               dist/*.zip
               dist/latest.yml
 
-          - name: macOS (Universal)
+          - name: macOS universal
             runner: macos-latest
             script: release:mac-universal
+            mac-universal: true
             artifact-pattern: |
               dist/*.dmg
               dist/latest-mac.yml
+
+          - name: macOS x86_legacy
+            runner: macos-15-intel
+            script: release:mac-legacy
+            electron-version: '37'
+            artifact-pattern: dist/exogui-legacy-*.dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -104,17 +134,13 @@ jobs:
           ref: master
           submodules: recursive
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build ${{ matrix.name }}
-        run: npm run ${{ matrix.script }}
+        uses: ./.github/actions/build-app
+        with:
+          script: ${{ matrix.script }}
+          electron-version: ${{ matrix.electron-version }}
+          mac-universal: ${{ matrix.mac-universal }}
+          arch-suffix: ${{ matrix.arch-suffix }}
 
       - name: List dist directory
         shell: bash
@@ -127,52 +153,9 @@ jobs:
           path: ${{ matrix.artifact-pattern }}
           if-no-files-found: warn
 
-  build-legacy-mac:
-    name: Build macOS (Legacy)
-    needs: prepare
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: master
-          submodules: recursive
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Electron v37
-        run: npm install electron@37 --save-dev
-
-      - name: Build macOS (Legacy)
-        run: npm run release:mac-universal
-
-      - name: Rename artifacts to legacy
-        shell: bash
-        run: |
-          for f in dist/exogui-*.dmg; do
-            mv "$f" "${f/exogui-/exogui-legacy-}"
-          done
-
-      - name: List dist directory
-        run: ls -la dist/ || true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macOS-Legacy-artifacts
-          path: |
-            dist/*-legacy-*.dmg
-          if-no-files-found: warn
-
   release:
     name: Create Release
-    needs: [prepare, build, build-legacy-mac]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -210,7 +193,7 @@ jobs:
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: v${{ needs.prepare.outputs.version }}
-          draft: false
+          draft: ${{ inputs.dry_run == true }}
           prerelease: false
           files: |
             artifacts/**/*

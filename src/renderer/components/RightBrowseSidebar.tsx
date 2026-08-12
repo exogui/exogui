@@ -2,6 +2,7 @@ import { shell } from "@electron/remote";
 import { faFolder, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { englishTranslation } from "@renderer/lang/en";
+import { AdvancedFilter } from "@renderer/redux/searchSlice";
 import { loadDynamicAddAppsForGame } from "@renderer/util/addApps";
 import { openGameConfigDirectory } from "@renderer/util/games";
 import { fixSlashes } from "@shared/Util";
@@ -14,7 +15,6 @@ import * as path from "path";
 import * as React from "react";
 import { getGameImagePath, openContextMenu } from "../Util";
 import { WithPreferencesProps } from "../containers/withPreferences";
-import { DropdownInputField } from "./DropdownInputField";
 import { FormattedGameMedia, GameImageCarousel } from "./GameImageCarousel";
 import { MediaPreview } from "./ImagePreview";
 import { InputField } from "./InputField";
@@ -37,9 +37,25 @@ type OwnProps = {
     onAddAppLaunch: (addApp: IAdditionalApplicationInfo) => void;
     /** Toggle favorite state for the current game */
     onFavoriteToggle: (game: IGameInfo) => void;
+    /** Toggle a single metadata field value as an advanced filter in the current view */
+    onSearchField: (field: keyof AdvancedFilter, value: string) => void;
+    /** Currently active advanced filter (used to highlight selected values) */
+    advancedFilter?: AdvancedFilter;
 };
 
 export type RightBrowseSidebarProps = OwnProps & WithPreferencesProps;
+
+/** Split a ";"-separated metadata field into unique, trimmed values. */
+function splitFieldValues(raw: string): string[] {
+    const values: string[] = [];
+    for (const part of (raw ?? "").split(";")) {
+        const trimmed = part.trim();
+        if (trimmed.length > 0 && !values.includes(trimmed)) {
+            values.push(trimmed);
+        }
+    }
+    return values;
+}
 
 type RightBrowseSidebarState = {
     /** If a preview of the current game's selected media. */
@@ -97,6 +113,49 @@ export class RightBrowseSidebar extends React.Component<
         this.setState({ dynamicAddApps });
     };
 
+    renderSearchableRow = (
+        label: string,
+        placeholder: string,
+        field: keyof AdvancedFilter,
+        values: string[]
+    ): React.ReactNode => {
+        const selected = (this.props.advancedFilter?.[field] as string[]) ?? [];
+        return (
+            <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
+                <p>{label}: </p>
+                {values.length > 0 ? (
+                    <p className="input-field browse-right-sidebar__searchable-values">
+                        {values.map((value, index) => (
+                            <React.Fragment key={value}>
+                                {index > 0 ? (
+                                    <span className="browse-right-sidebar__searchable-separator">
+                                        ;{" "}
+                                    </span>
+                                ) : null}
+                                <span
+                                    className={`browse-right-sidebar__searchable${
+                                        selected.includes(value)
+                                            ? " browse-right-sidebar__searchable--active"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        this.props.onSearchField(field, value)
+                                    }
+                                >
+                                    {value}
+                                </span>
+                            </React.Fragment>
+                        ))}
+                    </p>
+                ) : (
+                    <p className="input-field simple-disabled-text">
+                        {placeholder}
+                    </p>
+                )}
+            </div>
+        );
+    };
+
     componentDidMount(): void {
         this.checkAddAppsExistence();
         this.getDynamicAddApps();
@@ -131,6 +190,7 @@ export class RightBrowseSidebar extends React.Component<
                     ? strings.play
                     : strings.install
                 : strings.open;
+            const releaseYear = (game.releaseYear ?? "").split("-")[0].trim();
             return (
                 <div
                     className={
@@ -207,87 +267,56 @@ export class RightBrowseSidebar extends React.Component<
 
                     {/* -- Most Fields -- */}
                     <div className="browse-right-sidebar__section">
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.tags}: </p>
-                            <DropdownInputField
-                                text={game.genre}
-                                placeholder={strings.noTags}
-                                className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.genre = text;
-                                    this.forceUpdate();
-                                }}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.series}: </p>
-                            <InputField
-                                text={game.series}
-                                placeholder={strings.noSeries}
-                                className="browse-right-sidebar__searchable"
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.developer}: </p>
-                            <InputField
-                                text={game.developer}
-                                placeholder={strings.noDeveloper}
-                                className="browse-right-sidebar__searchable"
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.publisher}: </p>
-                            <InputField
-                                text={game.publisher}
-                                placeholder={strings.noPublisher}
-                                className="browse-right-sidebar__searchable"
-                            />
-                        </div>
+                        {this.renderSearchableRow(
+                            strings.genre,
+                            strings.noGenre,
+                            "genre",
+                            splitFieldValues(game.genre)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.series,
+                            strings.noSeries,
+                            "series",
+                            splitFieldValues(game.series)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.developer,
+                            strings.noDeveloper,
+                            "developer",
+                            splitFieldValues(game.developer)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.publisher,
+                            strings.noPublisher,
+                            "publisher",
+                            splitFieldValues(game.publisher)
+                        )}
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.source}: </p>
                             <InputField
                                 text={game.source}
                                 placeholder={strings.noSource}
-                                className="browse-right-sidebar__searchable"
                             />
                         </div>
                         <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
                             <p>{strings.platform}: </p>
-                            <DropdownInputField
+                            <InputField
                                 text={game.platform}
                                 placeholder={strings.noPlatform}
-                                className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.platform = text;
-                                    this.forceUpdate();
-                                }}
                             />
                         </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.playMode}: </p>
-                            <DropdownInputField
-                                text={game.playMode}
-                                placeholder={strings.noPlayMode}
-                                className="browse-right-sidebar__searchable"
-                                items={[]}
-                                onItemSelect={(text) => {
-                                    game.playMode = text;
-                                    this.forceUpdate();
-                                }}
-                            />
-                        </div>
-                        <div className="browse-right-sidebar__row browse-right-sidebar__row--one-line">
-                            <p>{strings.releaseYear}: </p>
-                            <InputField
-                                text={new Date(game.releaseYear)
-                                .getFullYear()
-                                .toString()}
-                                placeholder={strings.noReleaseDate}
-                                className="browse-right-sidebar__searchable"
-                            />
-                        </div>
+                        {this.renderSearchableRow(
+                            strings.playMode,
+                            strings.noPlayMode,
+                            "playMode",
+                            splitFieldValues(game.playMode)
+                        )}
+                        {this.renderSearchableRow(
+                            strings.releaseYear,
+                            strings.noReleaseDate,
+                            "releaseYear",
+                            releaseYear ? [releaseYear] : []
+                        )}
                     </div>
                     {/* -- Playlist Game Entry Notes -- */}
                     {gamePlaylistEntry ? (

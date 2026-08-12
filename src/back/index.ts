@@ -248,6 +248,11 @@ async function initializePlaylistManager() {
         state.config.exodosPath,
         state.config.playlistFolderPath
     );
+    const parentsFilePath = path.join(
+        state.config.exodosPath,
+        state.config.jsonFolderPath,
+        "Parents.xml"
+    );
 
     const onPlaylistAddOrUpdate = function (playlist: GamePlaylist): void {
         // Clear all query caches that uses this playlist
@@ -267,6 +272,7 @@ async function initializePlaylistManager() {
 
     await state.playlistManager.init({
         playlistFolder,
+        parentsFilePath,
         log,
         onPlaylistAddOrUpdate,
     });

@@ -18,7 +18,7 @@ The launcher for Retro eXo Projects.
 
 -   [eXo Projects](https://www.retro-exo.com) - Official eXo projects website
 -   [Retro-Exo Linux Guide](https://www.retro-exo.com/linux.html) - Linux setup guide
--   [exogui discord](https://discord.gg/yMcZnyUn) - exogui-specific support
+-   [exogui discord](https://discord.gg/3Z75KnHHjY) - exogui-specific support
 
 ## About
 
@@ -45,14 +45,14 @@ More eXo projects coming in the future!
 
 ### macOS Builds
 
-Two macOS builds are produced automatically by the CI workflow:
+Two macOS builds are produced automatically by the CI workflow, each built natively for its architecture:
 
--   **Universal build** — for macOS 12 (Monterey) and later, supports both Intel and Apple Silicon
--   **Legacy build** — for macOS 11 (Big Sur), built with an older Electron version to maintain compatibility
+-   **Apple Silicon build (arm64)** — for Apple Silicon Macs (M1 and later), built with the current Electron version
+-   **Legacy build (Intel x64)** — for Intel Macs, built with an older Electron version for maximum compatibility
 
-> ⚠️ **Security notice:** The legacy build uses an older version of Electron (v37) to support macOS 11. Older Electron versions may contain unpatched security vulnerabilities. Use the legacy build only if you cannot upgrade to macOS 12 or later, and avoid using it to browse untrusted content.
+> ⚠️ **Security notice:** The legacy (Intel) build uses an older version of Electron (v37). Older Electron versions may contain unpatched security vulnerabilities, so avoid using it to browse untrusted content.
 
-If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/yMcZnyUn) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/yMcZnyUn) server.
+If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/3Z75KnHHjY) server. For general Retro eXo Projects support and Linux setup, visit the [Retro eXo Projects Discord](https://discord.gg/37FYaUZ) server.
 
 ## Installation
 
@@ -196,8 +196,11 @@ npm run start
 #### Platform-Specific Packaging
 
 -   `npm run pack:linux` - Package for Linux (x64)
--   `npm run pack:win32` - Package for Windows (ia32)
--   `npm run pack:mac-universal` - Package for macOS (Universal — Intel + Apple Silicon)
+-   `npm run pack:linux-arm64` - Package for Linux (arm64)
+-   `npm run pack:windows` - Package for Windows (x64)
+-   `npm run pack:mac-arm64` - Package for macOS (Apple Silicon)
+-   `npm run pack:mac-x64` - Package for macOS (Intel)
+-   `npm run pack:mac-universal` - Package for macOS (universal arm64 + x64)
 -   `npm run pack:all` - Package for all platforms
 
 Use `release:*` variants (e.g., `npm run release:linux`) to build and package in production mode.
@@ -216,5 +219,6 @@ exogui uses several JSON configuration files to control its behavior:
 ## Documentation
 
 -   **[docs/architecture.md](docs/architecture.md)** - Detailed architecture overview and socket communication
+-   **[docs/image-caching.md](docs/image-caching.md)** - How images are served and how grid thumbnails are generated and cached
 -   **[docs/online-updates.md](docs/online-updates.md)** - Online updates for Linux AppImage
 -   **[docs/troubleshooting.md](docs/troubleshooting.md)** - Troubleshooting guide for common issues

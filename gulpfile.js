@@ -80,12 +80,15 @@ gulp.task("pack", (done) => {
         process.env.PACK_ARCH,
     );
     const copyFiles = getCopyFiles();
+    const isLegacy = process.env.PACK_LEGACY === "true";
+    const productName = isLegacy ? "exogui-legacy" : "exogui";
+    const appId = isLegacy ? "com.exo.exogui.legacy" : "com.exo.exogui";
     builder
         .build({
             publish: process.env.PUBLISH ? "always" : "never",
             config: {
-                appId: "com.exo.exogui",
-                productName: "exogui",
+                appId,
+                productName,
                 directories: {
                     buildResources: "./static/",
                     output: "./dist/",
@@ -94,8 +97,18 @@ gulp.task("pack", (done) => {
                 extraFiles: copyFiles, // Files to copy to the build folder
                 compression: "store", // Only used if a compressed target (like 7z, nsis, dmg etc)
                 asar: true,
+                // sharp/libvips native binaries (.node + libvips .so/.dylib) must
+                // live on disk so dlopen can resolve them — they cannot be loaded
+                // from inside the asar archive.
+                asarUnpack: [
+                    "**/node_modules/sharp/**",
+                    "**/node_modules/@img/**",
+                ],
                 generateUpdatesFilesForAllChannels: true,
                 publish: createPublishInfo(),
+                toolsets: {
+                    appimage: "1.0.2",
+                },
                 linux: {
                     publish: "github",
                     target: ["AppImage", "tar.gz", "dir"],
@@ -120,18 +133,25 @@ gulp.task("pack", (done) => {
                 },
                 mac: {
                     icon: "./icons/icon.icns",
-                    x64ArchFiles: "**/7za"
+                    // These native binaries are byte identical across the x64
+                    // and arm64 builds, so @electron/universal would fail the
+                    // merge without an explicit allowance:
+                    //  - @img: both arch builds ship the full set of sharp/
+                    //    libvips binaries; sharp picks the right one at runtime.
+                    //  - 7zip-bin: a single (non-fat) 7za binary shared by both.
+                    x64ArchFiles: "**/{node_modules/@img,extern/7zip-bin}/**",
                 },
             },
             targets: targets,
         })
         .then(() => {
             console.log("Pack - Done!");
+            done();
         })
         .catch((error) => {
             console.log("Pack - Error!", error);
-        })
-        .then(done);
+            done(error);
+        });
 });
 
 /* ------ Meta Tasks ------*/
@@ -181,13 +201,16 @@ function createBuildTargets(os, arch) {
             );
         case "darwin":
             return Platform.MAC.createTarget(["dmg"], archFromString(arch));
-        case "linux":
-            return new Map([
-                [Platform.LINUX, new Map([
-                    [Arch.x64, ["AppImage", "tar.gz", "dir"]],
-                    [Arch.arm64, ["AppImage", "tar.gz"]],
-                ])],
-            ]);
+        case "linux": {
+            // Build the requested arch only (each is built on a native runner so
+            // its arch-specific sharp/libvips binaries get installed correctly).
+            const linuxArch = archFromString(arch);
+            const targets =
+                linuxArch === Arch.x64
+                    ? ["AppImage", "tar.gz", "dir"]
+                    : ["AppImage", "tar.gz"];
+            return Platform.LINUX.createTarget(targets, linuxArch);
+        }
     }
 }
 

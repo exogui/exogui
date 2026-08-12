@@ -17,6 +17,7 @@ npm-debug.log.*
 # Launcher files (created during testing)
 /config.json
 /preferences.json
+/cache
 /.installed
 /.version
 /secret.txt

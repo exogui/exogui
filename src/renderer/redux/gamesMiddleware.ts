@@ -17,12 +17,13 @@ import { initializeViews } from "./searchSlice";
 import { IGameCollection } from "@shared/game/interfaces";
 import { GameCollection } from "@shared/game/GameCollection";
 import {
+    assignGameImages,
     createMusicWatcher,
     createVideosWatcher,
     loadPlatformImages,
     loadPlatformMusic,
     loadPlatformVideos,
-    mapGamesMedia,
+    mapGameVideo,
     mapGamesMusic,
 } from "@renderer/util/media";
 import { createManualsWatcher } from "@renderer/util/addApps";
@@ -63,18 +64,19 @@ export function addGamesMiddleware() {
                         currentName: platform,
                     }));
                     try {
+                        const optionsForPlatform =
+                            platformOptions?.find((p) => p.name === platform) ??
+                            DefaultPlatformOptions;
                         const platformCollection = await loadPlatform(
                             platform,
-                            platformsPath
+                            platformsPath,
+                            optionsForPlatform.watchable
                         );
                         if (platformCollection.games.length > 0) {
                             libraries.push(platform);
                         }
                         collection.push(platformCollection);
 
-                        const optionsForPlatform =
-                            platformOptions?.find((p) => p.name === platform) ??
-                            DefaultPlatformOptions;
                         if (optionsForPlatform.watchable) {
                             createGamesWatcher(platformCollection);
                             createVideosWatcher(platform);
@@ -100,7 +102,7 @@ export function addGamesMiddleware() {
     });
 }
 
-async function loadPlatform(platform: string, platformsPath: string) {
+async function loadPlatform(platform: string, platformsPath: string, installable: boolean) {
     const platformStartTime = Date.now();
     console.log(`[PERF] Loading platform ${platform} from ${platformsPath} - START`);
 
@@ -166,13 +168,15 @@ async function loadPlatform(platform: string, platformsPath: string) {
                 data,
                 platform,
                 window.External.config.fullExodosPath,
-                window.External.config.data.useSortTitleForOrdering
+                window.External.config.data.useSortTitleForOrdering,
+                installable
             );
             console.log(`[PERF] ${platform} - Parse games (${platformCollection.games.length} games): ${Date.now() - parseGamesStart}ms`);
 
             const mapMediaStart = Date.now();
+            assignGameImages(platformCollection.games, images);
             for (const game of platformCollection.games) {
-                mapGamesMedia(game, images, videos);
+                mapGameVideo(game, videos);
                 mapGamesMusic(game, music);
             }
             console.log(`[PERF] ${platform} - Map media: ${Date.now() - mapMediaStart}ms`);

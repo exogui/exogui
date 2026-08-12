@@ -1,0 +1,83 @@
+name: Build app package
+description: Install dependencies and build/package exogui for one platform and arch.
+
+inputs:
+  script:
+    description: npm script to run (e.g. release:linux, release:mac-universal).
+    required: true
+  node-version:
+    description: Node.js version to set up.
+    required: false
+    default: '24'
+  electron-version:
+    description: Pin a specific (legacy) Electron version before building. Empty = use the version from package.json.
+    required: false
+    default: ''
+  mac-universal:
+    description: Set to 'true' to add the x64 sharp binaries needed for a universal macOS build.
+    required: false
+    default: 'false'
+  arch-suffix:
+    description: When set, rename the produced *-x64.dmg to *-<suffix>.dmg.
+    required: false
+    default: ''
+  disable-codesign:
+    description: Set to 'true' to stub out macOS codesign (for unsigned on-demand builds).
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Disable code signing
+      if: inputs.disable-codesign == 'true'
+      shell: bash
+      run: |
+        printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/codesign
+        chmod +x /usr/local/bin/codesign
+
+    - name: Install legacy Electron
+      if: inputs.electron-version != ''
+      shell: bash
+      run: npm install electron@${{ inputs.electron-version }} --save-dev
+
+    - name: Add x64 sharp binaries for universal macOS build
+      if: inputs.mac-universal == 'true'
+      shell: bash
+      run: |
+        SHARP_VER=$(node -p "require('./node_modules/sharp/package.json').version")
+        VIPS_VER=$(node -p "require('./node_modules/sharp/package.json').optionalDependencies['@img/sharp-libvips-darwin-x64']")
+        tmp=$(mktemp -d)
+        # --force bypasses the EBADPLATFORM check: npm validates an explicitly
+        # named package against the host platform (arm64), and --os/--cpu only
+        # filter transitive optional deps, not the named root packages.
+        npm install --prefix "$tmp" --no-save --force --os=darwin --cpu=x64 \
+          "@img/sharp-darwin-x64@${SHARP_VER}" "@img/sharp-libvips-darwin-x64@${VIPS_VER}"
+        mkdir -p node_modules/@img
+        cp -R "$tmp/node_modules/@img/." node_modules/@img/
+        echo "@img contents after adding x64 binaries:"
+        ls node_modules/@img/
+
+    - name: Build package
+      shell: bash
+      run: npm run ${{ inputs.script }}
+
+    - name: Rename macOS dmg
+      if: inputs.arch-suffix != ''
+      shell: bash
+      run: |
+        for f in dist/*.dmg; do
+          base="${f%.dmg}"
+          base="${base%-x64}"
+          mv "$f" "${base}-${{ inputs.arch-suffix }}.dmg"
+        done
