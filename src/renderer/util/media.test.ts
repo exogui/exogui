@@ -233,7 +233,9 @@ describe("image filename to XML title round-trip", () => {
 
 describe("assignGameImages", () => {
     // Filenames below are taken verbatim from the eXoDOS collection.
+    const BOX_FRONT = "Box - Front";
     const GAMEPLAY = "Screenshot - Gameplay";
+    const GAME_OVER = "Screenshot - Game Over";
     const TITLE_SHOT = "Screenshot - Game Title";
 
     function collectionOf(files: Record<string, string[]>): GameImagesCollection {
@@ -266,6 +268,125 @@ describe("assignGameImages", () => {
         return Object.fromEntries(gameInfos.map((g) => [g.id, g]));
     }
 
+    // eXoDOS only GUID-renames a game's files in the categories where a clash actually
+    // needed resolving, so the same game can be GUID-named in one category and still
+    // bare-named in another.
+    it("takes the bare file in categories where the game has no GUID-named file of its own", () => {
+        const games = assign(
+            [
+                ["Copper", "31045f95-c08a-44a8-8b84-a60ee59525a8"],
+                ["Copper", "679ecd1c-14bd-40d9-b81d-7942ff1f6932"],
+            ],
+            {
+                [BOX_FRONT]: [
+                    "Copper-01.png",
+                    "Copper.679ecd1c-14bd-40d9-b81d-7942ff1f6932-02.png",
+                ],
+                [TITLE_SHOT]: [
+                    "Copper-02.png",
+                    "Copper.679ecd1c-14bd-40d9-b81d-7942ff1f6932-02.png",
+                ],
+                [GAMEPLAY]: [
+                    "Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-01.png",
+                    "Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-02.png",
+                ],
+                [GAME_OVER]: [
+                    "Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-01.png",
+                ],
+            }
+        );
+
+        expect(games["31045f95-c08a-44a8-8b84-a60ee59525a8"].media.images).toEqual({
+            [BOX_FRONT]: ["Copper-01.png"],
+            [TITLE_SHOT]: ["Copper-02.png"],
+            [GAMEPLAY]: [
+                "Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-01.png",
+                "Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-02.png",
+            ],
+            [GAME_OVER]: ["Copper.31045f95-c08a-44a8-8b84-a60ee59525a8-01.png"],
+        });
+        expect(games["679ecd1c-14bd-40d9-b81d-7942ff1f6932"].media.images).toEqual({
+            [BOX_FRONT]: ["Copper.679ecd1c-14bd-40d9-b81d-7942ff1f6932-02.png"],
+            [TITLE_SHOT]: ["Copper.679ecd1c-14bd-40d9-b81d-7942ff1f6932-02.png"],
+        });
+        expect(games["31045f95-c08a-44a8-8b84-a60ee59525a8"].thumbnailPath)
+        .toBe("Images/eXoDemoScene/Copper-01.png");
+    });
+
+    it("gives the single bare file to the one of three siblings that has no GUID-named file", () => {
+        const games = assign(
+            [
+                ["Weird", "182d4b6f-c2b4-4782-8b10-0b71b8086086"],
+                ["Weird", "50222d47-d422-4d84-982f-412cbb3bbfa1"],
+                ["Weird", "7d25bcc7-9425-4293-8055-57bf796ba64f"],
+            ],
+            {
+                [BOX_FRONT]: [
+                    "Weird-01.png",
+                    "Weird.182d4b6f-c2b4-4782-8b10-0b71b8086086-01.png",
+                    "Weird.7d25bcc7-9425-4293-8055-57bf796ba64f-01.png",
+                ],
+                [GAME_OVER]: [
+                    "Weird.182d4b6f-c2b4-4782-8b10-0b71b8086086-01.png",
+                    "Weird.50222d47-d422-4d84-982f-412cbb3bbfa1-01.png",
+                ],
+            }
+        );
+
+        expect(games["50222d47-d422-4d84-982f-412cbb3bbfa1"].media.images).toEqual({
+            [BOX_FRONT]: ["Weird-01.png"],
+            [GAME_OVER]: ["Weird.50222d47-d422-4d84-982f-412cbb3bbfa1-01.png"],
+        });
+        expect(games["182d4b6f-c2b4-4782-8b10-0b71b8086086"].media.images[BOX_FRONT])
+        .toEqual(["Weird.182d4b6f-c2b4-4782-8b10-0b71b8086086-01.png"]);
+        expect(games["7d25bcc7-9425-4293-8055-57bf796ba64f"].media.images[GAME_OVER])
+        .toBeUndefined();
+    });
+
+    it("leaves a bare file unassigned when more than one sibling could claim it", () => {
+        const games = assign(
+            [
+                ["Megademo", "b2a6a3c1-61ee-4bd5-bb24-55d598814322"],
+                ["MegaDemo", "9510d911-7a2d-4bbe-aa8f-322de1ef7894"],
+            ],
+            {
+                [BOX_FRONT]: [
+                    "Megademo.b2a6a3c1-61ee-4bd5-bb24-55d598814322-02.png",
+                    "MegaDemo.9510d911-7a2d-4bbe-aa8f-322de1ef7894-01.png",
+                ],
+                // Neither game is GUID-named here, so the bare file is unattributable.
+                [GAME_OVER]: ["Megademo-01.png"],
+                // Only one game is GUID-named here, so the bare files go to the other.
+                [GAMEPLAY]: [
+                    "Megademo-02.png",
+                    "Megademo-03.png",
+                    "MegaDemo.9510d911-7a2d-4bbe-aa8f-322de1ef7894-01.png",
+                ],
+            }
+        );
+
+        expect(games["b2a6a3c1-61ee-4bd5-bb24-55d598814322"].media.images[GAME_OVER])
+        .toBeUndefined();
+        expect(games["9510d911-7a2d-4bbe-aa8f-322de1ef7894"].media.images[GAME_OVER])
+        .toBeUndefined();
+        expect(games["b2a6a3c1-61ee-4bd5-bb24-55d598814322"].media.images[GAMEPLAY])
+        .toEqual(["Megademo-02.png", "Megademo-03.png"]);
+        expect(games["9510d911-7a2d-4bbe-aa8f-322de1ef7894"].media.images[GAMEPLAY])
+        .toEqual(["MegaDemo.9510d911-7a2d-4bbe-aa8f-322de1ef7894-01.png"]);
+    });
+
+    it("mixes GUID-named and bare files for a game that has no same-titled sibling", () => {
+        const games = assign([["Solaris", "id-a"]], {
+            [BOX_FRONT]: ["Solaris-01.png"],
+            [GAMEPLAY]: ["Solaris.id-a-01.png"],
+        });
+
+        expect(games["id-a"].media.images).toEqual({
+            [BOX_FRONT]: ["Solaris-01.png"],
+            [GAMEPLAY]: ["Solaris.id-a-01.png"],
+        });
+    });
+
     it("gives GUID-suffixed files to the matching game and bare files to its sibling", () => {
         const games = assign(
             [
@@ -290,27 +411,32 @@ describe("assignGameImages", () => {
         ]);
     });
 
-    it("does not fall back to bare-title files in categories where the GUID-named game has none", () => {
+    it("leaves a game empty in categories that only hold its sibling's GUID-named files", () => {
         const games = assign(
             [
                 ["Evil", "3621627c-4517-4369-bf93-5366cab20dcf"],
                 ["Evil", "6c12e926-eb57-4439-8085-9d6239335d56"],
             ],
             {
+                [TITLE_SHOT]: [
+                    "Evil-01.png",
+                    "Evil.6c12e926-eb57-4439-8085-9d6239335d56-02.png",
+                ],
                 [GAMEPLAY]: [
                     "Evil.6c12e926-eb57-4439-8085-9d6239335d56-01.png",
                 ],
-                [TITLE_SHOT]: ["Evil-01.png"],
             }
         );
 
-        const guidNamed = games["6c12e926-eb57-4439-8085-9d6239335d56"];
-        expect(guidNamed.media.images[GAMEPLAY]).toEqual([
-            "Evil.6c12e926-eb57-4439-8085-9d6239335d56-01.png",
-        ]);
-        expect(guidNamed.media.images[TITLE_SHOT]).toBeUndefined();
-        expect(games["3621627c-4517-4369-bf93-5366cab20dcf"].media.images[TITLE_SHOT])
-        .toEqual(["Evil-01.png"]);
+        expect(games["6c12e926-eb57-4439-8085-9d6239335d56"].media.images).toEqual({
+            [TITLE_SHOT]: ["Evil.6c12e926-eb57-4439-8085-9d6239335d56-02.png"],
+            [GAMEPLAY]: ["Evil.6c12e926-eb57-4439-8085-9d6239335d56-01.png"],
+        });
+        // Nothing in GAMEPLAY is this game's, and the loose index must not hand it
+        // its sibling's file either.
+        expect(games["3621627c-4517-4369-bf93-5366cab20dcf"].media.images).toEqual({
+            [TITLE_SHOT]: ["Evil-01.png"],
+        });
     });
 
     it.each([
