@@ -162,6 +162,8 @@ export type BackInitArgs = {
     basePath: string;
     /** If the back should accept remote clients to connect (renderers from different machines). */
     acceptRemote: boolean;
+    /** Enable verbose back diagnostics (periodic memory logging). */
+    diagnostics: boolean;
 };
 
 export enum BackInit {

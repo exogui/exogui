@@ -16,6 +16,7 @@ import {
     readJsonFile,
 } from "@shared/Util";
 import { EventEmitter } from "events";
+import * as fs from "fs";
 import * as path from "path";
 import { FileServer } from "./backend/fileServer";
 import { ConfigFile } from "./config/ConfigFile";
@@ -75,6 +76,54 @@ const commandMappingsFilename = `mappings.${process.platform}.json`;
 
 process.on("message", initialize);
 
+installProcessDiagnostics();
+
+/**
+ * Nothing upstream watches this process, so anything that takes it down does so silently and the
+ * window is left waiting on a socket no one is answering. Name the cause on the way out.
+ */
+function installProcessDiagnostics(): void {
+    process.on("uncaughtException", (error) => {
+        // console.error is asynchronous when stderr is a pipe, and process.exit() would cut it
+        // off - which is how a crash ends up looking like the process silently vanished.
+        try {
+            fs.writeSync(2, `Back - Uncaught exception, exiting: ${error?.stack ?? error}\n`);
+        } catch {
+            /* stderr is gone; there is nothing left to report through */
+        }
+        process.exit(1);
+    });
+
+    // Node would take the process down for this; a stray rejection (a VLC command that timed out,
+    // a watcher that lost a file) is not worth killing the session over, so log it and carry on.
+    process.on("unhandledRejection", (reason) => {
+        console.error("Back - Unhandled promise rejection (continuing):", reason);
+    });
+
+    for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+        process.on(signal, () => {
+            console.log(`Back - Received ${signal}, shutting down.`);
+            exit();
+        });
+    }
+
+    process.on("exit", (code) => {
+        console.log(`Back - Process exiting with code ${code}.`);
+    });
+}
+
+function startMemoryLogging(): void {
+    const INTERVAL_MS = 30_000;
+    const timer = setInterval(() => {
+        const { rss, heapUsed, heapTotal, external } = process.memoryUsage();
+        const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
+        console.log(
+            `[Diagnostics][back] memory rss=${mb(rss)} heapUsed=${mb(heapUsed)} heapTotal=${mb(heapTotal)} external=${mb(external)}`
+        );
+    }, INTERVAL_MS);
+    timer.unref();
+}
+
 function getEmbeddedExodosPath(): string {
     if (process.env.APPIMAGE) {
         return path.dirname(path.dirname(process.env.APPIMAGE));
@@ -98,6 +147,10 @@ async function initialize(message: any, _: any): Promise<void> {
     (global as any).log = logFactory(state.socketServer, addLog, false);
 
     const content: BackInitArgs = JSON.parse(message);
+    console.log(`Back - Started (pid=${process.pid}, node=${process.versions.node}).`);
+    if (content.diagnostics) {
+        startMemoryLogging();
+    }
     state.secret = content.secret;
     state.configFolder = content.configFolder;
     state.localeCode = "unknown";
