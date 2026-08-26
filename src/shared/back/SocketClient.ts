@@ -27,9 +27,6 @@ export class SocketClient<SOCKET extends BaseSocket> extends EventEmitter {
     /** If true, do not attempt to reconnect */
     abortReconnects = false;
 
-    /** Kill self if connection ever fully dies (can't reconnect) */
-    killOnDisconnect = false;
-
     client: SocketServerClient<BackIn, BackInTemplate, SOCKET> = {
         id: -1, // Unused (only used by servers)
         next_id: 0,
@@ -128,7 +125,7 @@ export class SocketClient<SOCKET extends BaseSocket> extends EventEmitter {
                         }
                     })
                     .catch(async (error) => {
-                        console.error(`Failed Connection Attempt: ${error}`);
+                        console.error(`Failed to reconnect to ${this.url}: ${describeSocketError(error)}. Retrying in 2s.`);
                         await new Promise<void>(resolve => {
                             setTimeout(resolve, 2000);
                         });
@@ -248,19 +245,19 @@ export class SocketClient<SOCKET extends BaseSocket> extends EventEmitter {
     }
 
     protected onClose(event: CloseEvent): void {
-        if (this.abortReconnects) {
-            console.log("Socket Client - Connection closed.");
-            if (this.killOnDisconnect) {
-                process.exit(process.pid);
-            }
-            if (this.onStateChange) {
-                this.onStateChange(false);
-            }
-        } else {
-            console.log(`SharedSocket Closed (Code: ${event.code}, Clean: ${event.wasClean}, Reason: "${event.reason}", URL: "${this.url}").`);
-            if (this.onStateChange) {
-                this.onStateChange(false);
-            }
+        // 1006 with an empty reason is not a close handshake at all - the TCP connection went away
+        // without one, which on a local backend means the process died rather than shut down.
+        const abrupt = event.code === 1006 && !event.wasClean;
+        console.log(
+            `Socket Client - Connection closed (Code: ${event.code}, Clean: ${event.wasClean}, Reason: "${event.reason}", URL: "${this.url || "<none>"}").` +
+      (abrupt ? " The other end vanished without closing the socket." : "")
+        );
+
+        if (this.onStateChange) {
+            this.onStateChange(false);
+        }
+
+        if (!this.abortReconnects) {
             this.reconnect();
         }
     }
@@ -290,3 +287,14 @@ export class SocketClient<SOCKET extends BaseSocket> extends EventEmitter {
     }
 }
 function noop() { /* Does nothing. */ }
+
+/** WebSocket rejects with an error event rather than an Error, which stringifies to "[object Object]". */
+function describeSocketError(error: any): string {
+    if (!error) {
+        return "unknown error";
+    }
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return error.error?.message ?? error.message ?? error.type ?? String(error);
+}

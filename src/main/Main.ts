@@ -19,6 +19,7 @@ import { ChildProcess, fork } from "child_process";
 import {
     app,
     BrowserWindow,
+    dialog,
     ipcMain,
     IpcMainEvent,
     nativeImage,
@@ -50,6 +51,8 @@ type MainState = {
     _sentLocaleCode: boolean;
     /** If the main is about to quit. */
     isQuitting: boolean;
+    /** If the back has been asked to quit, so its exit is expected rather than a crash. */
+    expectBackExit: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
     /** Online updater instance */
@@ -74,10 +77,13 @@ export function main(init: Init): void {
         backProc: undefined,
         _sentLocaleCode: false,
         isQuitting: false,
+        expectBackExit: false,
         mainFolderPath: createErrorProxy("mainFolderPath"),
     };
 
-    startup();
+    startup().catch((error) => {
+        console.error("Startup failed:", error);
+    });
 
     async function startup() {
         // Disable sandbox for Linux (required for AppImage and some distros)
@@ -127,6 +133,17 @@ export function main(init: Init): void {
                     undefined,
                     { detached: true }
                 );
+                state.backProc.on("error", (error) => {
+                    console.error("Back process error:", error);
+                });
+                state.backProc.on("exit", (code, signal) => {
+                    onBackProcExit(code, signal);
+                    reject(
+                        new Error(
+                            `Back process exited during startup (code=${code}, signal=${signal}).`
+                        )
+                    );
+                });
                 // Wait for process to initialize
                 state.backProc.once("message", (msg) => {
                     const port = parseInt(msg.toString());
@@ -149,6 +166,7 @@ export function main(init: Init): void {
                     exePath: path.dirname(app.getPath("exe")),
                     basePath: getResourcesPath(app, Util.isDev),
                     acceptRemote: !!init.args["host-remote"],
+                    diagnostics: diagnosticsEnabled,
                 };
                 state.backProc.send(JSON.stringify(msg));
             });
@@ -171,11 +189,16 @@ export function main(init: Init): void {
             };
 
             const socket = await waitForConnection();
+            // Without these the client has nothing to dial on a drop, and every disconnect ends
+            // in "No client url stored, cannot reconnect" with the window left pointing at a
+            // backend that is no longer there.
+            state.socket.url = state.backHost.href;
+            state.socket.secret = "exogui-launcher";
             state.socket.setSocket(socket);
-            state.socket.killOnDisconnect = true;
 
             // Handle quit signal from backend
             state.socket.register(BackOut.QUIT, () => {
+                state.expectBackExit = true;
                 state.isQuitting = true;
                 app.quit();
             });
@@ -263,6 +286,36 @@ export function main(init: Init): void {
         }
     }
 
+    /**
+     * The back process dying is the one failure the window cannot report on its own: the socket
+     * just closes and everything the renderer asks for hangs forever. Say what happened, on
+     * stdout and to the user, and stop the client from retrying a port nothing is listening on.
+     */
+    function onBackProcExit(code: number | null, signal: NodeJS.Signals | null): void {
+        if (state.isQuitting || state.expectBackExit) {
+            console.log(`Back process exited (code=${code}, signal=${signal}).`);
+            return;
+        }
+
+        console.error(
+            `Back process died unexpectedly (code=${code}, signal=${signal}). ` +
+        (signal === "SIGKILL"
+            ? "SIGKILL usually means the OS killed it - check dmesg/journalctl -k for the OOM killer."
+            : "See the output above for what it logged before going.")
+        );
+
+        state.socket.allowDeath();
+        state.isQuitting = true;
+
+        dialog.showErrorBox(
+            `${APP_TITLE} - backend stopped`,
+            `The background process exited unexpectedly (code=${code}, signal=${signal}).\n\n` +
+        "The launcher cannot continue without it and will now close. Start it from a terminal to see what it logged before it died."
+        );
+
+        app.quit();
+    }
+
     function onAppReady(): void {
         if (!session.defaultSession) {
             throw new Error("Default session is missing!");
@@ -300,6 +353,7 @@ export function main(init: Init): void {
 
         if (!init.args["connect-remote"] && !state.isQuitting) {
             // (Local back)
+            state.expectBackExit = true;
             state.socket.send(BackIn.QUIT);
             event.preventDefault();
             // Backend may die before its BackOut.QUIT message reaches us (race on socket close).
