@@ -104,6 +104,44 @@ Separately, a **legacy** Electron 37 x64 build (`macOS x86_legacy` matrix entry)
 
 ---
 
+## A dead back process ends the session instead of being restarted
+**Priority:** Low
+**Severity:** Low
+**Effort:** Medium
+
+**Issue:**
+`Main.ts` forks the back process once at startup. If it dies, `onBackProcExit` reports the exit code/signal, shows an error box and quits the app. The client's reconnect loop (`SocketClient.reconnect`) can only redial the same port, which nothing is listening on any more, so it is aborted via `allowDeath()` rather than left spinning.
+
+Restarting the back would mean re-forking it, waiting for a new port, reconnecting both the main and renderer clients, and re-fetching all init data (config, preferences, playlists, themes, mappings) in the renderer, which currently only happens once in `MainWindowPreload`.
+
+**Trade-offs:**
+- ✅ Simple and honest: the user is told what happened instead of staring at a window whose every action hangs
+- ✅ No half-initialized renderer state to reason about
+- ❌ A single back crash costs the user their session, including any in-progress game loading
+
+**Potential Solutions:**
+1. **Keep as-is** — back crashes should be rare; the log now names the cause.
+2. **Re-fork and re-handshake** — needs a renderer-side "reinitialize everything" path.
+
+**Recommendation:** Keep as-is until crash reports show this happening often enough to be worth the reinitialization path.
+
+---
+
+## `PlatformFile.test.ts` names its temp files by timestamp
+**Priority:** Low
+**Severity:** Low (test-only flake)
+**Effort:** Low
+
+**Issue:**
+`runUpdate` in `src/renderer/file/PlatformFile.test.ts` builds its temp path as `platform-test-${Date.now()}.xml` and then sleeps 50ms "to let the rename settle". Under a loaded full-suite run the whole suite has been observed failing one assertion here and passing when the file is run alone. Two tests entering the helper within the same millisecond share a path, and the fixed sleep is a guess at how long `updateFavoriteField`'s rename takes.
+
+**Potential Solutions:**
+1. `fs.mkdtempSync` per test (unique by construction), and have `updateFavoriteField` resolve only after the rename completes so the sleep can go.
+
+**Recommendation:** Worth doing next time this file is touched - a test that fails only in company is worse than no test.
+
+---
+
 ## Contributing
 
 When adding new code to this project:
