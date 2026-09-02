@@ -453,6 +453,7 @@ class App extends React.Component<AppProps, AppState> {
                                 <HeaderContainer
                                     exodosResources={this.state.exodosResources}
                                     libraries={this.props.libraries}
+                                    selectedLibrary={libraryPath}
                                     onToggleLeftSidebarClick={
                                         this.onToggleLeftSidebarClick
                                     }
