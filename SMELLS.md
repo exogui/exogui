@@ -142,6 +142,59 @@ Restarting the back would mean re-forking it, waiting for a new port, reconnecti
 
 ---
 
+## Search filters carry two parallel representations of a release year
+
+**Priority:** Medium
+**Severity:** Low (correct today, easy to get wrong later)
+**Effort:** Medium
+
+**Issue:**
+`IGameInfo.releaseYear` is not a year - it holds LaunchBox's raw `<ReleaseDate>`
+(`"1996-10-31T01:00:00-06:00"`). Three places now have to know that:
+`FieldFilter.releaseYear` matches it as a substring, `CompareFilter.releaseYear` is a
+string that `gameFilter.ts` parses into a number before comparing, and `GameList` calls
+`getPrintableYearFromDateString` to display it. The field name promises a year and
+delivers a timestamp, which is what produced four of the nine search defects fixed in
+this pass: `year:1996` never matched, `year>1996` was inclusive because
+`"1996-10-31..." > "1996"` is lexicographically true, and undated games sorted below
+every year.
+
+**Potential Solutions:**
+1. Parse the year once at load time into a numeric `releaseYearNumber` on `IGameInfo`,
+   keep the raw date under a name that says so (`releaseDate`), and let filters and the
+   UI read the parsed field.
+
+**Recommendation:** Worth doing when game parsing is next touched. The comparison path is
+correct now and covered by tests, but every new consumer of `releaseYear` has to
+rediscover that it is a timestamp.
+
+---
+
+## `parseUserInput` is a single stateful token loop
+
+**Priority:** Medium
+**Severity:** Low
+**Effort:** Medium
+
+**Issue:**
+`src/renderer/util/search.ts` parses the query language in one loop over
+space-separated tokens, carrying `workingKey`, `workingValue`, `workingKeyChar`,
+`negative`, `quoted` and `capturingQuotes` across iterations. The commit step is now a
+closure called from two places (end of each token, and once more after the loop for an
+unterminated quote). It works and is well covered, but the defect it used to have -
+the commit block nested inside `if (!workingValue)`, so any quoted value silently
+returned an empty filter matching all 7,600 games - was invisible precisely because the
+control flow is hard to follow.
+
+**Potential Solutions:**
+1. Split into a tokenizer (handling quotes and negation) and a reducer over the
+   resulting tokens, so quoting cannot interact with committing.
+
+**Recommendation:** Leave until the query language grows again. `search.test.ts` now
+pins the behavior, so a rewrite would be verifiable rather than risky.
+
+---
+
 ## Contributing
 
 When adding new code to this project:

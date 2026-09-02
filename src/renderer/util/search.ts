@@ -5,7 +5,7 @@ import {
     FieldFilter,
     GameFilter,
 } from "@shared/interfaces";
-import { getDefaultBooleanFilter, getDefaultCompareFilter, getDefaultFieldFilter, getDefaultGameFilter } from "@shared/utils/search";
+import { getDefaultGameFilter } from "@shared/utils/search";
 
 enum KeyChar {
     MATCHES = ":",
@@ -19,24 +19,125 @@ const KEY_CHARS = ["=", ":", "<", ">"];
 const REPLACEMENT = "awgdty7awgvbduiawdjnujioawd888";
 
 export function parseUserInput(input: string): GameFilter {
-    const filter: GameFilter = {
-        subfilters: [],
-        whitelist: getDefaultFieldFilter(),
-        blacklist: getDefaultFieldFilter(),
-        exactWhitelist: getDefaultFieldFilter(),
-        exactBlacklist: getDefaultFieldFilter(),
-        equalTo: getDefaultCompareFilter(),
-        greaterThan: getDefaultCompareFilter(),
-        lessThan: getDefaultCompareFilter(),
-        booleans: getDefaultBooleanFilter(),
-        matchAny: false,
-    };
+    const filter = getDefaultGameFilter();
 
     let capturingQuotes = false;
     let workingKey = "";
     let workingValue = "";
     let workingKeyChar: KeyChar | undefined = undefined;
     let negative = false;
+    let quoted = false;
+
+    const commit = () => {
+        let exact = false;
+        if (workingKey) {
+            if (workingValue == REPLACEMENT) {
+                workingValue = ""; // Empty it again now we're at the end
+                exact = true;
+            } else if (workingKeyChar === KeyChar.EQUALS) {
+                exact = true;
+            }
+        }
+
+        const value = workingValue;
+        let processed = true;
+
+        switch (workingKeyChar) {
+            case KeyChar.LESS_THAN: {
+                switch (workingKey) {
+                    case "players":
+                    case "maxPlayers": {
+                        filter.lessThan.maxPlayers = Number(value);
+                        break;
+                    }
+                    case "release":
+                    case "releaseDate":
+                    case "releaseYear":
+                    case "year": {
+                        filter.lessThan.releaseYear = value;
+                        break;
+                    }
+                    default: {
+                        processed = false;
+                    }
+                }
+                break;
+            }
+            case KeyChar.GREATER_THAN: {
+                switch (workingKey) {
+                    case "players":
+                    case "maxPlayers": {
+                        filter.greaterThan.maxPlayers = Number(value);
+                        break;
+                    }
+                    case "release":
+                    case "releaseDate":
+                    case "releaseYear":
+                    case "year": {
+                        filter.greaterThan.releaseYear = value;
+                        break;
+                    }
+                    default: {
+                        processed = false;
+                    }
+                }
+                break;
+            }
+            case KeyChar.EQUALS:
+            case KeyChar.MATCHES: {
+                switch (workingKey) {
+                    case "players":
+                    case "maxPlayers": {
+                        filter.equalTo.maxPlayers = Number(value);
+                        break;
+                    }
+                    case "release":
+                    case "releaseDate":
+                    case "releaseYear":
+                    case "year": {
+                        filter.equalTo.releaseYear = value;
+                        break;
+                    }
+                    default: {
+                        processed = false;
+                    }
+                }
+                break;
+            }
+            default: {
+                processed = false;
+            }
+        }
+
+        if (!processed) {
+            const field = fieldForKey(workingKey);
+
+            if (field !== undefined) {
+                addValues(filter, field, value, negative, exact, quoted);
+            } else if (!workingKeyChar && value.toLowerCase() === "installed") {
+                // Cheat a little and assume nobody is writing installed or favorite as a value
+                filter.booleans.installed = !negative;
+            } else if (!workingKeyChar && value.toLowerCase() === "favorite") {
+                filter.booleans.favorite = !negative;
+            } else {
+                if (workingKey) {
+                    console.warn(
+                        `Unrecognized search key "${workingKey}", matching it as plain text instead`
+                    );
+                }
+                const fullValue = workingKeyChar
+                    ? workingKey + workingKeyChar + value
+                    : value;
+                addValues(filter, "generic", fullValue, negative, exact, quoted);
+            }
+        }
+
+        negative = false;
+        quoted = false;
+        workingValue = "";
+        workingKey = "";
+        workingKeyChar = undefined;
+    };
 
     for (let token of input.split(" ")) {
         if (!capturingQuotes && token.length > 1) {
@@ -74,6 +175,7 @@ export function parseUserInput(input: string): GameFilter {
         if (token.startsWith("\"")) {
             token = token.slice(1);
             capturingQuotes = true;
+            quoted = true;
         }
 
         if (capturingQuotes) {
@@ -114,13 +216,14 @@ export function parseUserInput(input: string): GameFilter {
 
             // Entire token is wrapped, must be a generic value
             if (token.endsWith("\"") && token.startsWith("\"")) {
+                quoted = true;
                 if (token.length == 2) {
                     if (workingKey !== "") {
                         // It has a key? Must be a deliberately empty value, fill with a replacement string for now
                         workingValue = REPLACEMENT;
                     }
                 } else {
-                    token = token.slice(1, token.length); // Remove quotes
+                    token = token.slice(1, token.length - 1); // Remove quotes
                     workingValue = token;
                 }
                 // Opening quote, but no key yet, must be the start of a spaced generic value
@@ -128,206 +231,99 @@ export function parseUserInput(input: string): GameFilter {
                 if (token.startsWith("\"")) {
                     token = token.slice(1);
                     capturingQuotes = true;
+                    quoted = true;
                     workingValue = token;
                     continue;
                 }
                 workingValue = token;
             }
+        }
 
-            if (workingValue) {
-                let exact = false;
-                if (workingKey) {
-                    if (workingValue == REPLACEMENT) {
-                        workingValue = ""; // Empty it again now we're at the end
-                        exact = true;
-                    } else {
-                        if (workingKeyChar) {
-                            switch (workingKeyChar) {
-                                case KeyChar.EQUALS: {
-                                    exact = true;
-                                    break;
-                                }
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                console.debug(
-                    `key: ${workingKey}, value: ${workingValue}, keychar: ${workingKeyChar}, negative: ${negative}, exact: ${exact}`
-                );
-
-                const list =
-                    negative && exact
-                        ? filter.exactBlacklist
-                        : negative && !exact
-                            ? filter.blacklist
-                            : !negative && exact
-                                ? filter.exactWhitelist
-                                : filter.whitelist;
-
-                const value = workingValue; // Reassign here so we can expand typings later, trust me
-
-                let processed = true;
-
-                if (workingKeyChar !== undefined) {
-                    switch (workingKeyChar) {
-                        case KeyChar.LESS_THAN: {
-                            switch (workingKey) {
-                                case "players":
-                                case "maxPlayers": {
-                                    filter.lessThan.maxPlayers = Number(value);
-                                    break;
-                                }
-                                case "release":
-                                case "releaseDate":
-                                case "releaseYear":
-                                case "year": {
-                                    filter.lessThan.releaseYear = value;
-                                    break;
-                                }
-                                default: {
-                                    processed = false;
-                                }
-                            }
-                            break;
-                        }
-                        case KeyChar.GREATER_THAN: {
-                            switch (workingKey) {
-                                case "players":
-                                case "maxPlayers": {
-                                    filter.greaterThan.maxPlayers =
-                                        Number(value);
-                                    break;
-                                }
-                                case "release":
-                                case "releaseDate":
-                                case "releaseYear":
-                                case "year": {
-                                    filter.greaterThan.releaseYear = value;
-                                    break;
-                                }
-                                default: {
-                                    processed = false;
-                                }
-                            }
-                            break;
-                        }
-                        case KeyChar.EQUALS:
-                        case KeyChar.MATCHES: {
-                            switch (workingKey) {
-                                case "players":
-                                case "maxPlayers": {
-                                    filter.equalTo.maxPlayers = Number(value);
-                                    break;
-                                }
-                                case "release":
-                                case "releaseDate":
-                                case "releaseYear":
-                                case "year": {
-                                    filter.equalTo.releaseYear = value;
-                                    break;
-                                }
-                                default: {
-                                    processed = false;
-                                }
-                            }
-                            break;
-                        }
-                        default: {
-                            processed = false;
-                        }
-                    }
-                } else {
-                    processed = false;
-                }
-
-                if (!processed) {
-                    // Handle adding string values to filter
-                    switch (workingKey.toLowerCase()) {
-                        case "id": {
-                            list.id.push(value);
-                            break;
-                        }
-                        case "title": {
-                            list.title.push(value);
-                            break;
-                        }
-                        case "series": {
-                            list.series.push(value);
-                            break;
-                        }
-                        case "dev":
-                        case "developer": {
-                            list.developer.push(value);
-                            break;
-                        }
-                        case "pub":
-                        case "publisher": {
-                            list.publisher.push(value);
-                            break;
-                        }
-                        case "platform": {
-                            list.platform.push(value);
-                            break;
-                        }
-                        case "tag":
-                        case "genre": {
-                            list.genre.push(value);
-                            break;
-                        }
-                        case "region": {
-                            list.region.push(value);
-                            break;
-                        }
-                        case "rating": {
-                            list.rating.push(value);
-                            break;
-                        }
-                        default: {
-                            // Cheat a little and assume nobody is writing installed or favorite as a value
-                            if (
-                                !workingKeyChar &&
-                                value.toLowerCase() === "installed"
-                            ) {
-                                if (negative) {
-                                    filter.booleans.installed = false;
-                                } else {
-                                    filter.booleans.installed = true;
-                                }
-                            } else if (
-                                !workingKeyChar &&
-                                value.toLowerCase() === "favorite"
-                            ) {
-                                if (negative) {
-                                    filter.booleans.favorite = false;
-                                } else {
-                                    filter.booleans.favorite = true;
-                                }
-                            } else {
-                                if (workingKeyChar) {
-                                    const fullValue =
-                                        workingKey + workingKeyChar + value;
-                                    list.generic.push(fullValue);
-                                } else {
-                                    list.generic.push(value);
-                                }
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                negative = false;
-                workingValue = "";
-                workingKey = "";
-            }
+        if (workingValue) {
+            commit();
         }
     }
 
+    // An unterminated quote still holds a value - keep it rather than dropping the whole query
+    if (workingValue) {
+        commit();
+    }
+
     return filter;
+}
+
+function fieldForKey(key: string): keyof FieldFilter | undefined {
+    switch (key.toLowerCase()) {
+        case "id":
+            return "id";
+        case "title":
+            return "title";
+        case "series":
+            return "series";
+        case "dev":
+        case "developer":
+            return "developer";
+        case "pub":
+        case "publisher":
+            return "publisher";
+        case "platform":
+            return "platform";
+        case "tag":
+        case "genre":
+            return "genre";
+        case "playmode":
+        case "play_mode":
+            return "playMode";
+        case "region":
+            return "region";
+        case "rating":
+            return "rating";
+        default:
+            return undefined;
+    }
+}
+
+function listFor(
+    filter: GameFilter,
+    negative: boolean,
+    exact: boolean
+): FieldFilter {
+    if (negative) {
+        return exact ? filter.exactBlacklist : filter.blacklist;
+    }
+    return exact ? filter.exactWhitelist : filter.whitelist;
+}
+
+/** A comma separated value means "any of these"; quoting it keeps the commas literal. */
+function splitAlternatives(value: string, quoted: boolean): string[] {
+    if (quoted || value === "") {
+        return [value];
+    }
+    const parts = value
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v !== "");
+    return parts.length > 0 ? parts : [value];
+}
+
+function addValues(
+    filter: GameFilter,
+    field: keyof FieldFilter,
+    value: string,
+    negative: boolean,
+    exact: boolean,
+    quoted: boolean
+) {
+    const values = splitAlternatives(value, quoted);
+
+    if (values.length > 1) {
+        const anyFilter = getDefaultGameFilter();
+        anyFilter.matchAny = true;
+        listFor(anyFilter, negative, exact)[field].push(...values);
+        filter.subfilters.push(anyFilter);
+    } else {
+        listFor(filter, negative, exact)[field].push(values[0]);
+    }
 }
 
 function getKeyChar(token: string): KeyChar | undefined {
@@ -376,7 +372,10 @@ export function isGameFilterEmpty(filter: GameFilter) {
         isFilterEmpty(filter.blacklist) &&
         isFilterEmpty(filter.exactWhitelist) &&
         isFilterEmpty(filter.exactBlacklist) &&
-        isBooleanFilterEmpty(filter.booleans)
+        isBooleanFilterEmpty(filter.booleans) &&
+        isCompareFilterEmpty(filter.equalTo) &&
+        isCompareFilterEmpty(filter.greaterThan) &&
+        isCompareFilterEmpty(filter.lessThan)
     );
 }
 
@@ -495,7 +494,7 @@ export function parseAdvancedFilter(filter: AdvancedFilter): GameFilter {
         releaseYearFilter.whitelist.releaseYear = filter.releaseYear.filter(
             (s) => s !== ""
         );
-        releaseYearFilter.exactWhitelist.rating = filter.releaseYear.filter(
+        releaseYearFilter.exactWhitelist.releaseYear = filter.releaseYear.filter(
             (s) => s === ""
         );
         newFilter.subfilters.push(releaseYearFilter);
