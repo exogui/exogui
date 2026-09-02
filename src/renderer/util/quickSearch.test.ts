@@ -1,5 +1,5 @@
 import { IGameInfo } from "@shared/game/interfaces";
-import { binarySearchGame, linearSearchGame } from "../../util/quickSearch";
+import { binarySearchGame, linearSearchGame } from "./quickSearch";
 
 const g = (orderTitle: string, id = orderTitle): IGameInfo =>
     ({

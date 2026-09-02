@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, shell } from "@electron/remote";
-import { SocketClient } from "@shared/back/SocketClient";
+import { describeSocketError, SocketClient } from "@shared/back/SocketClient";
 import {
     BackIn,
     BackOut
@@ -22,7 +22,7 @@ async function waitForConnection(host: string): Promise<WebSocket> {
             console.log("Initial connection established to backend");
             return socket;
         } catch (error) {
-            console.log("Initial connection failed to backend, waiting 5 seconds...");
+            console.log(`Initial connection failed to backend: ${describeSocketError(error)}. Retrying in 5s.`);
             await new Promise<void>(resolve => setTimeout(resolve, 5000));
         }
     }

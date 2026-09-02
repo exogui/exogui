@@ -1,5 +1,5 @@
 import * as remoteMain from "@electron/remote/main";
-import { SocketClient } from "@shared/back/SocketClient";
+import { describeSocketError, SocketClient } from "@shared/back/SocketClient";
 import {
     BackIn,
     BackInitArgs,
@@ -182,7 +182,7 @@ export function main(init: Init): void {
                         console.log("Main connection established to backend");
                         return socket;
                     } catch (error) {
-                        console.log("Main connection failed to backend, waiting 1 seconds...");
+                        console.log(`Main connection failed to backend: ${describeSocketError(error)}. Retrying in 1s.`);
                         await new Promise<void>(resolve => setTimeout(resolve, 1000));
                     }
                 }

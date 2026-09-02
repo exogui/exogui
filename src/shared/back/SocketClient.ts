@@ -289,7 +289,7 @@ export class SocketClient<SOCKET extends BaseSocket> extends EventEmitter {
 function noop() { /* Does nothing. */ }
 
 /** WebSocket rejects with an error event rather than an Error, which stringifies to "[object Object]". */
-function describeSocketError(error: any): string {
+export function describeSocketError(error: any): string {
     if (!error) {
         return "unknown error";
     }

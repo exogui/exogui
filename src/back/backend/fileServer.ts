@@ -7,12 +7,7 @@ import * as path from "path";
 import { getFilePathExtension } from "@shared/Util";
 import { LogFunc } from "@back/types";
 import { startFileServer } from "./serverHelper";
-
-// sharp is a CommonJS module whose export is the function itself. The backend
-// SWC build uses `noInterop`, so a default `import` would compile to a
-// `.default` access that is undefined at runtime — require it directly.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const sharp: typeof import("sharp").default = require("sharp");
+import { ThumbnailPool } from "./thumbnailPool";
 
 const TIFF_EXTS = new Set([".tif", ".tiff"]);
 
@@ -32,9 +27,6 @@ const THUMBNAIL_EXTS = new Set([
 /** Upper bound on a requested thumbnail edge, to bound cache/work. */
 const MAX_THUMBNAIL_EDGE = 2048;
 
-/** JPEG quality for generated thumbnails. */
-const THUMBNAIL_QUALITY = 80;
-
 export interface IAssetsPaths {
     exodosPath: string;
     imageFolderPath: string;
@@ -44,6 +36,7 @@ export interface IAssetsPaths {
 export class FileServer {
     private _server = new http.Server(this._onFileServerRequest.bind(this));
     private _port = -1;
+    private _thumbnailPool = new ThumbnailPool();
 
     get port() {
         return this._port;
@@ -129,16 +122,12 @@ export class FileServer {
                 recursive: true,
             });
             const tmpPath = `${cachePath}.tmp-${process.pid}-${Date.now()}`;
-            await sharp(filePath, { failOn: "none", limitInputPixels: false })
-            .rotate()
-            .resize({
-                width: maxEdge,
-                height: maxEdge,
-                fit: "inside",
-                withoutEnlargement: true,
-            })
-            .jpeg({ quality: THUMBNAIL_QUALITY, mozjpeg: true })
-            .toFile(tmpPath);
+            await this._thumbnailPool.run({
+                kind: "thumb",
+                src: filePath,
+                dest: tmpPath,
+                maxEdge,
+            });
             await fs.promises.rename(tmpPath, cachePath);
             return cachePath;
         })().finally(() => this._thumbInFlight.delete(cachePath));
@@ -148,9 +137,7 @@ export class FileServer {
     }
 
     private async _convertTiffToPng(tiffPath: string, pngPath: string): Promise<void> {
-        await sharp(tiffPath, { failOn: "none", limitInputPixels: false })
-        .png()
-        .toFile(pngPath);
+        await this._thumbnailPool.run({ kind: "tiff", src: tiffPath, dest: pngPath });
     }
 
     public async start() {
@@ -164,6 +151,10 @@ export class FileServer {
             server: this._server,
         });
         console.log(`Started file server on port ${this._port}`);
+    }
+
+    public close(): void {
+        this._thumbnailPool.close();
     }
 
     private _onFileServerRequest(
