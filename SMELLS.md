@@ -50,8 +50,8 @@ All CSS lives in `core.css` (2756 lines). Update system added 477 lines for Upda
 ---
 
 ## sharp/libvips emits GLib-GObject-CRITICAL log spam in the Electron backend
-**Priority:** Low
-**Severity:** Low (cosmetic)
+**Priority:** Medium (see the 2026-09-02 update below)
+**Severity:** Unclear - assumed cosmetic, not yet proven
 **Effort:** Low (to suppress) / High (to truly fix)
 
 **Issue:**
@@ -75,6 +75,10 @@ to the backend's stderr (visible only when running from a terminal; the backend 
 3. **Eliminate the duplicate glib** by building `sharp` against a system libvips (single glib instance). The "proper" fix, but reintroduces the native-dependency/packaging complexity we are otherwise avoiding.
 
 **Recommendation:** Ignore (1) for now — it's cosmetic and end users never see it. Revisit only if actual crashes/hangs ever occur *during* image processing (not just these log lines), in which case (3) becomes warranted.
+
+**Update (2026-09-02): that condition has been met.** A user's back process died with SIGSEGV during cold thumbnail generation. (An earlier version of this note read the core's `#0 0x0000000000000000` frame as a null vtable jump; the core turned out to be **truncated**, so that frame is an artifact and the inference was withdrawn.) The claim above that the failed `unref`s are handled by the correct glib instance and leak nothing is an inference, not something anyone verified, and native memory in the back does grow ~2 MB per large thumbnail and never come back (measured; the JS heap stays flat).
+
+That growth reproduces under plain node too, where there is no second glib, so the duplication is *not* the whole story — but it is no longer safe to call these warnings harmless. The fix has since landed: sharp runs in a recyclable child process (`src/back/backend/thumbnailPool.ts`), so this spam and any crash it accompanies now belong to a worker rather than to the back. See [docs/thumbnail-worker-plan.md](docs/thumbnail-worker-plan.md). A real backtrace from the reporter's core dump would settle whether (3) is actually needed.
 
 ---
 
@@ -126,72 +130,6 @@ Restarting the back would mean re-forking it, waiting for a new port, reconnecti
 **Recommendation:** Keep as-is until crash reports show this happening often enough to be worth the reinitialization path.
 
 ---
-
-## `PlatformFile.test.ts` names its temp files by timestamp
-**Priority:** Low
-**Severity:** Low (test-only flake)
-**Effort:** Low
-
-**Issue:**
-`runUpdate` in `src/renderer/file/PlatformFile.test.ts` builds its temp path as `platform-test-${Date.now()}.xml` and then sleeps 50ms "to let the rename settle". Under a loaded full-suite run the whole suite has been observed failing one assertion here and passing when the file is run alone. Two tests entering the helper within the same millisecond share a path, and the fixed sleep is a guess at how long `updateFavoriteField`'s rename takes.
-
-**Potential Solutions:**
-1. `fs.mkdtempSync` per test (unique by construction), and have `updateFavoriteField` resolve only after the rename completes so the sleep can go.
-
-**Recommendation:** Worth doing next time this file is touched - a test that fails only in company is worse than no test.
-
----
-
-## Search filters carry two parallel representations of a release year
-
-**Priority:** Medium
-**Severity:** Low (correct today, easy to get wrong later)
-**Effort:** Medium
-
-**Issue:**
-`IGameInfo.releaseYear` is not a year - it holds LaunchBox's raw `<ReleaseDate>`
-(`"1996-10-31T01:00:00-06:00"`). Three places now have to know that:
-`FieldFilter.releaseYear` matches it as a substring, `CompareFilter.releaseYear` is a
-string that `gameFilter.ts` parses into a number before comparing, and `GameList` calls
-`getPrintableYearFromDateString` to display it. The field name promises a year and
-delivers a timestamp, which is what produced four of the nine search defects fixed in
-this pass: `year:1996` never matched, `year>1996` was inclusive because
-`"1996-10-31..." > "1996"` is lexicographically true, and undated games sorted below
-every year.
-
-**Potential Solutions:**
-1. Parse the year once at load time into a numeric `releaseYearNumber` on `IGameInfo`,
-   keep the raw date under a name that says so (`releaseDate`), and let filters and the
-   UI read the parsed field.
-
-**Recommendation:** Worth doing when game parsing is next touched. The comparison path is
-correct now and covered by tests, but every new consumer of `releaseYear` has to
-rediscover that it is a timestamp.
-
----
-
-## `parseUserInput` is a single stateful token loop
-
-**Priority:** Medium
-**Severity:** Low
-**Effort:** Medium
-
-**Issue:**
-`src/renderer/util/search.ts` parses the query language in one loop over
-space-separated tokens, carrying `workingKey`, `workingValue`, `workingKeyChar`,
-`negative`, `quoted` and `capturingQuotes` across iterations. The commit step is now a
-closure called from two places (end of each token, and once more after the loop for an
-unterminated quote). It works and is well covered, but the defect it used to have -
-the commit block nested inside `if (!workingValue)`, so any quoted value silently
-returned an empty filter matching all 7,600 games - was invisible precisely because the
-control flow is hard to follow.
-
-**Potential Solutions:**
-1. Split into a tokenizer (handling quotes and negation) and a reducer over the
-   resulting tokens, so quoting cannot interact with committing.
-
-**Recommendation:** Leave until the query language grows again. `search.test.ts` now
-pins the behavior, so a rewrite would be verifiable rather than risky.
 
 ---
 
