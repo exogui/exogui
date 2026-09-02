@@ -1,4 +1,3 @@
-import * as chokidar from "chokidar";
 import store from "@renderer/redux/store";
 import { updateGame } from "@renderer/redux/gamesSlice";
 import { deepCopy, extractTitleFromMediaPath, fixSlashes, getRelativePath, removeFileExtension, resolvePathSegmentCaseInsensitive } from "@shared/Util";
@@ -7,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getGameByTitle } from "./games";
 import { getAllowedExtensionsForMappings } from "@shared/mappings/CommandMapping";
+import { DirectoryWatcher, watchDirectory } from "./watchDirectory";
 
 // @TODO Move it to seperate module to make it easier to extend (it would be best to have it in json)
 const ADD_APPS_DIRECTORIES = ["Extras", "Magazines"];
@@ -103,41 +103,32 @@ function createAddApp(
     };
 }
 
-export function createManualsWatcher(platform: string): chokidar.FSWatcher {
+export function createManualsWatcher(platform: string): DirectoryWatcher {
     const path = getPlatformManualsPath(platform);
     console.log(`Initializing manuals watcher for ${platform} path ${path}`);
 
-    const watcher = chokidar.watch(path, {
-        depth: 0,
-        persistent: true,
-        followSymlinks: false,
-        ignoreInitial: true,
-    });
-
-    watcher
-    .on("add", (manualPath) => {
-        console.debug(`Manual ${manualPath} added.`);
-        const relativePath = getRelativePath(manualPath, window.External.config.fullExodosPath);
-        const title = extractTitleFromMediaPath(manualPath, window.External.config.fullExodosPath);
-        if (title) {
-            const game = getGameByTitle(title);
-            if (game) {
-                console.debug(
-                    `Found the game for the new manual. Updating game ${title}`
-                );
-                const updatedGame = deepCopy(game);
-                updatedGame.manualPath = relativePath;
-                store.dispatch(
-                    updateGame({
-                        game: updatedGame,
-                    })
-                );
+    return watchDirectory(path, {
+        onAddFile: (manualPath) => {
+            console.debug(`Manual ${manualPath} added.`);
+            const relativePath = getRelativePath(manualPath, window.External.config.fullExodosPath);
+            const title = extractTitleFromMediaPath(manualPath, window.External.config.fullExodosPath);
+            if (title) {
+                const game = getGameByTitle(title);
+                if (game) {
+                    console.debug(
+                        `Found the game for the new manual. Updating game ${title}`
+                    );
+                    const updatedGame = deepCopy(game);
+                    updatedGame.manualPath = relativePath;
+                    store.dispatch(
+                        updateGame({
+                            game: updatedGame,
+                        })
+                    );
+                }
             }
-        }
-    })
-    .on("error", (error) => console.log(`Watcher error: ${error}`));
-
-    return watcher;
+        },
+    });
 }
 
 function getPlatformManualsPath(platform: string) {

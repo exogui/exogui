@@ -10,10 +10,10 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import { IFileInfo } from "@shared/platform/interfaces";
-import * as chokidar from "chokidar";
 import { updateGame } from "@renderer/redux/gamesSlice";
 import { getGameByTitle } from "./games";
 import store from "@renderer/redux/store";
+import { DirectoryWatcher, watchDirectory } from "./watchDirectory";
 
 export function loadPlatformVideos(platform: string): GameVideosCollection {
     const videosPath = getPlatformVideosPath(platform);
@@ -45,9 +45,9 @@ const thumbnailPreference = [
 //      do what is in the findVideo
 //      call redux action for adding video
 //
-// comments, probably findVideo doesn't need to be done as initial run of the chokidar runner will iterate over files
-// but we want to do at all at once for initial so if there is no way for that then left it and in chokidar do not do
-// initial reading
+// comments, probably findVideo doesn't need to be done as the watcher's initial run will iterate over files
+// but we want to do at all at once for initial so if there is no way for that then left it and in the watcher
+// do not do initial reading
 //
 // Instead of first load all videos and then in mapGamesMedia map it to game we may search for the video when game is initialized
 // and after is installed, but for that we need to ensure that on installation video is extracted first and then game
@@ -365,48 +365,39 @@ export function* walkSync(dir: string): IterableIterator<IFileInfo> {
     }
 }
 
-export function createVideosWatcher(platform: string): chokidar.FSWatcher {
+export function createVideosWatcher(platform: string): DirectoryWatcher {
     const videosPath = getPlatformVideosPath(platform);
     console.log(
         `Initializing videos watcher for ${platform} path ${videosPath}`
     );
 
-    const watcher = chokidar.watch(videosPath, {
-        depth: 0,
-        persistent: true,
-        followSymlinks: false,
-        ignoreInitial: true,
-    });
-
-    watcher
-    .on("add", (videoPath) => {
-        console.debug(`Video ${videoPath} added.`);
-        const relativePath = getRelativePath(videoPath, window.External.config.fullExodosPath);
-        const title = extractTitleFromMediaPath(videoPath, window.External.config.fullExodosPath);
-        if (title) {
-            const game = getGameByTitle(title);
-            if (game) {
-                console.debug(
-                    `Found the game for the new video. Updating game ${title}`
-                );
-                const updatedGame = deepCopy(game);
-                updatedGame.media.video = relativePath;
-                // HACK: Sometimes extraction of the video is not finished but the view was refreshed and the video doesn't start. Added delay.
-                setTimeout(
-                    () =>
-                        store.dispatch(
-                            updateGame({
-                                game: updatedGame,
-                            })
-                        ),
-                    2000
-                );
+    return watchDirectory(videosPath, {
+        onAddFile: (videoPath) => {
+            console.debug(`Video ${videoPath} added.`);
+            const relativePath = getRelativePath(videoPath, window.External.config.fullExodosPath);
+            const title = extractTitleFromMediaPath(videoPath, window.External.config.fullExodosPath);
+            if (title) {
+                const game = getGameByTitle(title);
+                if (game) {
+                    console.debug(
+                        `Found the game for the new video. Updating game ${title}`
+                    );
+                    const updatedGame = deepCopy(game);
+                    updatedGame.media.video = relativePath;
+                    // HACK: Sometimes extraction of the video is not finished but the view was refreshed and the video doesn't start. Added delay.
+                    setTimeout(
+                        () =>
+                            store.dispatch(
+                                updateGame({
+                                    game: updatedGame,
+                                })
+                            ),
+                        2000
+                    );
+                }
             }
-        }
-    })
-    .on("error", (error) => console.log(`Watcher error: ${error}`));
-
-    return watcher;
+        },
+    });
 }
 
 function getPlatformVideosPath(platform: string) {
@@ -443,34 +434,25 @@ export function mapGamesMusic(game: IGameInfo, music: GameMusicCollection): void
     }
 }
 
-export function createMusicWatcher(platform: string): chokidar.FSWatcher {
+export function createMusicWatcher(platform: string): DirectoryWatcher {
     const musicPath = getPlatformMusicPath(platform);
     console.log(`Initializing music watcher for ${platform} path ${musicPath}`);
 
-    const watcher = chokidar.watch(musicPath, {
-        depth: 0,
-        persistent: true,
-        followSymlinks: false,
-        ignoreInitial: true,
-    });
-
-    watcher
-    .on("add", (filePath) => {
-        if (!musicExtensions.has(path.extname(filePath).toLowerCase())) { return; }
-        console.debug(`Music ${filePath} added.`);
-        const relativePath = getRelativePath(filePath, window.External.config.fullExodosPath);
-        const title = extractTitleFromMediaPath(filePath, window.External.config.fullExodosPath);
-        if (title) {
-            const game = getGameByTitle(title);
-            if (game) {
-                console.debug(`Found the game for new music. Updating game ${title}`);
-                store.dispatch(updateGame({ game: { ...game, musicPath: relativePath } }));
+    return watchDirectory(musicPath, {
+        onAddFile: (filePath) => {
+            if (!musicExtensions.has(path.extname(filePath).toLowerCase())) { return; }
+            console.debug(`Music ${filePath} added.`);
+            const relativePath = getRelativePath(filePath, window.External.config.fullExodosPath);
+            const title = extractTitleFromMediaPath(filePath, window.External.config.fullExodosPath);
+            if (title) {
+                const game = getGameByTitle(title);
+                if (game) {
+                    console.debug(`Found the game for new music. Updating game ${title}`);
+                    store.dispatch(updateGame({ game: { ...game, musicPath: relativePath } }));
+                }
             }
-        }
-    })
-    .on("error", (error) => console.log(`Watcher error: ${error}`));
-
-    return watcher;
+        },
+    });
 }
 
 function getPlatformMusicPath(platform: string) {
