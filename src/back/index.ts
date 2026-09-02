@@ -394,6 +394,7 @@ export function exit() {
                 })
             )
             : Promise.resolve();
+        state.fileServer?.close();
         const fileServerPromise = state.fileServer
             ? new Promise<void>((resolve) =>
                 state.fileServer!.server.close((error) => {
