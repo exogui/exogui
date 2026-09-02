@@ -18,14 +18,12 @@ async function runUpdate(
     gameId: string,
     newValue: boolean
 ): Promise<string> {
-    const tmpDir = os.tmpdir();
-    const filePath = path.join(tmpDir, `platform-test-${Date.now()}.xml`);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "platform-test-"));
+    const filePath = path.join(tmpDir, "platform.xml");
     fs.writeFileSync(filePath, xmlContent, "utf8");
     await updateFavoriteField(filePath, gameId, newValue);
-    // Give the rename a moment to settle
-    await new Promise((r) => setTimeout(r, 50));
     const result = fs.readFileSync(filePath, "utf8");
-    fs.unlinkSync(filePath);
+    fs.rmSync(tmpDir, { recursive: true, force: true });
     return result;
 }
 
