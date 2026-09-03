@@ -75,7 +75,7 @@ export function registerRequestCallbacks(state: BackState): void {
         };
     });
 
-    state.socketServer.register(BackIn.LAUNCH_COMMAND, async (event, filePath) => {
+    state.socketServer.register(BackIn.LAUNCH_COMMAND, async (event, filePath, args) => {
         const appPath = fixSlashes(
             path.join(
                 path.resolve(state.config.exodosPath),
@@ -84,7 +84,7 @@ export function registerRequestCallbacks(state: BackState): void {
         );
         GameLauncher.launchCommand(
             appPath,
-            "",
+            args ?? "",
             state.commandMappings
         );
     });

@@ -43,7 +43,7 @@ export function Header(props: HeaderProps) {
                     : {
                         label: r.label,
                         click() {
-                            onLaunchCommand(r.filepath);
+                            onLaunchCommand(r.filepath, r.args);
                         },
                     }
             ),
@@ -178,6 +178,6 @@ function MenuItem({
     );
 }
 
-export const onLaunchCommand = throttle((path: string): void => {
-    window.External.back.send(BackIn.LAUNCH_COMMAND, path);
+export const onLaunchCommand = throttle((path: string, args?: string): void => {
+    window.External.back.send(BackIn.LAUNCH_COMMAND, path, args);
 }, 500);
