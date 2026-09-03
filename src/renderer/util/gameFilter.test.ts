@@ -221,3 +221,31 @@ describe("a query combined with a toolbar filter", () => {
         expect(result.map((g) => g.id)).toEqual(["t"]);
     });
 });
+
+describe("quoted alternatives", () => {
+    const sierra = makeGame({ id: "sierra", publisher: "Sierra Entertainment" });
+    const lucas = makeGame({ id: "lucas", publisher: "LucasArts Games" });
+    const sierraInc = makeGame({
+        id: "sierra-inc",
+        publisher: "Sierra Entertainment, Inc.",
+    });
+    const games = [sierra, lucas, sierraInc];
+
+    it("matches either publisher exactly", () => {
+        expect(
+            idsFor("pub=\"Sierra Entertainment\",\"Lucasarts Games\"", games)
+        ).toEqual(["lucas", "sierra"]);
+    });
+
+    it("matches either publisher partially with the : key character", () => {
+        expect(
+            idsFor("pub:\"Sierra Entertainment\",\"Lucasarts Games\"", games)
+        ).toEqual(["lucas", "sierra", "sierra-inc"]);
+    });
+
+    it("excludes both publishers when negated", () => {
+        expect(
+            idsFor("-pub=\"Sierra Entertainment\",\"Lucasarts Games\"", games)
+        ).toEqual(["sierra-inc"]);
+    });
+});

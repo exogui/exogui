@@ -14,242 +14,234 @@ enum KeyChar {
     GREATER_THAN = ">",
 }
 
-const KEY_CHARS = ["=", ":", "<", ">"];
+const KEY_CHARS: string[] = [
+    KeyChar.EQUALS,
+    KeyChar.MATCHES,
+    KeyChar.LESS_THAN,
+    KeyChar.GREATER_THAN,
+];
 
-const REPLACEMENT = "awgdty7awgvbduiawdjnujioawd888";
+const QUOTE = "\"";
+
+const SHORTCUT_KEYS: Record<string, string> = {
+    "#": "genre",
+    "!": "platform",
+    "@": "developer",
+};
+
+/** One alternative of a value, remembering whether the user quoted it. */
+type ValuePart = {
+    value: string;
+    quoted: boolean;
+};
 
 export function parseUserInput(input: string): GameFilter {
     const filter = getDefaultGameFilter();
 
-    let capturingQuotes = false;
-    let workingKey = "";
-    let workingValue = "";
-    let workingKeyChar: KeyChar | undefined = undefined;
-    let negative = false;
-    let quoted = false;
-
-    const commit = () => {
-        let exact = false;
-        if (workingKey) {
-            if (workingValue == REPLACEMENT) {
-                workingValue = ""; // Empty it again now we're at the end
-                exact = true;
-            } else if (workingKeyChar === KeyChar.EQUALS) {
-                exact = true;
-            }
-        }
-
-        const value = workingValue;
-        let processed = true;
-
-        switch (workingKeyChar) {
-            case KeyChar.LESS_THAN: {
-                switch (workingKey) {
-                    case "players":
-                    case "maxPlayers": {
-                        filter.lessThan.maxPlayers = Number(value);
-                        break;
-                    }
-                    case "release":
-                    case "releaseDate":
-                    case "releaseYear":
-                    case "year": {
-                        filter.lessThan.releaseYear = value;
-                        break;
-                    }
-                    default: {
-                        processed = false;
-                    }
-                }
-                break;
-            }
-            case KeyChar.GREATER_THAN: {
-                switch (workingKey) {
-                    case "players":
-                    case "maxPlayers": {
-                        filter.greaterThan.maxPlayers = Number(value);
-                        break;
-                    }
-                    case "release":
-                    case "releaseDate":
-                    case "releaseYear":
-                    case "year": {
-                        filter.greaterThan.releaseYear = value;
-                        break;
-                    }
-                    default: {
-                        processed = false;
-                    }
-                }
-                break;
-            }
-            case KeyChar.EQUALS:
-            case KeyChar.MATCHES: {
-                switch (workingKey) {
-                    case "players":
-                    case "maxPlayers": {
-                        filter.equalTo.maxPlayers = Number(value);
-                        break;
-                    }
-                    case "release":
-                    case "releaseDate":
-                    case "releaseYear":
-                    case "year": {
-                        filter.equalTo.releaseYear = value;
-                        break;
-                    }
-                    default: {
-                        processed = false;
-                    }
-                }
-                break;
-            }
-            default: {
-                processed = false;
-            }
-        }
-
-        if (!processed) {
-            const field = fieldForKey(workingKey);
-
-            if (field !== undefined) {
-                addValues(filter, field, value, negative, exact, quoted);
-            } else if (!workingKeyChar && value.toLowerCase() === "installed") {
-                // Cheat a little and assume nobody is writing installed or favorite as a value
-                filter.booleans.installed = !negative;
-            } else if (!workingKeyChar && value.toLowerCase() === "favorite") {
-                filter.booleans.favorite = !negative;
-            } else {
-                if (workingKey) {
-                    console.warn(
-                        `Unrecognized search key "${workingKey}", matching it as plain text instead`
-                    );
-                }
-                const fullValue = workingKeyChar
-                    ? workingKey + workingKeyChar + value
-                    : value;
-                addValues(filter, "generic", fullValue, negative, exact, quoted);
-            }
-        }
-
-        negative = false;
-        quoted = false;
-        workingValue = "";
-        workingKey = "";
-        workingKeyChar = undefined;
-    };
-
-    for (let token of input.split(" ")) {
-        if (!capturingQuotes && token.length > 1) {
-            // Check for "-" negation
-            if (token.startsWith("-")) {
-                negative = true;
-
-                token = token.slice(1);
-            }
-
-            // Check for quick search shortcuts
-            if (token.length > 1) {
-                const ch = token[0];
-                switch (ch) {
-                    case "#": {
-                        token = token.slice(1);
-                        workingKey = "genre";
-                        break;
-                    }
-                    case "!": {
-                        token = token.slice(1);
-                        workingKey = "platform";
-                        break;
-                    }
-                    case "@": {
-                        token = token.slice(1);
-                        workingKey = "developer";
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Opening quotes check
-        if (token.startsWith("\"")) {
-            token = token.slice(1);
-            capturingQuotes = true;
-            quoted = true;
-        }
-
-        if (capturingQuotes) {
-            // Inside quotes, add to working value
-            if (workingValue == "") {
-                workingValue = token;
-            } else {
-                workingValue += ` ${token}`;
-            }
-        }
-
-        // Closing quotes check
-        if (token.endsWith("\"") && capturingQuotes) {
-            capturingQuotes = false;
-            // Remove quote at end of working value, if doesn't exist then it's a broken quoted value
-            const suffixIdx = workingValue.lastIndexOf("\"");
-            if (suffixIdx > -1) {
-                workingValue = workingValue.slice(0, suffixIdx);
-            }
-        }
-
-        if (capturingQuotes) {
-            // Still inside quotes, keep parsing rest of tokens
-            continue;
-        }
-
-        // Try parsing what we have left into a proper key value pair
-        if (!workingValue) {
-            workingKeyChar = getKeyChar(token);
-
-            if (workingKeyChar) {
-                const parts = token.split(workingKeyChar);
-                if (parts.length > 1) {
-                    workingKey = parts[0];
-                    token = parts.slice(1).join(workingKeyChar);
-                }
-            }
-
-            // Entire token is wrapped, must be a generic value
-            if (token.endsWith("\"") && token.startsWith("\"")) {
-                quoted = true;
-                if (token.length == 2) {
-                    if (workingKey !== "") {
-                        // It has a key? Must be a deliberately empty value, fill with a replacement string for now
-                        workingValue = REPLACEMENT;
-                    }
-                } else {
-                    token = token.slice(1, token.length - 1); // Remove quotes
-                    workingValue = token;
-                }
-                // Opening quote, but no key yet, must be the start of a spaced generic value
-            } else {
-                if (token.startsWith("\"")) {
-                    token = token.slice(1);
-                    capturingQuotes = true;
-                    quoted = true;
-                    workingValue = token;
-                    continue;
-                }
-                workingValue = token;
-            }
-        }
-
-        if (workingValue) {
-            commit();
-        }
-    }
-
-    // An unterminated quote still holds a value - keep it rather than dropping the whole query
-    if (workingValue) {
-        commit();
+    for (const token of splitTokens(input)) {
+        applyToken(filter, token);
     }
 
     return filter;
+}
+
+function applyToken(filter: GameFilter, token: string) {
+    let rest = token;
+    let negative = false;
+    let key = "";
+
+    if (rest.length > 1 && rest.startsWith("-")) {
+        negative = true;
+        rest = rest.slice(1);
+    }
+
+    if (rest.length > 1 && SHORTCUT_KEYS[rest[0]]) {
+        key = SHORTCUT_KEYS[rest[0]];
+        rest = rest.slice(1);
+    }
+
+    let keyChar: KeyChar | undefined = undefined;
+    const keyCharIndex = findKeyChar(rest);
+    if (keyCharIndex > -1) {
+        keyChar = rest[keyCharIndex] as KeyChar;
+        key = rest.slice(0, keyCharIndex);
+        rest = rest.slice(keyCharIndex + 1);
+    }
+
+    const parts = splitValues(rest);
+    const values = (
+        parts.length > 1 ? parts.filter((part) => part.value !== "") : parts
+    ).map((part) => part.value);
+
+    if (values.length === 0) {
+        return;
+    }
+
+    if (keyChar && applyComparison(filter, key, keyChar, values.join(","))) {
+        return;
+    }
+
+    const exact =
+        key !== "" && (keyChar === KeyChar.EQUALS || isDeliberatelyEmpty(parts));
+    const field = fieldForKey(key);
+
+    if (field !== undefined) {
+        addValues(filter, field, values, negative, exact);
+        return;
+    }
+
+    if (!keyChar && values.length === 1) {
+        // Cheat a little and assume nobody is writing installed or favorite as a value
+        switch (values[0].toLowerCase()) {
+            case "installed": {
+                filter.booleans.installed = !negative;
+                return;
+            }
+            case "favorite": {
+                filter.booleans.favorite = !negative;
+                return;
+            }
+        }
+    }
+
+    if (key) {
+        console.warn(
+            `Unrecognized search key "${key}", matching it as plain text instead`
+        );
+    }
+
+    if (keyChar) {
+        values[0] = key + keyChar + values[0];
+    }
+    addValues(filter, "generic", values, negative, exact);
+}
+
+/** Splits on spaces, except inside quotes, so a quoted value keeps its spaces. */
+function splitTokens(input: string): string[] {
+    const tokens: string[] = [];
+    let token = "";
+    let insideQuotes = false;
+
+    for (const char of input) {
+        if (char === QUOTE) {
+            insideQuotes = !insideQuotes;
+            token += char;
+        } else if (char === " " && !insideQuotes) {
+            if (token) {
+                tokens.push(token);
+                token = "";
+            }
+        } else {
+            token += char;
+        }
+    }
+
+    if (token) {
+        tokens.push(token);
+    }
+
+    return tokens;
+}
+
+/**
+ * A comma separated value means "any of these". Every alternative can carry its
+ * own quotes (pub="Sierra On-Line","LucasArts Entertainment"), so quotes group
+ * only the alternative they wrap and the commas inside them stay literal.
+ */
+function splitValues(value: string): ValuePart[] {
+    const parts: ValuePart[] = [];
+    let part = "";
+    let quoted = false;
+    let insideQuotes = false;
+
+    const commitPart = () => {
+        const trimmed = quoted ? part : part.trim();
+        if (trimmed !== "" || quoted) {
+            parts.push({ value: trimmed, quoted });
+        }
+        part = "";
+        quoted = false;
+    };
+
+    for (const char of value) {
+        if (char === QUOTE) {
+            insideQuotes = !insideQuotes;
+            quoted = true;
+        } else if (char === "," && !insideQuotes) {
+            commitPart();
+        } else {
+            part += char;
+        }
+    }
+    commitPart();
+
+    return parts;
+}
+
+/** The key ends at the first key character, but only if no quote opened first. */
+function findKeyChar(token: string): number {
+    for (let i = 0; i < token.length; i++) {
+        if (token[i] === QUOTE) {
+            return -1;
+        }
+        if (KEY_CHARS.includes(token[i])) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/** pub="" asks for games with no publisher, which only an exact match can answer. */
+function isDeliberatelyEmpty(parts: ValuePart[]): boolean {
+    return parts.length === 1 && parts[0].quoted && parts[0].value === "";
+}
+
+function comparisonFor(
+    filter: GameFilter,
+    keyChar: KeyChar
+): CompareFilter | undefined {
+    switch (keyChar) {
+        case KeyChar.LESS_THAN:
+            return filter.lessThan;
+        case KeyChar.GREATER_THAN:
+            return filter.greaterThan;
+        case KeyChar.EQUALS:
+        case KeyChar.MATCHES:
+            return filter.equalTo;
+        default:
+            return undefined;
+    }
+}
+
+function applyComparison(
+    filter: GameFilter,
+    key: string,
+    keyChar: KeyChar,
+    value: string
+): boolean {
+    const comparison = comparisonFor(filter, keyChar);
+    if (comparison === undefined) {
+        return false;
+    }
+
+    switch (key) {
+        case "players":
+        case "maxPlayers": {
+            comparison.maxPlayers = Number(value);
+            return true;
+        }
+        case "release":
+        case "releaseDate":
+        case "releaseYear":
+        case "year": {
+            comparison.releaseYear = value;
+            return true;
+        }
+        default: {
+            return false;
+        }
+    }
 }
 
 function fieldForKey(key: string): keyof FieldFilter | undefined {
@@ -294,28 +286,13 @@ function listFor(
     return exact ? filter.exactWhitelist : filter.whitelist;
 }
 
-/** A comma separated value means "any of these"; quoting it keeps the commas literal. */
-function splitAlternatives(value: string, quoted: boolean): string[] {
-    if (quoted || value === "") {
-        return [value];
-    }
-    const parts = value
-    .split(",")
-    .map((v) => v.trim())
-    .filter((v) => v !== "");
-    return parts.length > 0 ? parts : [value];
-}
-
 function addValues(
     filter: GameFilter,
     field: keyof FieldFilter,
-    value: string,
+    values: string[],
     negative: boolean,
-    exact: boolean,
-    quoted: boolean
+    exact: boolean
 ) {
-    const values = splitAlternatives(value, quoted);
-
     if (values.length > 1) {
         const anyFilter = getDefaultGameFilter();
         anyFilter.matchAny = true;
@@ -323,32 +300,6 @@ function addValues(
         filter.subfilters.push(anyFilter);
     } else {
         listFor(filter, negative, exact)[field].push(values[0]);
-    }
-}
-
-function getKeyChar(token: string): KeyChar | undefined {
-    let earliestPos = 9999999;
-    let earliestKeyChar = "";
-
-    for (const keyChar of KEY_CHARS) {
-        const idx = token.indexOf(keyChar);
-        if (idx < earliestPos && idx > -1) {
-            earliestPos = idx;
-            earliestKeyChar = keyChar;
-        }
-    }
-
-    switch (earliestKeyChar) {
-        case "=":
-            return KeyChar.EQUALS;
-        case ":":
-            return KeyChar.MATCHES;
-        case ">":
-            return KeyChar.GREATER_THAN;
-        case "<":
-            return KeyChar.LESS_THAN;
-        default:
-            return undefined;
     }
 }
 

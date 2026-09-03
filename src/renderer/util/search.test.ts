@@ -198,6 +198,75 @@ describe("parseUserInput - comma separated alternatives", () => {
     });
 });
 
+describe("parseUserInput - quoted alternatives", () => {
+    it("ORs quoted exact values", () => {
+        const filter = parseUserInput(
+            "pub=\"Sierra Entertainment\",\"Lucasarts Games\""
+        );
+        expect(filter.subfilters).toHaveLength(1);
+        expect(filter.subfilters[0].matchAny).toBe(true);
+        expect(filter.subfilters[0].exactWhitelist.publisher).toEqual([
+            "Sierra Entertainment",
+            "Lucasarts Games",
+        ]);
+        expect(filter.subfilters[0].whitelist.publisher).toEqual([]);
+    });
+
+    it("ORs quoted partial values", () => {
+        const filter = parseUserInput("pub:\"Sierra On\",\"Lucasarts\"");
+        expect(filter.subfilters[0].whitelist.publisher).toEqual([
+            "Sierra On",
+            "Lucasarts",
+        ]);
+        expect(filter.subfilters[0].exactWhitelist.publisher).toEqual([]);
+    });
+
+    it("mixes quoted and bare alternatives", () => {
+        const filter = parseUserInput("pub=\"Sierra Entertainment\",lucasarts");
+        expect(filter.subfilters[0].exactWhitelist.publisher).toEqual([
+            "Sierra Entertainment",
+            "lucasarts",
+        ]);
+    });
+
+    it("keeps commas inside an alternative literal", () => {
+        const filter = parseUserInput(
+            "pub=\"Virgin Interactive, Inc.\",\"Sierra On-Line\""
+        );
+        expect(filter.subfilters[0].exactWhitelist.publisher).toEqual([
+            "Virgin Interactive, Inc.",
+            "Sierra On-Line",
+        ]);
+    });
+
+    it("negates the whole quoted group", () => {
+        const filter = parseUserInput(
+            "-pub=\"Sierra Entertainment\",\"Lucasarts Games\""
+        );
+        expect(filter.subfilters[0].matchAny).toBe(true);
+        expect(filter.subfilters[0].exactBlacklist.publisher).toEqual([
+            "Sierra Entertainment",
+            "Lucasarts Games",
+        ]);
+    });
+
+    it("retains terms that follow a quoted group", () => {
+        const filter = parseUserInput(
+            "pub=\"Sierra Entertainment\",\"Lucasarts Games\" #adventure"
+        );
+        expect(filter.subfilters[0].exactWhitelist.publisher).toHaveLength(2);
+        expect(filter.whitelist.genre).toEqual(["adventure"]);
+    });
+
+    it("works for the genre shortcut too", () => {
+        const filter = parseUserInput("#\"Role Playing\",\"Adventure\"");
+        expect(filter.subfilters[0].whitelist.genre).toEqual([
+            "Role Playing",
+            "Adventure",
+        ]);
+    });
+});
+
 describe("parseUserInput - unrecognized keys", () => {
     it("warns about a key it does not understand", () => {
         const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
