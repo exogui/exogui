@@ -5,18 +5,15 @@ import { BackIn } from "@shared/back/types";
 import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { RESTART_REQUIRED_CONFIG_KEYS } from "@shared/config/util";
-import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { isExodosValidCheck } from "../../Util";
-import { Dropdown } from "../Dropdown";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
 import { RootState } from "../../redux/store";
 
 type OwnProps = {
-    platforms: string[];
     themeList: Theme[];
 };
 
@@ -65,10 +62,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
     }
 
     render() {
-        const platformOptions = this.itemizePlatformOptionsMemo(
-            this.props.platforms,
-            this.state.nativePlatforms,
-        );
         const dirty = this.isDirty();
         const restartRequired = ConfigPage.computeRestartRequired(this.state);
 
@@ -115,33 +108,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 </div>
                             </div>
                         )}
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Native Platforms</span>
-                                <span className="cfg-row__desc">Use native versions of these platforms. If not available, Wine is used.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <Dropdown text="Platforms">
-                                    {platformOptions.map((item) => (
-                                        <label key={item.value} className="log-page__dropdown-item">
-                                            <div className="simple-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={item.checked}
-                                                    onChange={() => this.onNativeCheckboxChange(item.value)}
-                                                    className="simple-center__vertical-inner"
-                                                />
-                                            </div>
-                                            <div className="simple-center">
-                                                <p className="simple-center__vertical-inner log-page__dropdown-item-text">
-                                                    {item.value}
-                                                </p>
-                                            </div>
-                                        </label>
-                                    ))}
-                                </Dropdown>
-                            </div>
-                        </div>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
                                 <span className="cfg-row__name">Sort Games by Sort Title</span>
@@ -338,25 +304,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             </div>
         );
     }
-
-    itemizePlatformOptionsMemo = memoizeOne(
-        (platforms: string[], nativePlatforms: string[]) =>
-            platforms.map((platform) => ({
-                value: platform,
-                checked: nativePlatforms.includes(platform),
-            })),
-    );
-
-    onNativeCheckboxChange = (platform: string): void => {
-        const nativePlatforms = [...this.state.nativePlatforms];
-        const index = nativePlatforms.findIndex((item) => item === platform);
-        if (index !== -1) {
-            nativePlatforms.splice(index, 1);
-        } else {
-            nativePlatforms.push(platform);
-        }
-        this.setState({ nativePlatforms });
-    };
 
     onExodosLocationModeChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         this.setState({ useEmbeddedExodosPath: event.target.value === "embedded" });
