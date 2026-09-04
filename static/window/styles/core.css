@@ -639,6 +639,13 @@ body {
   border: 1px solid rgba(0, 0, 0, 0);
 }
 
+.header__menu__item .header__menu__item__link--selected,
+.header__menu__item .header__menu__item__link--selected:hover {
+  background-color: var(--layout__header-menu-item-hover-background);
+  border-color: var(--layout__header-menu-item-hover-border);
+  box-shadow: inset 0 -0.2em 0 var(--layout__header-menu-item-hover-border);
+}
+
 /* Header Update Indicator */
 .header__update-checking {
   opacity: 0.6;
@@ -2347,8 +2354,10 @@ body {
   overflow: visible;
 }
 
-.cfg-section__header {
-  font-size: 0.75em;
+.cfg-section__header,
+.cfg-section__toggle {
+  font-family: inherit;
+  font-size: 0.85em;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2438,7 +2447,7 @@ body {
   text-align: right;
 }
 
-/* Collapsible section toggle */
+/* Collapsible section toggle (typography shared with .cfg-section__header) */
 .cfg-section__toggle {
   display: flex;
   align-items: center;
@@ -2448,12 +2457,6 @@ body {
   border: none;
   border-bottom: 1px solid var(--theme-primary-border);
   cursor: pointer;
-  font-size: 0.75em;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.55;
-  padding: 0.65em 1em 0.5em;
   color: inherit;
   text-align: left;
 }

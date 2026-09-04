@@ -17,12 +17,14 @@ type OwnProps = {
     exodosResources: ExodosResources;
     /** Array of library routes */
     libraries: string[];
+    /** Library route of the currently viewed library */
+    selectedLibrary: string;
 };
 
 export type HeaderProps = OwnProps & WithPreferencesProps;
 
 export function Header(props: HeaderProps) {
-    const { exodosResources, libraries } = props;
+    const { exodosResources, libraries, selectedLibrary } = props;
 
     const navigate = useNavigate();
 
@@ -41,7 +43,7 @@ export function Header(props: HeaderProps) {
                     : {
                         label: r.label,
                         click() {
-                            onLaunchCommand(r.filepath);
+                            onLaunchCommand(r.filepath, r.args);
                         },
                     }
             ),
@@ -111,6 +113,7 @@ export function Header(props: HeaderProps) {
                             key={library}
                             title={getLibraryItemTitle(library)}
                             link={joinLibraryRoute(library)}
+                            selected={library === selectedLibrary}
                         />
                     ))}
                 </ul>
@@ -154,16 +157,27 @@ function UpdateIndicator() {
 }
 
 /** An item in the header menu. Used as buttons to switch between tabs/pages. */
-function MenuItem({ title, link }: { title: string; link: string }) {
+function MenuItem({
+    title,
+    link,
+    selected,
+}: {
+    title: string;
+    link: string;
+    selected?: boolean;
+}) {
     return (
         <li className="header__menu__item">
-            <Link to={link} className="header__menu__item__link">
+            <Link
+                to={link}
+                className={`header__menu__item__link${selected ? " header__menu__item__link--selected" : ""}`}
+            >
                 {title}
             </Link>
         </li>
     );
 }
 
-export const onLaunchCommand = throttle((path: string): void => {
-    window.External.back.send(BackIn.LAUNCH_COMMAND, path);
+export const onLaunchCommand = throttle((path: string, args?: string): void => {
+    window.External.back.send(BackIn.LAUNCH_COMMAND, path, args);
 }, 500);

@@ -5,18 +5,15 @@ import { BackIn } from "@shared/back/types";
 import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
 import { RESTART_REQUIRED_CONFIG_KEYS } from "@shared/config/util";
-import { memoizeOne } from "@shared/memoize";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { isExodosValidCheck } from "../../Util";
-import { Dropdown } from "../Dropdown";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
 import { RootState } from "../../redux/store";
 
 type OwnProps = {
-    platforms: string[];
     themeList: Theme[];
 };
 
@@ -24,7 +21,7 @@ export type ConfigPageProps = OwnProps;
 
 type ConfigPageState = IAppConfigData & {
     isExodosPathValid?: boolean;
-    networkExpanded: boolean;
+    advancedExpanded: boolean;
     saveError?: string;
 };
 
@@ -46,7 +43,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             ...configData,
             nativePlatforms: [...configData.nativePlatforms],
             isExodosPathValid: undefined,
-            networkExpanded: false,
+            advancedExpanded: false,
         };
     }
 
@@ -65,10 +62,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
     }
 
     render() {
-        const platformOptions = this.itemizePlatformOptionsMemo(
-            this.props.platforms,
-            this.state.nativePlatforms,
-        );
         const dirty = this.isDirty();
         const restartRequired = ConfigPage.computeRestartRequired(this.state);
 
@@ -80,75 +73,14 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         Press &apos;Save&apos; to apply changes.
                     </p>
 
-                    {/* Retro eXo Projects */}
+                    {/* Games */}
                     <section className="cfg-section">
-                        <h2 className="cfg-section__header">Retro eXo Projects</h2>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Retro eXo Projects Location</span>
-                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <select
-                                    value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
-                                    onChange={this.onExodosLocationModeChange}
-                                    className="simple-selector"
-                                >
-                                    <option value="embedded">Auto (embedded)</option>
-                                    <option value="custom">Custom path</option>
-                                </select>
-                            </div>
-                        </div>
-                        {!this.state.useEmbeddedExodosPath && (
-                            <div className="cfg-row cfg-row--filepath">
-                                <div className="cfg-row__label">
-                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
-                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
-                                </div>
-                                <div className="cfg-row__control cfg-row__control--wide">
-                                    <ConfigExodosPathInput
-                                        input={this.state.exodosPath}
-                                        buttonText="Browse"
-                                        onInputChange={this.onExodosPathChange}
-                                        isValid={this.state.isExodosPathValid}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Native Platforms</span>
-                                <span className="cfg-row__desc">Use native versions of these platforms. If not available, Wine is used.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <Dropdown text="Platforms">
-                                    {platformOptions.map((item) => (
-                                        <label key={item.value} className="log-page__dropdown-item">
-                                            <div className="simple-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={item.checked}
-                                                    onChange={() => this.onNativeCheckboxChange(item.value)}
-                                                    className="simple-center__vertical-inner"
-                                                />
-                                            </div>
-                                            <div className="simple-center">
-                                                <p className="simple-center__vertical-inner log-page__dropdown-item-text">
-                                                    {item.value}
-                                                </p>
-                                            </div>
-                                        </label>
-                                    ))}
-                                </Dropdown>
-                            </div>
-                        </div>
+                        <h2 className="cfg-section__header">Games</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
                                 <span className="cfg-row__name">Sort Games by Sort Title</span>
                                 <span className="cfg-row__desc">
-                                    When enabled, games are sorted using the &quot;Sort Title&quot; field from the game data instead of the display title.
-                                    This ensures that series like &quot;King&apos;s Quest&quot; or &quot;Ultima&quot; appear in the correct numbered order,
-                                    and that titles beginning with punctuation (like &quot;...A Personal Nightmare&quot;) sort in a sensible place.
+                                    When enabled, games are sorted using the &lt;SortTitle&gt; tag from the game data instead of the display title.
                                 </span>
                             </div>
                             <div className="cfg-row__control">
@@ -166,19 +98,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         <h2 className="cfg-section__header">Visuals</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
-                                <span className="cfg-row__name">Use Custom Title Bar</span>
-                                <span className="cfg-row__desc">Use a custom title bar at the top of this window.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <input
-                                    type="checkbox"
-                                    checked={this.state.useCustomTitlebar}
-                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
-                                />
-                            </div>
-                        </div>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
                                 <span className="cfg-row__name">Theme</span>
                                 <span className="cfg-row__desc">Select the visual theme for the application.</span>
                             </div>
@@ -194,6 +113,25 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                        </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Use Custom Title Bar</span>
+                                <span className="cfg-row__desc">
+                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
+                                    provides. The window is created without a native frame, so the title, the drag area
+                                    and the minimise, maximise and close buttons all come from exogui. This applies on
+                                    Windows, macOS and Linux &mdash; on macOS it also removes the native traffic-light
+                                    buttons, leaving only the launcher&apos;s own.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useCustomTitlebar}
+                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                />
                             </div>
                         </div>
                     </section>
@@ -241,17 +179,61 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         )}
                     </section>
 
-                    {/* Network (collapsible) */}
+                    {/* Experimental */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Experimental Features</h2>
+                        <div className="cfg-note">
+                            No experimental features at the moment. New ones may appear here in future releases.
+                        </div>
+                    </section>
+
+                    {/* Advanced (collapsible) */}
                     <section className="cfg-section">
                         <button
-                            className={`cfg-section__toggle${this.state.networkExpanded ? "" : " cfg-section__toggle--collapsed"}`}
-                            onClick={() => this.setState({ networkExpanded: !this.state.networkExpanded })}
+                            className={`cfg-section__toggle${this.state.advancedExpanded ? "" : " cfg-section__toggle--collapsed"}`}
+                            onClick={() => this.setState({ advancedExpanded: !this.state.advancedExpanded })}
                         >
-                            <span>Network</span>
-                            <span>{this.state.networkExpanded ? "▲" : "▼"}</span>
+                            <span>Advanced</span>
+                            <span>{this.state.advancedExpanded ? "▲" : "▼"}</span>
                         </button>
-                        {this.state.networkExpanded && (
+                        {this.state.advancedExpanded && (
                             <>
+                                <div className="cfg-note cfg-note--warning">
+                                    Only change these if you know what you are doing. A wrong value here can stop the
+                                    launcher from finding your games or leave the window without usable controls.
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Retro eXo Projects Location</span>
+                                        <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <select
+                                            value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
+                                            onChange={this.onExodosLocationModeChange}
+                                            className="simple-selector"
+                                        >
+                                            <option value="embedded">Auto (embedded)</option>
+                                            <option value="custom">Custom path</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {!this.state.useEmbeddedExodosPath && (
+                                    <div className="cfg-row cfg-row--filepath">
+                                        <div className="cfg-row__label">
+                                            <span className="cfg-row__name">Retro eXo Projects Path</span>
+                                            <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
+                                        </div>
+                                        <div className="cfg-row__control cfg-row__control--wide">
+                                            <ConfigExodosPathInput
+                                                input={this.state.exodosPath}
+                                                buttonText="Browse"
+                                                onInputChange={this.onExodosPathChange}
+                                                isValid={this.state.isExodosPathValid}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="cfg-row">
                                     <div className="cfg-row__label">
                                         <span className="cfg-row__name">Backend Port Min</span>
@@ -301,14 +283,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         )}
                     </section>
 
-                    {/* Experimental */}
-                    <section className="cfg-section">
-                        <h2 className="cfg-section__header">Experimental Features</h2>
-                        <div className="cfg-note">
-                            No experimental features at the moment. New ones may appear here in future releases.
-                        </div>
-                    </section>
-
                     {/* Footer */}
                     {this.state.saveError && (
                         <div className="cfg-note cfg-note--warning">
@@ -338,25 +312,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             </div>
         );
     }
-
-    itemizePlatformOptionsMemo = memoizeOne(
-        (platforms: string[], nativePlatforms: string[]) =>
-            platforms.map((platform) => ({
-                value: platform,
-                checked: nativePlatforms.includes(platform),
-            })),
-    );
-
-    onNativeCheckboxChange = (platform: string): void => {
-        const nativePlatforms = [...this.state.nativePlatforms];
-        const index = nativePlatforms.findIndex((item) => item === platform);
-        if (index !== -1) {
-            nativePlatforms.splice(index, 1);
-        } else {
-            nativePlatforms.push(platform);
-        }
-        this.setState({ nativePlatforms });
-    };
 
     onExodosLocationModeChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         this.setState({ useEmbeddedExodosPath: event.target.value === "embedded" });

@@ -10,13 +10,6 @@ const ExodosResourcesTypeExtensions = {
 };
 const excludedFiles = ["exogui.command"];
 
-// Update scripts
-const updateScriptFiles = [
-    "update.command",
-    "updateScummVm.command",
-    "update3x.command",
-].map((f) => `eXo/Update/${f}`);
-
 // Label mapping
 const labelMapping = {
     install_dependencies: "Install dependencies",
@@ -25,9 +18,29 @@ const labelMapping = {
     update3x: "Update eXoWin3x",
 };
 
+type UpdateScriptFile = {
+    filepath: string;
+    label?: string;
+    args?: string;
+};
+
+// Update scripts
+const updateScriptFiles: UpdateScriptFile[] = [
+    process.platform === "win32"
+        ? { filepath: "eXo/Update/update.command" }
+        : {
+            filepath: "install_dependencies.command",
+            label: labelMapping.update,
+            args: "update",
+        },
+    { filepath: "eXo/Update/updateScummVm.command" },
+    { filepath: "eXo/Update/update3x.command" },
+];
+
 export type ExodosResource = {
     label: string;
     filepath: string;
+    args?: string;
 };
 
 // HACK - null for separator
@@ -62,14 +75,18 @@ export const loadExoResources = async () => {
 const getUpdateScriptsWithSeparator = async () => {
     const result = [];
     const existingScripts = updateScriptFiles
-    .filter((f) => {
+    .filter((s) => {
         const filepath = path.join(
             window.External.config.fullExodosPath,
-            f
+            s.filepath
         );
         return fs.existsSync(filepath);
     })
-    .map(mapToExoResource);
+    .map((s) => ({
+        filepath: s.filepath,
+        label: s.label ?? getLabel(s.filepath),
+        args: s.args,
+    }));
     if (existingScripts.length > 0) {
         result.push(null);
         result.push(...existingScripts);

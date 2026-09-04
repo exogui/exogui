@@ -410,7 +410,6 @@ class App extends React.Component<AppProps, AppState> {
             playlists: playlists,
             appPaths: this.state.appPaths,
             playlistIconCache: this.state.playlistIconCache,
-            libraries: this.props.libraries,
             localeCode: this.state.localeCode,
             order: this.state.order,
             gameScale: this.state.gameScale,
@@ -453,6 +452,7 @@ class App extends React.Component<AppProps, AppState> {
                                 <HeaderContainer
                                     exodosResources={this.state.exodosResources}
                                     libraries={this.props.libraries}
+                                    selectedLibrary={libraryPath}
                                     onToggleLeftSidebarClick={
                                         this.onToggleLeftSidebarClick
                                     }
