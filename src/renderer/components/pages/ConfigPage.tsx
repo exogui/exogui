@@ -21,7 +21,7 @@ export type ConfigPageProps = OwnProps;
 
 type ConfigPageState = IAppConfigData & {
     isExodosPathValid?: boolean;
-    networkExpanded: boolean;
+    advancedExpanded: boolean;
     saveError?: string;
 };
 
@@ -43,7 +43,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
             ...configData,
             nativePlatforms: [...configData.nativePlatforms],
             isExodosPathValid: undefined,
-            networkExpanded: false,
+            advancedExpanded: false,
         };
     }
 
@@ -96,6 +96,25 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                     {/* Visuals */}
                     <section className="cfg-section">
                         <h2 className="cfg-section__header">Visuals</h2>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Use Custom Title Bar</span>
+                                <span className="cfg-row__desc">
+                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
+                                    provides. The window is created without a native frame, so the title, the drag area
+                                    and the minimise, maximise and close buttons all come from exogui. This applies on
+                                    Windows, macOS and Linux &mdash; on macOS it also removes the native traffic-light
+                                    buttons, leaving only the launcher&apos;s own.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useCustomTitlebar}
+                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                />
+                            </div>
+                        </div>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
                                 <span className="cfg-row__name">Theme</span>
@@ -160,17 +179,61 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         )}
                     </section>
 
-                    {/* Network (collapsible) */}
+                    {/* Experimental */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Experimental Features</h2>
+                        <div className="cfg-note">
+                            No experimental features at the moment. New ones may appear here in future releases.
+                        </div>
+                    </section>
+
+                    {/* Advanced (collapsible) */}
                     <section className="cfg-section">
                         <button
-                            className={`cfg-section__toggle${this.state.networkExpanded ? "" : " cfg-section__toggle--collapsed"}`}
-                            onClick={() => this.setState({ networkExpanded: !this.state.networkExpanded })}
+                            className={`cfg-section__toggle${this.state.advancedExpanded ? "" : " cfg-section__toggle--collapsed"}`}
+                            onClick={() => this.setState({ advancedExpanded: !this.state.advancedExpanded })}
                         >
-                            <span>Network</span>
-                            <span>{this.state.networkExpanded ? "▲" : "▼"}</span>
+                            <span>Advanced</span>
+                            <span>{this.state.advancedExpanded ? "▲" : "▼"}</span>
                         </button>
-                        {this.state.networkExpanded && (
+                        {this.state.advancedExpanded && (
                             <>
+                                <div className="cfg-note cfg-note--warning">
+                                    Only change these if you know what you are doing. A wrong value here can stop the
+                                    launcher from finding your games or leave the window without usable controls.
+                                </div>
+                                <div className="cfg-row">
+                                    <div className="cfg-row__label">
+                                        <span className="cfg-row__name">Retro eXo Projects Location</span>
+                                        <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
+                                    </div>
+                                    <div className="cfg-row__control">
+                                        <select
+                                            value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
+                                            onChange={this.onExodosLocationModeChange}
+                                            className="simple-selector"
+                                        >
+                                            <option value="embedded">Auto (embedded)</option>
+                                            <option value="custom">Custom path</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {!this.state.useEmbeddedExodosPath && (
+                                    <div className="cfg-row cfg-row--filepath">
+                                        <div className="cfg-row__label">
+                                            <span className="cfg-row__name">Retro eXo Projects Path</span>
+                                            <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
+                                        </div>
+                                        <div className="cfg-row__control cfg-row__control--wide">
+                                            <ConfigExodosPathInput
+                                                input={this.state.exodosPath}
+                                                buttonText="Browse"
+                                                onInputChange={this.onExodosPathChange}
+                                                isValid={this.state.isExodosPathValid}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="cfg-row">
                                     <div className="cfg-row__label">
                                         <span className="cfg-row__name">Backend Port Min</span>
@@ -218,74 +281,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 </div>
                             </>
                         )}
-                    </section>
-
-                    {/* Experimental */}
-                    <section className="cfg-section">
-                        <h2 className="cfg-section__header">Experimental Features</h2>
-                        <div className="cfg-note">
-                            No experimental features at the moment. New ones may appear here in future releases.
-                        </div>
-                    </section>
-
-                    {/* Advanced */}
-                    <section className="cfg-section">
-                        <h2 className="cfg-section__header">Advanced</h2>
-                        <div className="cfg-note cfg-note--warning">
-                            Only change these if you know what you are doing. A wrong value here can stop the launcher
-                            from finding your games or leave the window without usable controls.
-                        </div>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Retro eXo Projects Location</span>
-                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <select
-                                    value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
-                                    onChange={this.onExodosLocationModeChange}
-                                    className="simple-selector"
-                                >
-                                    <option value="embedded">Auto (embedded)</option>
-                                    <option value="custom">Custom path</option>
-                                </select>
-                            </div>
-                        </div>
-                        {!this.state.useEmbeddedExodosPath && (
-                            <div className="cfg-row cfg-row--filepath">
-                                <div className="cfg-row__label">
-                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
-                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
-                                </div>
-                                <div className="cfg-row__control cfg-row__control--wide">
-                                    <ConfigExodosPathInput
-                                        input={this.state.exodosPath}
-                                        buttonText="Browse"
-                                        onInputChange={this.onExodosPathChange}
-                                        isValid={this.state.isExodosPathValid}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Use Custom Title Bar</span>
-                                <span className="cfg-row__desc">
-                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
-                                    provides. The window is created without a native frame, so the title, the drag area and
-                                    the minimise, maximise and close buttons all come from exogui.
-                                    This applies on Windows, macOS and Linux &mdash; on macOS it also removes the native
-                                    traffic-light buttons, leaving only the launcher&apos;s own.
-                                </span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <input
-                                    type="checkbox"
-                                    checked={this.state.useCustomTitlebar}
-                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
-                                />
-                            </div>
-                        </div>
                     </section>
 
                     {/* Footer */}
