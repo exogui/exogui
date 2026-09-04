@@ -98,25 +98,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         <h2 className="cfg-section__header">Visuals</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
-                                <span className="cfg-row__name">Use Custom Title Bar</span>
-                                <span className="cfg-row__desc">
-                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
-                                    provides. The window is created without a native frame, so the title, the drag area
-                                    and the minimise, maximise and close buttons all come from exogui. This applies on
-                                    Windows, macOS and Linux &mdash; on macOS it also removes the native traffic-light
-                                    buttons, leaving only the launcher&apos;s own.
-                                </span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <input
-                                    type="checkbox"
-                                    checked={this.state.useCustomTitlebar}
-                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
-                                />
-                            </div>
-                        </div>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
                                 <span className="cfg-row__name">Theme</span>
                                 <span className="cfg-row__desc">Select the visual theme for the application.</span>
                             </div>
@@ -132,6 +113,25 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                        </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Use Custom Title Bar</span>
+                                <span className="cfg-row__desc">
+                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
+                                    provides. The window is created without a native frame, so the title, the drag area
+                                    and the minimise, maximise and close buttons all come from exogui. This applies on
+                                    Windows, macOS and Linux &mdash; on macOS it also removes the native traffic-light
+                                    buttons, leaving only the launcher&apos;s own.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useCustomTitlebar}
+                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                />
                             </div>
                         </div>
                     </section>
