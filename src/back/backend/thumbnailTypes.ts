@@ -8,3 +8,7 @@ export type ThumbnailResult = {
     id: number;
     rss: number;
 } & ({ ok: true } | { ok: false; error: string });
+
+export type ThumbnailReady = { ready: true };
+
+export type ThumbnailMessage = ThumbnailReady | ThumbnailResult;
