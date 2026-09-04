@@ -36,7 +36,7 @@ export interface IAssetsPaths {
 export class FileServer {
     private _server = new http.Server(this._onFileServerRequest.bind(this));
     private _port = -1;
-    private _thumbnailPool = new ThumbnailPool();
+    private _thumbnailPool: ThumbnailPool;
 
     get port() {
         return this._port;
@@ -50,7 +50,11 @@ export class FileServer {
         private readonly _config: IAppConfigData,
         private readonly _log: LogFunc,
         private readonly _cacheFolder: string,
-    ) {}
+    ) {
+        this._thumbnailPool = new ThumbnailPool({
+            poisonFilePath: path.join(_cacheFolder, "unreadable-images.json"),
+        });
+    }
 
     private _tiffCacheFolder(): string {
         return path.join(this._cacheFolder, "tiff");

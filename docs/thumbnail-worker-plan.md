@@ -200,9 +200,9 @@ Owns one worker, a FIFO queue, and the recycling policy.
   single most useful diagnostic we do not currently have. Respawn on the next
   job.
 - **Poison memo.** Record images that crashed or timed out and refuse to retry
-  them for the rest of the session, otherwise every grid scroll past that tile
-  kills another worker. Consider persisting a marker next to the cache entry so
-  it survives restarts.
+  them, otherwise every grid scroll past that tile kills another worker.
+  Persisted to `cache/unreadable-images.json` as `src` + size + mtime, so the
+  skip survives a restart and is dropped again if the user replaces the file.
 
 Fork the worker the same way `Main.ts` forks the back: `child_process.fork` on
 the built `build/back/backend/thumbnailWorker.js`.
@@ -346,6 +346,29 @@ What to look for: whether the crash still happens at all, and in the baseline lo
 the last `Back -` line before it dies. On 1.2.59-beta and later `diagnostics=true`
 also prints `[Diagnostics][back] memory rss=...` every 30s, which shows whether
 the back was growing before it went; 1.2.58 does not have that line.
+
+### Follow-up hardening (2026-09-04)
+
+Three gaps found by walking the failure paths rather than the happy one:
+
+- **A broken worker was blamed on whatever image it happened to be holding.** A
+  worker that cannot load sharp at all dies on its first job, and the pool read
+  that as "this file killed it" — poisoning a healthy image, then the next one,
+  one doomed process per image with no end. The worker now sends `{ready: true}`
+  once sharp imports; a worker that dies before that is a fault of ours, so the
+  source is not poisoned and a **boot-failure counter** trips after 3 in a row,
+  pausing worker spawns for 30s while the file server serves originals.
+- **A worker that fails to `spawn` emits `error` and `close` but never `exit`,**
+  so the in-flight job used to hang for the full 60s job timeout, with queued
+  images stalling behind it. The pool now listens on `close` as well as `exit`
+  (the `worker !== this.worker` guard makes the second a no-op); measured 60000ms
+  → 6ms.
+- **The poison memo is now persisted** (see above), so a file that crashes a
+  worker costs one worker once, not once per launch.
+
+Note the deliberate asymmetry: only a worker *death* poisons a source. A clean
+decode error ("unsupported image format") fails that one request and leaves the
+file eligible to be retried.
 
 Remaining open points:
 

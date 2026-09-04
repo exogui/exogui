@@ -51,3 +51,7 @@ process.on("message", (job: ThumbnailJob) => {
 
 // The parent recycles us by closing the IPC channel; exit rather than linger.
 process.on("disconnect", () => process.exit(0));
+
+// Announces that sharp loaded. A worker that dies before sending this never ran any of
+// the job it was holding, so the parent must blame itself rather than that image.
+process.send?.({ ready: true });
