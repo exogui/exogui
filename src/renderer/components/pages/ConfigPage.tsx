@@ -202,7 +202,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                     Only change these if you know what you are doing. A wrong value here can stop the
                                     launcher from finding your games or leave the window without usable controls.
                                 </div>
-                                <div className="cfg-row">
+                                <div className="cfg-row cfg-row--hidden">
                                     <div className="cfg-row__label">
                                         <span className="cfg-row__name">Retro eXo Projects Location</span>
                                         <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
@@ -219,7 +219,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                     </div>
                                 </div>
                                 {!this.state.useEmbeddedExodosPath && (
-                                    <div className="cfg-row cfg-row--filepath">
+                                    <div className="cfg-row cfg-row--filepath cfg-row--hidden">
                                         <div className="cfg-row__label">
                                             <span className="cfg-row__name">Retro eXo Projects Path</span>
                                             <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
