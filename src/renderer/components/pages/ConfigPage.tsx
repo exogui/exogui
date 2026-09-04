@@ -73,48 +73,14 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         Press &apos;Save&apos; to apply changes.
                     </p>
 
-                    {/* Retro eXo Projects */}
+                    {/* Games */}
                     <section className="cfg-section">
-                        <h2 className="cfg-section__header">Retro eXo Projects</h2>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Retro eXo Projects Location</span>
-                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <select
-                                    value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
-                                    onChange={this.onExodosLocationModeChange}
-                                    className="simple-selector"
-                                >
-                                    <option value="embedded">Auto (embedded)</option>
-                                    <option value="custom">Custom path</option>
-                                </select>
-                            </div>
-                        </div>
-                        {!this.state.useEmbeddedExodosPath && (
-                            <div className="cfg-row cfg-row--filepath">
-                                <div className="cfg-row__label">
-                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
-                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
-                                </div>
-                                <div className="cfg-row__control cfg-row__control--wide">
-                                    <ConfigExodosPathInput
-                                        input={this.state.exodosPath}
-                                        buttonText="Browse"
-                                        onInputChange={this.onExodosPathChange}
-                                        isValid={this.state.isExodosPathValid}
-                                    />
-                                </div>
-                            </div>
-                        )}
+                        <h2 className="cfg-section__header">Games</h2>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
                                 <span className="cfg-row__name">Sort Games by Sort Title</span>
                                 <span className="cfg-row__desc">
-                                    When enabled, games are sorted using the &quot;Sort Title&quot; field from the game data instead of the display title.
-                                    This ensures that series like &quot;King&apos;s Quest&quot; or &quot;Ultima&quot; appear in the correct numbered order,
-                                    and that titles beginning with punctuation (like &quot;...A Personal Nightmare&quot;) sort in a sensible place.
+                                    When enabled, games are sorted using the &lt;SortTitle&gt; tag from the game data instead of the display title.
                                 </span>
                             </div>
                             <div className="cfg-row__control">
@@ -130,19 +96,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                     {/* Visuals */}
                     <section className="cfg-section">
                         <h2 className="cfg-section__header">Visuals</h2>
-                        <div className="cfg-row">
-                            <div className="cfg-row__label">
-                                <span className="cfg-row__name">Use Custom Title Bar</span>
-                                <span className="cfg-row__desc">Use a custom title bar at the top of this window.</span>
-                            </div>
-                            <div className="cfg-row__control">
-                                <input
-                                    type="checkbox"
-                                    checked={this.state.useCustomTitlebar}
-                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
-                                />
-                            </div>
-                        </div>
                         <div className="cfg-row">
                             <div className="cfg-row__label">
                                 <span className="cfg-row__name">Theme</span>
@@ -272,6 +225,66 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                         <h2 className="cfg-section__header">Experimental Features</h2>
                         <div className="cfg-note">
                             No experimental features at the moment. New ones may appear here in future releases.
+                        </div>
+                    </section>
+
+                    {/* Advanced */}
+                    <section className="cfg-section">
+                        <h2 className="cfg-section__header">Advanced</h2>
+                        <div className="cfg-note cfg-note--warning">
+                            Only change these if you know what you are doing. A wrong value here can stop the launcher
+                            from finding your games or leave the window without usable controls.
+                        </div>
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Retro eXo Projects Location</span>
+                                <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <select
+                                    value={this.state.useEmbeddedExodosPath ? "embedded" : "custom"}
+                                    onChange={this.onExodosLocationModeChange}
+                                    className="simple-selector"
+                                >
+                                    <option value="embedded">Auto (embedded)</option>
+                                    <option value="custom">Custom path</option>
+                                </select>
+                            </div>
+                        </div>
+                        {!this.state.useEmbeddedExodosPath && (
+                            <div className="cfg-row cfg-row--filepath">
+                                <div className="cfg-row__label">
+                                    <span className="cfg-row__name">Retro eXo Projects Path</span>
+                                    <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
+                                </div>
+                                <div className="cfg-row__control cfg-row__control--wide">
+                                    <ConfigExodosPathInput
+                                        input={this.state.exodosPath}
+                                        buttonText="Browse"
+                                        onInputChange={this.onExodosPathChange}
+                                        isValid={this.state.isExodosPathValid}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <div className="cfg-row">
+                            <div className="cfg-row__label">
+                                <span className="cfg-row__name">Use Custom Title Bar</span>
+                                <span className="cfg-row__desc">
+                                    Draw the title bar with the launcher&apos;s own theme instead of the one your desktop
+                                    provides. The window is created without a native frame, so the title, the drag area and
+                                    the minimise, maximise and close buttons all come from exogui.
+                                    This applies on Windows, macOS and Linux &mdash; on macOS it also removes the native
+                                    traffic-light buttons, leaving only the launcher&apos;s own.
+                                </span>
+                            </div>
+                            <div className="cfg-row__control">
+                                <input
+                                    type="checkbox"
+                                    checked={this.state.useCustomTitlebar}
+                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                />
+                            </div>
                         </div>
                     </section>
 
