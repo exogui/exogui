@@ -192,6 +192,9 @@ export function registerRequestCallbacks(state: BackState): void {
         }
     });
 
+    // Config writes read-modify-write the whole config, so they must not interleave.
+    state.socketServer.addQueue([BackIn.UPDATE_CONFIG]);
+
     state.socketServer.register(BackIn.UPDATE_CONFIG, async (event, data) => {
         const candidate = deepCopy(state.config);
         overwriteConfigData(candidate, data);
