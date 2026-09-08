@@ -2379,7 +2379,8 @@ body {
   border-top: 1px solid var(--theme-primary-border);
 }
 
-.cfg-row--hidden {
+.cfg-row--hidden,
+.cfg-section--hidden {
   display: none;
 }
 
@@ -2526,14 +2527,34 @@ body {
   box-sizing: border-box;
 }
 
-/* Config footer */
-.cfg-footer {
+/* Restart notice */
+.cfg-restart-note {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 0.3em;
   margin-top: 0.5rem;
+  line-height: 1.5;
 }
 
-.cfg-save-btn {
+.cfg-restart-note__text {
+  min-width: 0;
+}
+
+.cfg-restart-note__list {
+  list-style: disc;
+  margin: 0.4em 0 0;
+  padding-left: 1.4em;
+}
+
+.cfg-restart-note__list li {
+  margin-top: 0.15em;
+}
+
+.cfg-restart-note__button {
+  flex: 0 0 auto;
   padding: 0.35em 1.4em;
   font-size: 0.875em;
 }

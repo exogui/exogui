@@ -129,17 +129,24 @@ function strArray(array: any): string[] {
 }
 
 /**
- * Config keys that require an application restart for the change to take effect.
+ * Config keys that require an application restart for the change to take effect,
+ * mapped to the label shown to the user when listing pending restarts.
  * Other keys are applied live (theme, native platforms, online-update settings).
  */
-export const RESTART_REQUIRED_CONFIG_KEYS: ReadonlyArray<keyof IAppConfigData> = [
-    "useEmbeddedExodosPath",
-    "exodosPath",
-    "useCustomTitlebar",
-    "useSortTitleForOrdering",
-    "backPortMin",
-    "backPortMax",
-    "imagesPortMin",
-    "imagesPortMax",
-    "vlcPort",
-];
+export const RESTART_REQUIRED_CONFIG_LABELS: Readonly<
+    Partial<Record<keyof IAppConfigData, string>>
+> = Object.freeze({
+    useEmbeddedExodosPath: "Retro eXo Projects Location",
+    exodosPath: "Retro eXo Projects Path",
+    useCustomTitlebar: "Use Custom Title Bar",
+    useSortTitleForOrdering: "Sort Games by Sort Title",
+    backPortMin: "Backend Port Min",
+    backPortMax: "Backend Port Max",
+    imagesPortMin: "Images Port Min",
+    imagesPortMax: "Images Port Max",
+    vlcPort: "VLC Port",
+});
+
+export const RESTART_REQUIRED_CONFIG_KEYS = Object.keys(
+    RESTART_REQUIRED_CONFIG_LABELS
+) as ReadonlyArray<keyof IAppConfigData>;

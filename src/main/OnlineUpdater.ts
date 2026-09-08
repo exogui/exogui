@@ -456,9 +456,9 @@ export class OnlineUpdater {
             console.warn("[OnlineUpdater] Cannot enable updates: not supported on this platform");
         }
 
-        if (this.state.enabled) {
-            this.configureUpdater();
-        }
+        // Configure unconditionally: manual checks work even when automatic updates are off,
+        // so the channel must be applied either way.
+        this.configureUpdater();
     }
 
     /**

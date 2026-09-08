@@ -25,6 +25,7 @@ import {
     withPreferences,
 } from "./containers/withPreferences";
 import { WithRouterProps, withRouter } from "./containers/withRouter";
+import { getStartupConfig } from "./startupConfig";
 import {
     initializeLoading,
     setPlaylistsLoaded,
@@ -440,7 +441,7 @@ class App extends React.Component<AppProps, AppState> {
                             onGoToConfig={this.onGoToConfig}
                         />
                         {/* Title-bar (if enabled) */}
-                        {window.External.config.data.useCustomTitlebar ? (
+                        {getStartupConfig().useCustomTitlebar ? (
                             <TitleBar
                                 title={`${APP_TITLE} (${app.getVersion()})`}
                             />

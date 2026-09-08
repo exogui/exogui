@@ -9,6 +9,8 @@ export type ConfigExodosPathInputProps = {
     buttonText?: string;
     /** Called when the value of the input field is changed. */
     onInputChange?: (input: string) => void;
+    /** Called when the user is done editing (blur, or a folder picked with the button). */
+    onInputCommit?: (input: string) => void;
 };
 
 /** Text input element made specifically for setting the eXoDOS path at the config page. */
@@ -33,6 +35,7 @@ export class ConfigExodosPathInput extends React.Component<ConfigExodosPathInput
                     <input
                         type="text"
                         onChange={this.onInputChange}
+                        onBlur={this.onInputBlur}
                         value={input}
                     />
                 </div>
@@ -50,6 +53,10 @@ export class ConfigExodosPathInput extends React.Component<ConfigExodosPathInput
         this.setInput(event.target.value);
     };
 
+    onInputBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
+        this.props.onInputCommit?.(event.target.value || "");
+    };
+
     onBrowseClick = (): void => {
         // Synchronously show a "open dialog" (this makes the main window "frozen" while this is open)
         const filePaths = window.External.showOpenDialogSync({
@@ -58,6 +65,7 @@ export class ConfigExodosPathInput extends React.Component<ConfigExodosPathInput
         });
         if (filePaths) {
             this.setInput(filePaths[0]);
+            this.props.onInputCommit?.(filePaths[0] || "");
         }
     };
 
