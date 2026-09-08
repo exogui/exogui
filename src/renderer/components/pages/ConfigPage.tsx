@@ -4,7 +4,10 @@ import { ipcRenderer } from "electron";
 import { BackIn } from "@shared/back/types";
 import { UpdaterIPC } from "@shared/interfaces";
 import { IAppConfigData } from "@shared/config/interfaces";
-import { RESTART_REQUIRED_CONFIG_KEYS } from "@shared/config/util";
+import {
+    RESTART_REQUIRED_CONFIG_KEYS,
+    RESTART_REQUIRED_CONFIG_LABELS,
+} from "@shared/config/util";
 import { setTheme } from "@shared/Theme";
 import { Theme } from "@shared/ThemeFile";
 import * as React from "react";
@@ -12,6 +15,7 @@ import { useSelector } from "react-redux";
 import { isExodosValidCheck } from "../../Util";
 import { ConfigExodosPathInput } from "../ConfigExodosPathInput";
 import { RootState } from "../../redux/store";
+import { getStartupConfig } from "../../startupConfig";
 
 type OwnProps = {
     themeList: Theme[];
@@ -25,20 +29,10 @@ type ConfigPageState = IAppConfigData & {
     saveError?: string;
 };
 
-/** Snapshot of restart-required config values at the time ConfigPage first mounted in this session.
- *  Used to decide whether the running app diverges from its disk/startup state. */
-let appStartConfigSnapshot: IAppConfigData | null = null;
-
 export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState> {
     constructor(props: ConfigPageProps) {
         super(props);
         const configData = window.External.config.data;
-        if (!appStartConfigSnapshot) {
-            appStartConfigSnapshot = {
-                ...configData,
-                nativePlatforms: [...configData.nativePlatforms],
-            };
-        }
         this.state = {
             ...configData,
             nativePlatforms: [...configData.nativePlatforms],
@@ -47,30 +41,59 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         };
     }
 
-    private static computeRestartRequired(current: IAppConfigData): boolean {
-        if (!appStartConfigSnapshot) return false;
-        return RESTART_REQUIRED_CONFIG_KEYS.some(
-            (key) => !ConfigPage.isConfigValueEqual(appStartConfigSnapshot![key], current[key])
-        );
+    /** Labels of the options that were changed since startup and only take effect after a restart. */
+    private pendingRestartLabels(): string[] {
+        const startup = getStartupConfig();
+        return RESTART_REQUIRED_CONFIG_KEYS.filter(
+            (key) => !ConfigPage.isConfigValueEqual(startup[key], this.state[key])
+        ).map((key) => RESTART_REQUIRED_CONFIG_LABELS[key] as string);
     }
 
-    private isDirty(): boolean {
-        const saved = window.External.config.data;
-        return (Object.keys(saved) as (keyof IAppConfigData)[]).some(
-            (key) => !ConfigPage.isConfigValueEqual(this.state[key], saved[key])
-        );
+    /**
+     * Persist a single option straight away. The control moves optimistically and is put back to
+     * the last persisted value if the write fails, so the UI never claims a change that isn't on disk.
+     */
+    private commit<K extends keyof IAppConfigData>(
+        key: K,
+        value: IAppConfigData[K],
+        apply?: (value: IAppConfigData[K]) => void
+    ): void {
+        const previous = window.External.config.data[key];
+        apply?.(value);
+        this.setState({ [key]: value, saveError: undefined } as unknown as ConfigPageState);
+
+        window.External.back
+        .request(BackIn.UPDATE_CONFIG, { [key]: value })
+        .then(() => {
+            window.External.config.data = {
+                ...window.External.config.data,
+                [key]: value,
+            };
+            if (key === "enableOnlineUpdate" || key === "updateChannel") {
+                ipcRenderer.send(UpdaterIPC.UPDATE_CONFIG, {
+                    enabled: window.External.config.data.enableOnlineUpdate,
+                    channel: window.External.config.data.updateChannel,
+                });
+            }
+        })
+        .catch((err) => {
+            apply?.(previous);
+            this.setState({
+                [key]: previous,
+                saveError: err?.message ?? String(err),
+            } as unknown as ConfigPageState);
+        });
     }
 
     render() {
-        const dirty = this.isDirty();
-        const restartRequired = ConfigPage.computeRestartRequired(this.state);
+        const restartLabels = this.pendingRestartLabels();
 
         return (
             <div className="config-page simple-scroll">
                 <div className="config-page__content">
                     <h1 className="config-page__title">Config</h1>
                     <p className="config-page__subtitle">
-                        Press &apos;Save&apos; to apply changes.
+                        Changes are saved as soon as you make them.
                     </p>
 
                     {/* Games */}
@@ -87,7 +110,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 <input
                                     type="checkbox"
                                     checked={this.state.useSortTitleForOrdering}
-                                    onChange={(e) => this.onUseSortTitleForOrderingChange(e.target.checked)}
+                                    onChange={(e) => this.commit("useSortTitleForOrdering", e.target.checked)}
                                 />
                             </div>
                         </div>
@@ -104,7 +127,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                             <div className="cfg-row__control">
                                 <select
                                     value={this.state.currentTheme || ""}
-                                    onChange={(e) => this.applyTheme(e.target.value)}
+                                    onChange={(e) => this.commit("currentTheme", e.target.value, setTheme)}
                                     className="simple-selector"
                                 >
                                     {this.props.themeList.map((theme) => (
@@ -130,7 +153,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                 <input
                                     type="checkbox"
                                     checked={this.state.useCustomTitlebar}
-                                    onChange={(e) => this.onUseCustomTitlebarChange(e.target.checked)}
+                                    onChange={(e) => this.commit("useCustomTitlebar", e.target.checked)}
                                 />
                             </div>
                         </div>
@@ -150,7 +173,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                     <div className="cfg-row__control">
                                         <select
                                             value={this.state.updateChannel}
-                                            onChange={(e) => this.onUpdateChannelChange(e.target.value as "stable" | "beta")}
+                                            onChange={(e) => this.commit("updateChannel", e.target.value as "stable" | "beta")}
                                             className="simple-selector"
                                         >
                                             <option value="stable">Stable</option>
@@ -167,7 +190,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                         <input
                                             type="checkbox"
                                             checked={this.state.enableOnlineUpdate}
-                                            onChange={(e) => this.onEnableOnlineUpdateChange(e.target.checked)}
+                                            onChange={(e) => this.commit("enableOnlineUpdate", e.target.checked)}
                                         />
                                     </div>
                                 </div>
@@ -188,7 +211,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                     </section>
 
                     {/* Advanced (collapsible) */}
-                    <section className="cfg-section">
+                    <section className="cfg-section cfg-section--hidden">
                         <button
                             className={`cfg-section__toggle${this.state.advancedExpanded ? "" : " cfg-section__toggle--collapsed"}`}
                             onClick={() => this.setState({ advancedExpanded: !this.state.advancedExpanded })}
@@ -202,7 +225,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                     Only change these if you know what you are doing. A wrong value here can stop the
                                     launcher from finding your games or leave the window without usable controls.
                                 </div>
-                                <div className="cfg-row cfg-row--hidden">
+                                <div className="cfg-row">
                                     <div className="cfg-row__label">
                                         <span className="cfg-row__name">Retro eXo Projects Location</span>
                                         <span className="cfg-row__desc">How to locate the Retro eXo Projects folder.</span>
@@ -219,7 +242,7 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                     </div>
                                 </div>
                                 {!this.state.useEmbeddedExodosPath && (
-                                    <div className="cfg-row cfg-row--filepath cfg-row--hidden">
+                                    <div className="cfg-row cfg-row--filepath">
                                         <div className="cfg-row__label">
                                             <span className="cfg-row__name">Retro eXo Projects Path</span>
                                             <span className="cfg-row__desc">Path to the Retro eXo Projects folder (can be relative).</span>
@@ -229,92 +252,29 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                                                 input={this.state.exodosPath}
                                                 buttonText="Browse"
                                                 onInputChange={this.onExodosPathChange}
+                                                onInputCommit={this.onExodosPathCommit}
                                                 isValid={this.state.isExodosPathValid}
                                             />
                                         </div>
                                     </div>
                                 )}
-                                <div className="cfg-row">
-                                    <div className="cfg-row__label">
-                                        <span className="cfg-row__name">Backend Port Min</span>
-                                        <span className="cfg-row__desc">Lower limit of the port range for the backend WebSocket server.</span>
-                                    </div>
-                                    <div className="cfg-row__control">
-                                        <input type="number" className="cfg-number-input" value={this.state.backPortMin} onChange={this.onBackPortMinChange} min={1024} max={65535} />
-                                    </div>
-                                </div>
-                                <div className="cfg-row">
-                                    <div className="cfg-row__label">
-                                        <span className="cfg-row__name">Backend Port Max</span>
-                                        <span className="cfg-row__desc">Upper limit of the port range for the backend WebSocket server.</span>
-                                    </div>
-                                    <div className="cfg-row__control">
-                                        <input type="number" className="cfg-number-input" value={this.state.backPortMax} onChange={this.onBackPortMaxChange} min={1024} max={65535} />
-                                    </div>
-                                </div>
-                                <div className="cfg-row">
-                                    <div className="cfg-row__label">
-                                        <span className="cfg-row__name">Images Port Min</span>
-                                        <span className="cfg-row__desc">Lower limit of the port range for the file server.</span>
-                                    </div>
-                                    <div className="cfg-row__control">
-                                        <input type="number" className="cfg-number-input" value={this.state.imagesPortMin} onChange={this.onImagesPortMinChange} min={1024} max={65535} />
-                                    </div>
-                                </div>
-                                <div className="cfg-row">
-                                    <div className="cfg-row__label">
-                                        <span className="cfg-row__name">Images Port Max</span>
-                                        <span className="cfg-row__desc">Upper limit of the port range for the file server.</span>
-                                    </div>
-                                    <div className="cfg-row__control">
-                                        <input type="number" className="cfg-number-input" value={this.state.imagesPortMax} onChange={this.onImagesPortMaxChange} min={1024} max={65535} />
-                                    </div>
-                                </div>
-                                <div className="cfg-row">
-                                    <div className="cfg-row__label">
-                                        <span className="cfg-row__name">VLC Port</span>
-                                        <span className="cfg-row__desc">Port number for VLC media player HTTP interface.</span>
-                                    </div>
-                                    <div className="cfg-row__control">
-                                        <input type="number" className="cfg-number-input" value={this.state.vlcPort} onChange={this.onVlcPortChange} min={1024} max={65535} />
-                                    </div>
-                                </div>
                             </>
                         )}
                     </section>
 
-                    {/* Footer */}
                     {this.state.saveError && (
                         <div className="cfg-note cfg-note--warning">
                             Failed to save configuration: {this.state.saveError}
                         </div>
                     )}
-                    {restartRequired && (
-                        <div className="cfg-note cfg-note--warning">
-                            Some changes require an application restart to take effect.
-                        </div>
-                    )}
-                    <div className="cfg-footer">
-                        <button
-                            className="simple-button cfg-save-btn"
-                            onClick={() => window.External.restart()}
-                            disabled={dirty || !restartRequired}
-                            style={{ visibility: restartRequired ? "visible" : "hidden" }}
-                            title={restartRequired && dirty ? "Save your pending changes first." : undefined}
-                        >
-                            Restart Now
-                        </button>
-                        <button className="simple-button cfg-save-btn" onClick={this.onSaveClick}>
-                            Save
-                        </button>
-                    </div>
+                    {restartLabels.length > 0 && <RestartNotice labels={restartLabels} />}
                 </div>
             </div>
         );
     }
 
     onExodosLocationModeChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-        this.setState({ useEmbeddedExodosPath: event.target.value === "embedded" });
+        this.commit("useEmbeddedExodosPath", event.target.value === "embedded");
     };
 
     onExodosPathChange = async (filePath: string): Promise<void> => {
@@ -323,45 +283,12 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         this.setState({ isExodosPathValid: isValid });
     };
 
-    onUseCustomTitlebarChange = (isChecked: boolean): void => {
-        this.setState({ useCustomTitlebar: isChecked });
-    };
-
-    onEnableOnlineUpdateChange = (isChecked: boolean): void => {
-        this.setState({ enableOnlineUpdate: isChecked });
-    };
-
-    onUpdateChannelChange = (channel: "stable" | "beta"): void => {
-        this.setState({ updateChannel: channel });
-    };
-
-    onUseSortTitleForOrderingChange = (isChecked: boolean): void => {
-        this.setState({ useSortTitleForOrdering: isChecked });
-    };
-
-    onBackPortMinChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) this.setState({ backPortMin: v });
-    };
-
-    onBackPortMaxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) this.setState({ backPortMax: v });
-    };
-
-    onImagesPortMinChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) this.setState({ imagesPortMin: v });
-    };
-
-    onImagesPortMaxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) this.setState({ imagesPortMax: v });
-    };
-
-    onVlcPortChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) this.setState({ vlcPort: v });
+    onExodosPathCommit = async (filePath: string): Promise<void> => {
+        const isValid = await isExodosValidCheck(filePath);
+        this.setState({ isExodosPathValid: isValid });
+        if (isValid) {
+            this.commit("exodosPath", filePath);
+        }
     };
 
     isUpdateSupported = (): boolean => {
@@ -372,55 +299,6 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         ipcRenderer.send(UpdaterIPC.CHECK_FOR_UPDATES);
     };
 
-    applyTheme = (theme: string | undefined): void => {
-        this.setState({ currentTheme: theme });
-        setTheme(theme);
-        window.External.config.data.currentTheme = theme;
-        window.External.back.request(BackIn.UPDATE_CONFIG, { currentTheme: theme });
-    };
-
-    onSaveClick = (): void => {
-        // `currentTheme` is intentionally omitted — `applyTheme` persists it inline on selection.
-        const configData: Omit<IAppConfigData, "currentTheme"> = {
-            exodosPath: this.state.exodosPath,
-            imageFolderPath: this.state.imageFolderPath,
-            logoFolderPath: this.state.logoFolderPath,
-            playlistFolderPath: this.state.playlistFolderPath,
-            jsonFolderPath: this.state.jsonFolderPath,
-            platformFolderPath: this.state.platformFolderPath,
-            useCustomTitlebar: this.state.useCustomTitlebar,
-            nativePlatforms: this.state.nativePlatforms,
-            backPortMin: this.state.backPortMin,
-            backPortMax: this.state.backPortMax,
-            imagesPortMin: this.state.imagesPortMin,
-            imagesPortMax: this.state.imagesPortMax,
-            showDeveloperTab: this.state.showDeveloperTab,
-            vlcPort: this.state.vlcPort,
-            enableOnlineUpdate: this.state.enableOnlineUpdate,
-            updateChannel: this.state.updateChannel,
-            useEmbeddedExodosPath: this.state.useEmbeddedExodosPath,
-            useSortTitleForOrdering: this.state.useSortTitleForOrdering,
-        };
-
-        window.External.back
-        .request(BackIn.UPDATE_CONFIG, configData)
-        .then(() => {
-            window.External.config.data = {
-                ...window.External.config.data,
-                ...configData,
-                nativePlatforms: [...configData.nativePlatforms],
-            };
-            ipcRenderer.send(UpdaterIPC.UPDATE_CONFIG, {
-                enabled: configData.enableOnlineUpdate,
-                channel: configData.updateChannel,
-            });
-            this.setState({ saveError: undefined });
-        })
-        .catch((err) => {
-            this.setState({ saveError: err?.message ?? String(err) });
-        });
-    };
-
     // Assumes IAppConfigData fields are primitives or string[]. Add deep-equal handling if nested objects are ever introduced.
     private static isConfigValueEqual(a: unknown, b: unknown): boolean {
         if (Array.isArray(a) && Array.isArray(b)) {
@@ -428,6 +306,32 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
         }
         return a === b;
     }
+}
+
+function RestartNotice({ labels }: { labels: string[] }) {
+    const plural = labels.length > 1;
+    return (
+        <div className="cfg-note cfg-note--warning cfg-restart-note">
+            <div className="cfg-restart-note__text">
+                <span>
+                    Restart the app so the following {plural ? "changes take" : "change takes"} effect:
+                </span>
+                <ul className="cfg-restart-note__list">
+                    {labels.map((label) => (
+                        <li key={label}>
+                            <b>{label}</b>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <button
+                className="simple-button cfg-restart-note__button"
+                onClick={() => window.External.restart()}
+            >
+                Restart Now
+            </button>
+        </div>
+    );
 }
 
 function UpdateVersionRow({ onCheckNow }: { onCheckNow: () => void }) {

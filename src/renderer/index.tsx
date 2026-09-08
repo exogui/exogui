@@ -9,6 +9,7 @@ import { ContextReducerProvider } from "./context-reducer/ContextReducerProvider
 import { PreferencesContextProvider } from "./context/PreferencesContext";
 import { ProgressContext } from "./context/ProgressContext";
 import store from "./redux/store";
+import { captureStartupConfig } from "./startupConfig";
 
 function logFactory(socketServer: SocketClient<WebSocket>): LogFunc {
     return function (source: string, content: string) {
@@ -57,6 +58,8 @@ function logFactory(socketServer: SocketClient<WebSocket>): LogFunc {
     });
 
     await window.External.waitUntilInitialized();
+
+    captureStartupConfig();
 
     // Add global logging func
     window.log = logFactory(window.External.back);
