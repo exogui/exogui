@@ -387,21 +387,6 @@ body {
 }
 
 
-/* ------ Home ------ */
-/* HomePage Box */
-.home-page__box {
-  border-color: var(--layout__home-page-box-border);
-  background-color: var(--layout__home-page-box-background);
-}
-.home-page__box-head {
-  border-bottom-color: var(--layout__home-page-box-border);
-}
-/* HomePage Box - Upgrades */
-.home-page__box--upgrades .home-page__grayed-out {
-  color: var(--layout__disabled-text-color);
-}
-
-
 /* ------ About ------ */
 .about-page__section__title {
   background-color: var(--layout__tertiary-background);
