@@ -3,7 +3,7 @@ import { getLabel } from "./exoResources";
 
 describe("getLabel", () => {
     it("maps known update script paths to friendly labels", () => {
-        expect(getLabel("eXo/Update/update.command")).toBe("Update Retro eXo Projects");
+        expect(getLabel("eXo/Update/update.bat")).toBe("Update Retro eXo Projects");
         expect(getLabel("install_dependencies.command")).toBe("Install dependencies");
     });
 
@@ -60,7 +60,7 @@ describe("loadExoResources", () => {
         const scripts = await loadScriptsForPlatform("win32");
         expect(scripts).toContainEqual({
             label: "Update Retro eXo Projects",
-            filepath: "eXo/Update/update.command",
+            filepath: "eXo/Update/update.bat",
             args: undefined,
         });
     });

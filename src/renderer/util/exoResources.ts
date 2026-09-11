@@ -14,8 +14,6 @@ const excludedFiles = ["exogui.command"];
 const labelMapping = {
     install_dependencies: "Install dependencies",
     update: "Update Retro eXo Projects",
-    updateScummVm: "Update eXoScummVM",
-    update3x: "Update eXoWin3x",
 };
 
 type UpdateScriptFile = {
@@ -27,14 +25,12 @@ type UpdateScriptFile = {
 // Update scripts
 const updateScriptFiles: UpdateScriptFile[] = [
     process.platform === "win32"
-        ? { filepath: "eXo/Update/update.command" }
+        ? { filepath: "eXo/Update/update.bat" }
         : {
             filepath: "install_dependencies.command",
             label: labelMapping.update,
             args: "update",
         },
-    { filepath: "eXo/Update/updateScummVm.command" },
-    { filepath: "eXo/Update/update3x.command" },
 ];
 
 export type ExodosResource = {
