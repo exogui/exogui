@@ -6,7 +6,7 @@ import { removeFileExtension } from "@shared/Util";
 // extensions need to have a dot and be lowercase
 const ExodosResourcesTypeExtensions = {
     Documents: [".pdf", ".txt"],
-    Scripts: [".command"],
+    Scripts: [process.platform === "win32" ? ".bat" : ".command"],
 };
 const excludedFiles = ["exogui.command"];
 

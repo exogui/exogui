@@ -27,6 +27,8 @@ describe("loadExoResources", () => {
         (window as any).External = { config: { fullExodosPath: "/test" } };
         jest.spyOn(fs.promises, "readdir").mockResolvedValue([
             "install_dependencies.command",
+            "Setup eXoDOS.bat",
+            "Setup eXoDOS.command",
         ] as any);
         jest.spyOn(fs, "existsSync").mockReturnValue(true);
     });
@@ -63,5 +65,24 @@ describe("loadExoResources", () => {
             filepath: "eXo/Update/update.bat",
             args: undefined,
         });
+    });
+
+    it.each<NodeJS.Platform>(["linux", "darwin"])(
+        "lists root scripts with the .command extension on %s",
+        async (platform) => {
+            const labels = (await loadScriptsForPlatform(platform)).map(
+                (s) => s?.filepath
+            );
+            expect(labels).toContain("Setup eXoDOS.command");
+            expect(labels).not.toContain("Setup eXoDOS.bat");
+        }
+    );
+
+    it("lists root scripts with the .bat extension on windows", async () => {
+        const labels = (await loadScriptsForPlatform("win32")).map(
+            (s) => s?.filepath
+        );
+        expect(labels).toContain("Setup eXoDOS.bat");
+        expect(labels).not.toContain("Setup eXoDOS.command");
     });
 });
