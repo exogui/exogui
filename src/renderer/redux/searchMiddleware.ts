@@ -1,5 +1,6 @@
 import { PayloadAction, isAnyOf } from "@reduxjs/toolkit";
 import { filterGames } from "@renderer/util/gameFilter";
+import { selectViewGames } from "@renderer/util/search";
 import { getOrderFunction } from "@shared/game/GameFilter";
 import { debounce } from "@shared/utils/debounce";
 import { startAppListening } from "./listenerMiddleware";
@@ -47,11 +48,9 @@ export function addSearchMiddleware() {
             listenerApi
         ) => {
             const state = listenerApi.getState();
-            const viewName = action.payload.game.library;
-            const view = state.searchState.views[viewName];
             const game = action.payload.game;
 
-            if (view) {
+            for (const [viewName, view] of Object.entries(state.searchState.views)) {
                 if (view.selectedGame?.id === game.id)
                     store.dispatch(
                         selectGame({
@@ -60,39 +59,39 @@ export function addSearchMiddleware() {
                             userInitiated: false,
                         })
                     );
-                debounceSearch(state, viewName, view);
+                if (viewName === game.library || view.overridesPlatform) {
+                    debounceSearch(state, viewName, view);
+                }
             }
         },
     });
 }
 
-const debounceSearch = debounce(
-    (state: RootState, viewName: string, view: ResultsView) => {
-        let games = state.gamesState.games;
+type SearchFunction = (state: RootState, viewName: string, view: ResultsView) => void;
 
-        if (view.selectedPlaylist) {
-            if (view.selectedPlaylist.games.length > 0) {
-                const playlistIds = new Set(
-                    view.selectedPlaylist.games.map((g) => g.id)
-                );
-                games = games.filter((g) => playlistIds.has(g.id));
-            }
-        } else {
-            games = games.filter((g) => g.platform === viewName);
-        }
+const viewSearches = new Map<string, SearchFunction>();
 
-        games = filterGames(games, view.filter);
+function debounceSearch(state: RootState, viewName: string, view: ResultsView) {
+    let search = viewSearches.get(viewName);
+    if (!search) {
+        search = debounce(runSearch, 125);
+        viewSearches.set(viewName, search);
+    }
+    search(state, viewName, view);
+}
 
-        const orderFn = getOrderFunction(view.orderBy, view.orderReverse);
-        games = games.sort(orderFn);
+const runSearch: SearchFunction = (state, viewName, view) => {
+    let games = selectViewGames(state.gamesState.games, viewName, view);
+    games = filterGames(games, view.filter);
 
-        store.dispatch(
-            setViewGames({
-                view: viewName,
-                games,
-            })
-        );
-    },
-    125
-);
+    const orderFn = getOrderFunction(view.orderBy, view.orderReverse);
+    games = games.sort(orderFn);
+
+    store.dispatch(
+        setViewGames({
+            view: viewName,
+            games,
+        })
+    );
+};
 

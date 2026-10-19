@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import {
+    hasPlatformTerm,
     isGameFilterEmpty,
     mergeGameFilters,
     parseAdvancedFilter,
@@ -23,6 +24,7 @@ export type ResultsView = {
     text: string;
     advancedFilter: AdvancedFilter;
     filter: GameFilter;
+    overridesPlatform: boolean;
     loaded: boolean;
 };
 
@@ -164,6 +166,7 @@ const searchSlice = createSlice({
                             rating: [],
                         },
                         loaded: false,
+                        overridesPlatform: false,
                         filter: {
                             subfilters: [],
                             whitelist: getDefaultFieldFilter(),
@@ -295,6 +298,7 @@ const searchSlice = createSlice({
 function createFilter(view: ResultsView): GameFilter {
     // Build filter for this new search
     let newFilter = parseUserInput(view.text);
+    view.overridesPlatform = hasPlatformTerm(newFilter);
     // Merge all filters
     if (view.selectedPlaylist && view.selectedPlaylist.filter) {
         if (isGameFilterEmpty(newFilter)) {

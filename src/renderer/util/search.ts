@@ -1,4 +1,5 @@
-import { AdvancedFilter } from "@renderer/redux/searchSlice";
+import { AdvancedFilter, ResultsView } from "@renderer/redux/searchSlice";
+import { IGameInfo } from "@shared/game/interfaces";
 import {
     BooleanFilter,
     CompareFilter,
@@ -314,6 +315,37 @@ export function mergeGameFilters(a: GameFilter, b: GameFilter): GameFilter {
     }
 
     return newFilter;
+}
+
+/** A platform the user asked for widens the search beyond the selected platform tab. */
+export function hasPlatformTerm(filter: GameFilter): boolean {
+    return (
+        filter.whitelist.platform.length > 0 ||
+        filter.exactWhitelist.platform.length > 0 ||
+        filter.subfilters.some(hasPlatformTerm)
+    );
+}
+
+export function selectViewGames(
+    games: IGameInfo[],
+    viewName: string,
+    view: Pick<ResultsView, "selectedPlaylist" | "overridesPlatform">
+): IGameInfo[] {
+    if (view.selectedPlaylist) {
+        if (view.selectedPlaylist.games.length === 0) {
+            return games;
+        }
+        const playlistIds = new Set(
+            view.selectedPlaylist.games.map((g) => g.id)
+        );
+        return games.filter((g) => playlistIds.has(g.id));
+    }
+
+    if (view.overridesPlatform) {
+        return games;
+    }
+
+    return games.filter((g) => g.platform === viewName);
 }
 
 export function isGameFilterEmpty(filter: GameFilter) {

@@ -1,8 +1,12 @@
+import { IGameInfo } from "@shared/game/interfaces";
+import { GamePlaylist } from "@shared/interfaces";
 import {
+    hasPlatformTerm,
     isBooleanFilterEmpty,
     isGameFilterEmpty,
     parseAdvancedFilter,
     parseUserInput,
+    selectViewGames,
 } from "./search";
 
 describe("isBooleanFilterEmpty", () => {
@@ -288,5 +292,46 @@ describe("parseUserInput - unrecognized keys", () => {
         } finally {
             warn.mockRestore();
         }
+    });
+});
+
+describe("hasPlatformTerm", () => {
+    it.each([
+        "!ms-dos",
+        "!ms-dos,exodemoscene",
+        "platform:ms-dos,exodemoscene",
+        "platform=MS-DOS",
+        "platform=\"MS-DOS\",\"eXoDemoScene\"",
+        "!demo #action installed",
+    ])("is true for %s", (input) => {
+        expect(hasPlatformTerm(parseUserInput(input))).toBe(true);
+    });
+
+    it.each(["", "doom", "-!demo", "-platform:ms-dos", "!", "platform:", "#action"])(
+        "is false for %s",
+        (input) => {
+            expect(hasPlatformTerm(parseUserInput(input))).toBe(false);
+        }
+    );
+});
+
+describe("selectViewGames", () => {
+    const dosGame = { id: "1", platform: "MS-DOS" } as IGameInfo;
+    const demoGame = { id: "2", platform: "eXoDemoScene" } as IGameInfo;
+    const games = [dosGame, demoGame];
+
+    it("keeps only the view's platform by default", () => {
+        expect(selectViewGames(games, "MS-DOS", { overridesPlatform: false })).toEqual([dosGame]);
+    });
+
+    it("keeps every platform when the search names a platform", () => {
+        expect(selectViewGames(games, "MS-DOS", { overridesPlatform: true })).toEqual(games);
+    });
+
+    it("keeps only playlist games even when the search names a platform", () => {
+        const selectedPlaylist = { games: [{ id: "1" }] } as GamePlaylist;
+        expect(
+            selectViewGames(games, "eXoDemoScene", { selectedPlaylist, overridesPlatform: true })
+        ).toEqual([dosGame]);
     });
 });
