@@ -28,30 +28,30 @@ All CSS lives in `core.css` (2756 lines). Update system added 477 lines for Upda
 
 ---
 
-## ConfigPage restart-required snapshot lost on renderer reload
+## Startup config snapshot lost on renderer reload
 **Priority:** Low
 **Severity:** Low
 **Effort:** Medium
 
 **Issue:**
-`ConfigPage.appStartConfigSnapshot` (in `src/renderer/components/pages/ConfigPage.tsx`) is a module-level variable, captured the first time ConfigPage mounts. It survives navigation away and back, but a renderer reload (DevTools Cmd+R, or any future auto-reload) resets it. After reload, the snapshot is re-captured from the freshly-loaded config, which already reflects saved-but-not-applied values — so the "Restart required" indicator silently disappears even though the running main/back processes still hold the old values.
+`src/renderer/startupConfig.ts` captures the config once, right after `waitUntilInitialized()` in `index.tsx`. A renderer reload (DevTools Cmd+R, or any future auto-reload) resets it, and the snapshot is re-captured from the freshly-loaded config, which already reflects saved-but-not-applied values. Two things then lie: the "Restart the app so ... takes effect" notice on the config page silently disappears, and the custom title bar in `app.tsx` starts drawing from the new value while the window frame still reflects the old one.
 
 **Trade-offs:**
 - ✅ Cheap: zero plumbing, no new IPC/socket fields
-- ❌ Indicator can lie after a renderer reload
+- ❌ Restart notice and title bar can both lie after a renderer reload
 - ❌ Only experts hit it (DevTools reload), but the failure is silent
 
 **Potential Solutions:**
-1. Backend caches its config at boot (`state.bootConfig`) and ships it via `GET_RENDERER_INIT_DATA`; ConfigPage compares against that.
+1. Backend caches its config at boot (`state.bootConfig`) and ships it via `GET_RENDERER_INIT_DATA`; `captureStartupConfig()` uses that instead of the live config.
 2. Main process exposes its boot snapshot via preload.
 
-**Recommendation:** Keep as-is. Renderer reload is an expert-only action and the price is acceptable. Revisit if auto-reload-on-error is ever added.
+**Recommendation:** Keep as-is. Renderer reload is an expert-only action and the price is acceptable. Both solutions are now a one-line change at the single capture point in `startupConfig.ts`, so revisit if auto-reload-on-error is ever added.
 
 ---
 
 ## sharp/libvips emits GLib-GObject-CRITICAL log spam in the Electron backend
-**Priority:** Low
-**Severity:** Low (cosmetic)
+**Priority:** Medium (see the 2026-09-02 update below)
+**Severity:** Unclear - assumed cosmetic, not yet proven
 **Effort:** Low (to suppress) / High (to truly fix)
 
 **Issue:**
@@ -75,6 +75,10 @@ to the backend's stderr (visible only when running from a terminal; the backend 
 3. **Eliminate the duplicate glib** by building `sharp` against a system libvips (single glib instance). The "proper" fix, but reintroduces the native-dependency/packaging complexity we are otherwise avoiding.
 
 **Recommendation:** Ignore (1) for now — it's cosmetic and end users never see it. Revisit only if actual crashes/hangs ever occur *during* image processing (not just these log lines), in which case (3) becomes warranted.
+
+**Update (2026-09-02): that condition has been met.** A user's back process died with SIGSEGV during cold thumbnail generation. (An earlier version of this note read the core's `#0 0x0000000000000000` frame as a null vtable jump; the core turned out to be **truncated**, so that frame is an artifact and the inference was withdrawn.) The claim above that the failed `unref`s are handled by the correct glib instance and leak nothing is an inference, not something anyone verified, and native memory in the back does grow ~2 MB per large thumbnail and never come back (measured; the JS heap stays flat).
+
+That growth reproduces under plain node too, where there is no second glib, so the duplication is *not* the whole story — but it is no longer safe to call these warnings harmless. The fix has since landed: sharp runs in a recyclable child process (`src/back/backend/thumbnailPool.ts`), so this spam and any crash it accompanies now belong to a worker rather than to the back. See [docs/thumbnail-worker-plan.md](docs/thumbnail-worker-plan.md). A real backtrace from the reporter's core dump would settle whether (3) is actually needed.
 
 ---
 
@@ -101,6 +105,31 @@ Separately, a **legacy** Electron 37 x64 build (`macOS x86_legacy` matrix entry)
 2. **Self-hosted Intel Mac runner** — only if old-macOS support must continue.
 
 **Recommendation:** Leave as-is until `macos-15-intel` is actually retired; then most likely take (1), since the universal build already serves all current-macOS Intel users.
+
+---
+
+## A dead back process ends the session instead of being restarted
+**Priority:** Low
+**Severity:** Low
+**Effort:** Medium
+
+**Issue:**
+`Main.ts` forks the back process once at startup. If it dies, `onBackProcExit` reports the exit code/signal, shows an error box and quits the app. The client's reconnect loop (`SocketClient.reconnect`) can only redial the same port, which nothing is listening on any more, so it is aborted via `allowDeath()` rather than left spinning.
+
+Restarting the back would mean re-forking it, waiting for a new port, reconnecting both the main and renderer clients, and re-fetching all init data (config, preferences, playlists, themes, mappings) in the renderer, which currently only happens once in `MainWindowPreload`.
+
+**Trade-offs:**
+- ✅ Simple and honest: the user is told what happened instead of staring at a window whose every action hangs
+- ✅ No half-initialized renderer state to reason about
+- ❌ A single back crash costs the user their session, including any in-progress game loading
+
+**Potential Solutions:**
+1. **Keep as-is** — back crashes should be rare; the log now names the cause.
+2. **Re-fork and re-handshake** — needs a renderer-side "reinitialize everything" path.
+
+**Recommendation:** Keep as-is until crash reports show this happening often enough to be worth the reinitialization path.
+
+---
 
 ---
 

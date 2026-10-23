@@ -25,6 +25,7 @@ import {
     withPreferences,
 } from "./containers/withPreferences";
 import { WithRouterProps, withRouter } from "./containers/withRouter";
+import { getStartupConfig } from "./startupConfig";
 import {
     initializeLoading,
     setPlaylistsLoaded,
@@ -410,7 +411,6 @@ class App extends React.Component<AppProps, AppState> {
             playlists: playlists,
             appPaths: this.state.appPaths,
             playlistIconCache: this.state.playlistIconCache,
-            libraries: this.props.libraries,
             localeCode: this.state.localeCode,
             order: this.state.order,
             gameScale: this.state.gameScale,
@@ -441,7 +441,7 @@ class App extends React.Component<AppProps, AppState> {
                             onGoToConfig={this.onGoToConfig}
                         />
                         {/* Title-bar (if enabled) */}
-                        {window.External.config.data.useCustomTitlebar ? (
+                        {getStartupConfig().useCustomTitlebar ? (
                             <TitleBar
                                 title={`${APP_TITLE} (${app.getVersion()})`}
                             />
@@ -453,6 +453,7 @@ class App extends React.Component<AppProps, AppState> {
                                 <HeaderContainer
                                     exodosResources={this.state.exodosResources}
                                     libraries={this.props.libraries}
+                                    selectedLibrary={libraryPath}
                                     onToggleLeftSidebarClick={
                                         this.onToggleLeftSidebarClick
                                     }

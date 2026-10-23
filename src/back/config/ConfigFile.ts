@@ -1,9 +1,8 @@
-import * as fs from "fs";
 import { IAppConfigData } from "@shared/config/interfaces";
 import {
     deepCopy,
     readJsonFile,
-    stringifyJsonDataFile,
+    writeJsonDataFile,
     readJsonFileSync,
 } from "@shared/Util";
 import { getDefaultConfigData, overwriteConfigData } from "@shared/config/util";
@@ -77,18 +76,7 @@ export namespace ConfigFile {
         filePath: string,
         data: IAppConfigData
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // Convert config to json string
-            const json: string = stringifyJsonDataFile(data);
-            // Save the config file
-            fs.writeFile(filePath, json, function (error) {
-                if (error) {
-                    return reject(error);
-                } else {
-                    return resolve();
-                }
-            });
-        });
+        return writeJsonDataFile(filePath, data);
     }
 
     function parse(

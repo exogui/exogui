@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import { IAppPreferencesData } from "./interfaces";
 import { defaultPreferencesData, overwritePreferenceData } from "./util";
-import { deepCopy, readJsonFile, stringifyJsonDataFile } from "../Util";
+import { deepCopy, readJsonFile, writeJsonDataFile } from "../Util";
 
 /** Static class with methods for saving, loading and parsing the Preferences file */
 export namespace PreferencesFile {
@@ -28,6 +28,7 @@ export namespace PreferencesFile {
         }
         // If that failed, set data to default and save it to a new file
         if (error || !data) {
+            await backupUnreadableFile(filePath);
             data = deepCopy(defaultPreferencesData);
             await saveFile(filePath, data).catch(() =>
                 console.log("Failed to save default preferences file!")
@@ -60,17 +61,24 @@ export namespace PreferencesFile {
         filePath: string,
         data: IAppPreferencesData
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // Convert preferences to json string
-            const json: string = stringifyJsonDataFile(data);
-            // Save the preferences file
-            fs.writeFile(filePath, json, function (error) {
-                if (error) {
-                    return reject(error);
-                } else {
-                    return resolve();
-                }
-            });
-        });
+        return writeJsonDataFile(filePath, data);
+    }
+
+    /**
+     * Keep a copy of a preferences file we are about to replace with the defaults, so a parse
+     * failure does not silently throw the user's settings away.
+     */
+    async function backupUnreadableFile(filePath: string): Promise<void> {
+        const backupPath = `${filePath}.bak`;
+        try {
+            await fs.promises.copyFile(filePath, backupPath);
+            console.log(
+                `Kept a copy of the unreadable preferences file at ${backupPath}. Replacing it with the defaults.`
+            );
+        } catch (error: any) {
+            if (error?.code !== "ENOENT") {
+                console.log(`Failed to back up the unreadable preferences file! ${error}`);
+            }
+        }
     }
 }

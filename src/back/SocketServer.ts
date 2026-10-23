@@ -311,13 +311,16 @@ export class SocketServer {
 
                 if (!queue.isExecuting) {
                     queue.isExecuting = true;
-                    while (queue.items.length > 0) {
-                        const item = queue.items.shift();
-                        if (item) {
-                            await this.handleMessage(item.event, item.req);
+                    try {
+                        while (queue.items.length > 0) {
+                            const item = queue.items.shift();
+                            if (item) {
+                                await this.handleMessage(item.event, item.req);
+                            }
                         }
+                    } finally {
+                        queue.isExecuting = false;
                     }
-                    queue.isExecuting = false;
                 }
             } else {
                 this.handleMessage(event, msg);

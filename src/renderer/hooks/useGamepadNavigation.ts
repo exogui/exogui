@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 export type GamepadNavigationDirection = "up" | "down" | "left" | "right" | "select";
 
+export type GamepadDirection = Exclude<GamepadNavigationDirection, "select">;
+
+export type GamepadInputState = {
+    select: boolean;
+    direction: GamepadDirection | null;
+};
+
 export type GamepadNavigationCallbacks = {
     onNavigate: (direction: GamepadNavigationDirection) => void;
     onSelect?: () => void;
@@ -9,6 +16,59 @@ export type GamepadNavigationCallbacks = {
 
 const ANALOG_THRESHOLD = 0.5;
 const REPEAT_DELAY = 150;
+
+const BUTTON_A = 0;
+const BUTTON_DPAD_UP = 12;
+const BUTTON_DPAD_DOWN = 13;
+const BUTTON_DPAD_LEFT = 14;
+const BUTTON_DPAD_RIGHT = 15;
+
+const AXIS_LEFT_STICK_X = 0;
+const AXIS_LEFT_STICK_Y = 1;
+
+function readGamepadDirection(gamepad: Gamepad): GamepadDirection | null {
+    const leftStickX = gamepad.axes[AXIS_LEFT_STICK_X] ?? 0;
+    const leftStickY = gamepad.axes[AXIS_LEFT_STICK_Y] ?? 0;
+
+    if (gamepad.buttons[BUTTON_DPAD_UP]?.pressed || leftStickY < -ANALOG_THRESHOLD) {
+        return "up";
+    }
+    if (gamepad.buttons[BUTTON_DPAD_DOWN]?.pressed || leftStickY > ANALOG_THRESHOLD) {
+        return "down";
+    }
+    if (gamepad.buttons[BUTTON_DPAD_LEFT]?.pressed || leftStickX < -ANALOG_THRESHOLD) {
+        return "left";
+    }
+    if (gamepad.buttons[BUTTON_DPAD_RIGHT]?.pressed || leftStickX > ANALOG_THRESHOLD) {
+        return "right";
+    }
+    return null;
+}
+
+/**
+ * Combine the input of every connected gamepad, so any of them can drive the UI
+ * (on a Steam Deck the built-in controls take slot 0 and an external pad lands
+ * in a later slot).
+ */
+export function readGamepadsInput(
+    gamepads: ReadonlyArray<Gamepad | null>
+): GamepadInputState {
+    const state: GamepadInputState = { select: false, direction: null };
+
+    for (const gamepad of gamepads) {
+        if (!gamepad || !gamepad.connected) {
+            continue;
+        }
+        if (gamepad.buttons[BUTTON_A]?.pressed) {
+            state.select = true;
+        }
+        if (!state.direction) {
+            state.direction = readGamepadDirection(gamepad);
+        }
+    }
+
+    return state;
+}
 
 export function useGamepadNavigation(
     callbacks: GamepadNavigationCallbacks,
@@ -45,59 +105,34 @@ export function useGamepadNavigation(
             return;
         }
 
-        const pollGamepad = () => {
-            const gamepads = navigator.getGamepads();
-            const gamepad = gamepads[0];
+        const pollGamepads = () => {
+            const { select, direction } = readGamepadsInput(navigator.getGamepads());
+            const onSelect = callbacksRef.current.onSelect;
+            const input: GamepadNavigationDirection | null =
+                select && onSelect ? "select" : direction;
 
-            if (!gamepad) {
-                animationFrameId.current = requestAnimationFrame(pollGamepad);
-                return;
-            }
-
-            const now = Date.now();
-            let direction: GamepadNavigationDirection | null = null;
-
-            const leftStickX = gamepad.axes[0];
-            const leftStickY = gamepad.axes[1];
-            const dpadUp = gamepad.buttons[12]?.pressed;
-            const dpadDown = gamepad.buttons[13]?.pressed;
-            const dpadLeft = gamepad.buttons[14]?.pressed;
-            const dpadRight = gamepad.buttons[15]?.pressed;
-            const aButton = gamepad.buttons[0]?.pressed;
-
-            if (aButton && callbacksRef.current.onSelect) {
-                if (lastDirection.current !== "select" || now - lastInputTime.current > REPEAT_DELAY) {
-                    callbacksRef.current.onSelect();
-                    lastDirection.current = "select";
-                    lastInputTime.current = now;
-                }
-            } else if (dpadUp || leftStickY < -ANALOG_THRESHOLD) {
-                direction = "up";
-            } else if (dpadDown || leftStickY > ANALOG_THRESHOLD) {
-                direction = "down";
-            } else if (dpadLeft || leftStickX < -ANALOG_THRESHOLD) {
-                direction = "left";
-            } else if (dpadRight || leftStickX > ANALOG_THRESHOLD) {
-                direction = "right";
-            }
-
-            if (direction) {
+            if (input) {
+                const now = Date.now();
                 if (
-                    direction !== lastDirection.current ||
+                    input !== lastDirection.current ||
                     now - lastInputTime.current > REPEAT_DELAY
                 ) {
-                    callbacksRef.current.onNavigate(direction);
-                    lastDirection.current = direction;
+                    if (input === "select") {
+                        onSelect?.();
+                    } else {
+                        callbacksRef.current.onNavigate(input);
+                    }
+                    lastDirection.current = input;
                     lastInputTime.current = now;
                 }
             } else {
                 lastDirection.current = null;
             }
 
-            animationFrameId.current = requestAnimationFrame(pollGamepad);
+            animationFrameId.current = requestAnimationFrame(pollGamepads);
         };
 
-        animationFrameId.current = requestAnimationFrame(pollGamepad);
+        animationFrameId.current = requestAnimationFrame(pollGamepads);
 
         return () => {
             if (animationFrameId.current !== null) {

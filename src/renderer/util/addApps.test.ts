@@ -1,7 +1,7 @@
 jest.mock("./games", () => ({ getGameByTitle: jest.fn() }));
 jest.mock("@renderer/redux/store", () => ({ getState: jest.fn(), dispatch: jest.fn() }));
 jest.mock("@renderer/redux/gamesSlice", () => ({ updateGame: jest.fn() }));
-jest.mock("chokidar", () => ({ watch: jest.fn(() => ({ on: jest.fn() })) }));
+jest.mock("./watchDirectory", () => ({ watchDirectory: jest.fn(() => ({ close: jest.fn() })) }));
 
 import * as fs from "fs";
 import { IGameInfo } from "@shared/game/interfaces";

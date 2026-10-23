@@ -28,7 +28,7 @@ export function AboutPage(_props: AboutPageProps) {
                 </div>
                 {link(exoguiRepoLink, exoguiRepoLink)}
                 <p>
-                    exogui is the official Linux frontend for{" "}
+                    exogui is the official Linux and macOS frontend for{" "}
                     {link("eXo projects", exoProjectsLink)}.
                 </p>
                 <br />

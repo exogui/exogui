@@ -19,7 +19,6 @@ export type AppRouterProps = {
     playlists: GamePlaylist[];
     appPaths: Record<string, string>;
     playlistIconCache: Record<string, string>;
-    libraries: string[];
     localeCode: string;
 
     order?: GameOrderChangeEvent;
@@ -47,7 +46,6 @@ export class AppRouter extends React.Component<AppRouterProps> {
         };
         const configProps: ConnectedConfigPageProps = {
             themeList: this.props.themeList,
-            platforms: this.props.libraries,
         };
         return (
             <Routes>

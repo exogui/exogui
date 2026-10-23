@@ -77,6 +77,49 @@ const enum UpdateState {
     GameUpdated,
 }
 
+/**
+ * Publish a rewritten platform file once it is actually complete.
+ *
+ * `readline`'s "close" only means the input was exhausted - the writes it triggered are still
+ * buffered. Renaming there publishes a half-written file, and the function it was called from
+ * resolved before any of this happened, so callers had no way to wait for the real result.
+ */
+function commitRewrite(
+    rl: readline.Interface,
+    readStream: fs.ReadStream,
+    writeStream: fs.WriteStream,
+    tempFilePath: string,
+    filePath: string
+): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        let settled = false;
+
+        const fail = (error: Error) => {
+            if (settled) return;
+            settled = true;
+            readStream.destroy();
+            writeStream.destroy();
+            fs.promises.unlink(tempFilePath).catch(() => undefined);
+            reject(error);
+        };
+
+        readStream.on("error", fail);
+        writeStream.on("error", fail);
+        rl.on("close", () => writeStream.end());
+
+        writeStream.on("finish", () => {
+            fs.rename(tempFilePath, filePath, (error) => {
+                if (error) {
+                    fail(error);
+                } else if (!settled) {
+                    settled = true;
+                    resolve();
+                }
+            });
+        });
+    });
+}
+
 export const updateInstalledField = async (
     filePath: string,
     gameId: string,
@@ -137,12 +180,7 @@ export const updateInstalledField = async (
         }
     });
 
-    rl.on("close", () => {
-        fs.rename(tempFilePath, filePath, (err) => {
-            if (err) throw err;
-            console.log("XML file updated successfully.");
-        });
-    });
+    return commitRewrite(rl, readStream, writeStream, tempFilePath, filePath);
 };
 
 export const updateFavoriteField = async (
@@ -204,9 +242,5 @@ export const updateFavoriteField = async (
         }
     });
 
-    rl.on("close", () => {
-        fs.rename(tempFilePath, filePath, (err) => {
-            if (err) throw err;
-        });
-    });
+    return commitRewrite(rl, readStream, writeStream, tempFilePath, filePath);
 };

@@ -65,7 +65,7 @@ export type BackInTemplate = SocketTemplate<BackIn, {
     [BackIn.QUICK_SEARCH]: UnknownCallback;
     [BackIn.ADD_LOG]: (log: ILogPreEntry) => void;
     [BackIn.GET_PLAYLISTS]: () => GamePlaylist[];
-    [BackIn.LAUNCH_COMMAND]: (filePath: string) => void;
+    [BackIn.LAUNCH_COMMAND]: (filePath: string, args?: string) => void;
     [BackIn.QUIT]: () => void;
     [BackIn.BROWSE_VIEW_PAGE]: UnknownCallback;
     [BackIn.BROWSE_VIEW_INDEX]: UnknownCallback;
@@ -162,6 +162,8 @@ export type BackInitArgs = {
     basePath: string;
     /** If the back should accept remote clients to connect (renderers from different machines). */
     acceptRemote: boolean;
+    /** Enable verbose back diagnostics (periodic memory logging). */
+    diagnostics: boolean;
 };
 
 export enum BackInit {

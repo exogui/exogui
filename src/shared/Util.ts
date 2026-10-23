@@ -186,6 +186,43 @@ export function stringifyJsonDataFile(data: any): string {
     return JSON.stringify(data, null, 2).replace(/\n/g, "\r\n");
 }
 
+const jsonWriteQueue = new Map<string, Promise<void>>();
+
+/**
+ * Stringify and write a json data file.
+ *
+ * Writes are serialized per path and go through a temp file + rename. Two overlapping
+ * "fs.writeFile()" calls on one path each truncate it and then write from offset zero, so the
+ * tail of the longer write survives past the end of the shorter one and leaves trailing garbage
+ * after the closing brace - a file that no longer parses.
+ */
+export function writeJsonDataFile(filePath: string, data: any): Promise<void> {
+    const previous = jsonWriteQueue.get(filePath) ?? Promise.resolve();
+    const write = previous
+    .catch(() => undefined)
+    .then(() => writeFileAtomic(filePath, stringifyJsonDataFile(data)));
+
+    const settled: Promise<void> = write.catch(() => undefined).then(() => {
+        if (jsonWriteQueue.get(filePath) === settled) {
+            jsonWriteQueue.delete(filePath);
+        }
+    });
+    jsonWriteQueue.set(filePath, settled);
+
+    return write;
+}
+
+async function writeFileAtomic(filePath: string, content: string): Promise<void> {
+    const tempPath = `${filePath}.${process.pid}.tmp`;
+    try {
+        await fs.promises.writeFile(tempPath, content);
+        await fs.promises.rename(tempPath, filePath);
+    } catch (error) {
+        await fs.promises.unlink(tempPath).catch(() => undefined);
+        throw error;
+    }
+}
+
 /**
  * Check if all properties of both arguments have strictly equals values,
  * and if both objects have identical properties (same number of props with the same names)

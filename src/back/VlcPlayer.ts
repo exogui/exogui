@@ -4,6 +4,14 @@ import { pathToFileURL } from "url";
 import { VlcState } from "@shared/back/types";
 
 const COMMAND_TIMEOUT_MS = 15000;
+const PROBE_TIMEOUT_MS = 2000;
+/** Banner or "status" reply of a VLC RC interface, none of which a random listener would send. */
+const VLC_RC_GREETING = /VLC media player|Command Line Interface|audio volume:|\( ?state /;
+
+/** Whether what a listener sent back identifies it as a VLC remote control interface. */
+export function looksLikeVlcRc(received: string): boolean {
+    return VLC_RC_GREETING.test(received);
+}
 const VERBOSE = false;
 
 type QueuedCommand = {
@@ -45,7 +53,7 @@ export class VlcPlayer {
 
         const connected = await player.tryConnectExisting();
         if (connected) {
-            console.log(`VLC: attached to existing instance on port ${port}`);
+            console.log(`VLC: attached to existing instance on port ${port} (left over from an earlier run?)`);
             return player;
         }
 
@@ -69,24 +77,55 @@ export class VlcPlayer {
         return player;
     }
 
+    /**
+     * Adopt a VLC that is already listening on our RC port - typically one orphaned by a previous
+     * run. Anything at all can be listening on a fixed port, so make it prove it speaks RC before
+     * handing it our commands; a wrong guess means every command sits until it times out.
+     */
     private tryConnectExisting(): Promise<boolean> {
         return new Promise((resolve) => {
             const socket = net.connect(this.port, "127.0.0.1");
+            let received = "";
+            let connected = false;
+            let settled = false;
+
+            const finish = (isVlc: boolean) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeout);
+                socket.off("data", onData);
+                socket.off("error", onError);
+                if (isVlc) {
+                    this.attachSocket(socket);
+                } else {
+                    socket.destroy();
+                }
+                resolve(isVlc);
+            };
+
+            const onData = (chunk: Buffer) => {
+                received += chunk.toString();
+                if (looksLikeVlcRc(received)) {
+                    finish(true);
+                }
+            };
+
+            const onError = () => finish(false);
 
             const timeout = setTimeout(() => {
-                socket.destroy();
-                resolve(false);
-            }, 1000);
+                if (!settled && connected) {
+                    console.log(
+                        `VLC: something is listening on port ${this.port} but it does not answer as a VLC remote control interface. Not attaching to it - set a different vlcPort in config.json if this is another program.`
+                    );
+                }
+                finish(false);
+            }, PROBE_TIMEOUT_MS);
 
+            socket.on("data", onData);
+            socket.on("error", onError);
             socket.on("connect", () => {
-                clearTimeout(timeout);
-                this.attachSocket(socket);
-                resolve(true);
-            });
-
-            socket.on("error", () => {
-                clearTimeout(timeout);
-                resolve(false);
+                connected = true;
+                socket.write("status\n");
             });
         });
     }

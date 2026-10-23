@@ -204,3 +204,83 @@ describe("VlcPlayer.isProcessAlive", () => {
         expect(player.isProcessAlive()).toBe(false);
     });
 });
+
+describe("VlcPlayer.tryConnectExisting", () => {
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    function probe(player: VlcPlayer): Promise<boolean> {
+        return (player as any).tryConnectExisting();
+    }
+
+    test("adopts a listener that answers as a VLC RC interface", async () => {
+        const player = makePlayer();
+        const socket = makeMockSocket();
+        mockConnect(socket);
+
+        const p = probe(player);
+        socket.emit("connect");
+        socket.emit("data", Buffer.from("VLC media player 3.0.20 Vetinari\r\n"));
+
+        await expect(p).resolves.toBe(true);
+        expect(player.vlcState).toBe<VlcState>("connected");
+        expect(socket.destroy).not.toHaveBeenCalled();
+    });
+
+    test("adopts a listener whose greeting arrives split across chunks", async () => {
+        const player = makePlayer();
+        const socket = makeMockSocket();
+        mockConnect(socket);
+
+        const p = probe(player);
+        socket.emit("connect");
+        socket.emit("data", Buffer.from("( audio "));
+        socket.emit("data", Buffer.from("volume: 256 )\r\n"));
+
+        await expect(p).resolves.toBe(true);
+        expect(player.vlcState).toBe<VlcState>("connected");
+    });
+
+    test("does not adopt a listener that answers with something else", async () => {
+        jest.useFakeTimers();
+        const player = makePlayer();
+        const socket = makeMockSocket();
+        mockConnect(socket);
+
+        const p = probe(player);
+        socket.emit("connect");
+        socket.emit("data", Buffer.from("HTTP/1.1 400 Bad Request\r\n"));
+        jest.advanceTimersByTime(2000);
+
+        await expect(p).resolves.toBe(false);
+        expect(socket.destroy).toHaveBeenCalled();
+        expect(player.vlcState).toBe<VlcState>("idle");
+    });
+
+    test("does not adopt a listener that never answers", async () => {
+        jest.useFakeTimers();
+        const player = makePlayer();
+        const socket = makeMockSocket();
+        mockConnect(socket);
+
+        const p = probe(player);
+        socket.emit("connect");
+        jest.advanceTimersByTime(2000);
+
+        await expect(p).resolves.toBe(false);
+        expect(socket.destroy).toHaveBeenCalled();
+    });
+
+    test("gives up immediately when nothing is listening", async () => {
+        const player = makePlayer();
+        const socket = makeMockSocket();
+        mockConnect(socket);
+
+        const p = probe(player);
+        socket.emit("error", new Error("ECONNREFUSED"));
+
+        await expect(p).resolves.toBe(false);
+        expect(player.vlcState).toBe<VlcState>("idle");
+    });
+});

@@ -38,7 +38,7 @@ exogui uses a **three-process architecture** based on Electron:
 - Runs WebSocket server on dynamic port (range: `backPortMin` - `backPortMax`)
 - Runs HTTP file server for static assets (images, videos) on dynamic port (`imagesPortMin` - `imagesPortMax`)
 - Manages game processes via Node.js `child_process`
-- Watches filesystem for game installation changes (using Chokidar)
+- Watches filesystem for game installation changes (one `fs.watch` per directory, see `src/renderer/util/watchDirectory.ts`)
 
 **Key Modules:**
 - `SocketServer.ts` - WebSocket server for communication
